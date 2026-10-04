@@ -40,13 +40,14 @@ tensorplay/
 │   ├── math.test.js                 # Vitest kiểm chứng math.js (chạy độc lập, không cần DOM)
 │   ├── katex-render.js              # renderMath(el, latex) — nạp KaTeX từ CDN một lần, cache instance
 │   ├── katex-lint.test.js           # Vitest quét toàn bộ examples/**/*.{html,js} chặn `\text{___}` / `_` trần
-│   └── components/                  # 🔧 6 COMPONENT NỀN TẢNG — xem Hợp Đồng ở Mục III
+│   └── components/                  # 🔧 7 COMPONENT NỀN TẢNG — xem Hợp Đồng ở Mục III
 │       ├── StepWizard.js            # Khung dẫn dắt Socratic (Cột 1): problem→challenge→takeaway, phím ←/→
 │       ├── ValueGrid.js             # Lưới ô N×N click/kéo đổi giá trị (pixel, ma trận, chỉ số thread...)
 │       ├── LiveSlider.js            # Thanh trượt số liên kết trực tiếp 1 giá trị trong state
 │       ├── MemoryTape.js            # Dải ô nhớ 1D, highlight offset con trỏ, báo lỗi out-of-bound
 │       ├── ScoreBar.js              # Thanh đo % / điểm số, màu theo token ngữ nghĩa (reward/penalty)
-│       └── PresetPicker.js          # Dãy nút bấm thử nhanh dữ liệu mồi
+│       ├── PresetPicker.js          # Dãy nút bấm thử nhanh dữ liệu mồi
+│       └── CommentSection.js        # Hệ thống chú giải chuyên gia (Toán/C++/Gotchas) + ghi chú học tập per-step
 │
 └── examples/                        # 📦 MỖI VÍ DỤ = 3 FILE TĨNH, KHÔNG QUA ROUTER/ENGINE NÀO CẢ
     ├── catalog.json                 # Metadata của 15 ví dụ để index.html render thẻ — KHÔNG dùng để load logic
@@ -92,7 +93,7 @@ export function createX(container, options) {
 ```
 Quy ước này giống nhau cho cả 6 component nền tảng lẫn bất kỳ component mới thêm sau này (Mục III.3) — một khi đã học cách dùng 1 component, dùng component khác không cần học lại pattern.
 
-### 2. Sáu Component Nền Tảng (Foundational Six)
+### 2. Bảy Component Nền Tảng (Foundational Seven)
 
 | Component | Vai trò | Options chính | Dùng đầu tiên ở |
 |---|---|---|---|
@@ -102,6 +103,7 @@ Quy ước này giống nhau cho cả 6 component nền tảng lẫn bất kỳ 
 | **MemoryTape** | Dải ô nhớ 1D ngang, highlight ô theo `offset`, đỏ nếu offset vượt biên | `{ length, values, highlightIndex, onOutOfBounds }` | Bài 01 (RAM C++), tái dùng Bài 11/12 |
 | **ScoreBar** | Thanh ngang đo giá trị 0–1 hoặc điểm số, đổi màu theo ngữ nghĩa reward/penalty | `{ value, min, max, variant: 'reward'\|'penalty'\|'neutral', label }` | Bài 01 (điểm số), tái dùng Bài 02/09/14 |
 | **PresetPicker** | Dãy nút bấm thử nhanh, mỗi nút gọi `logic.applyPreset(preset.state)` | `{ presets: [{id,label,state}], onPick }` | Mọi bài có `presets` |
+| **CommentSection** | Cột 1 — Chú giải kiến thức chuyên gia (Toán, C++, Gotchas) per-step + Ghi chú học tập cá nhân lưu `localStorage` | `{ lessonId, initialStep, curatedComments, allowUserNotes }` | Mọi bài học |
 
 ### 3. Backlog Component (chưa thiết kế vội — chỉ thiết kế khi chạm tới track tương ứng)
 Không thiết kế trước cho bài chưa làm tới — tránh đoán sai nhu cầu. Dự kiến cần thêm khi tới:

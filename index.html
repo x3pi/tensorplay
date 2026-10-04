@@ -3,243 +3,304 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TensorPlay - Sân Chơi Trực Quan Hóa Hệ Thống Học Sâu (DLSys Visual Lab)</title>
-  <meta name="description" content="Nền tảng học tập tương tác trực quan hóa toán học & kỹ nghệ hệ thống AI (Deep Learning Systems). Biến công thức trừu tượng thành các khối vật lý phản hồi tức thì.">
+  <title>TensorPlay - Phòng Thí Nghiệm Trực Quan Hóa Hệ Thống Học Sâu (DLSys Visual Lab)</title>
+  <meta name="description" content="Danh mục các ví dụ học tập tương tác trực quan hóa toán học & kỹ nghệ hệ thống AI (CMU 10-414 / 10-714). Mỗi bài là một sandbox độc lập.">
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
-  <!-- KaTeX CDN (Pin v0.16.21) -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="./shared/styles/tokens.css">
+  <link rel="stylesheet" href="./shared/styles/layout.css">
+  <link rel="stylesheet" href="./shared/styles/components.css">
 
-  <!-- Core Styles -->
-  <link rel="stylesheet" href="./core/styles/tokens.css">
-  <link rel="stylesheet" href="./core/styles/layout.css">
-  <link rel="stylesheet" href="./core/styles/components.css">
+  <style>
+    .catalog-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem;
+      overflow-y: auto;
+      height: calc(100vh - var(--header-height));
+    }
+
+    .hero-section {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .hero-title {
+      font-size: 2.4rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.75rem;
+      background: linear-gradient(135deg, #ffffff 40%, var(--color-info) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      max-width: 680px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    .track-filters {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .track-filter-btn {
+      background-color: var(--bg-surface-elevated);
+      border: 1px solid var(--border-strong);
+      color: var(--text-muted);
+      padding: 8px 16px;
+      border-radius: var(--radius-full);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .track-filter-btn:hover {
+      color: var(--text-main);
+      border-color: var(--color-info);
+    }
+
+    .track-filter-btn.active {
+      background-color: var(--color-info-bg);
+      border-color: var(--color-info);
+      color: var(--color-info);
+      box-shadow: 0 0 12px var(--color-info-glow);
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .catalog-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.2s ease;
+      box-shadow: var(--card-shadow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .catalog-card:hover {
+      border-color: rgba(6, 182, 212, 0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .card-top {
+      margin-bottom: 1rem;
+    }
+
+    .card-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 0.5rem;
+      line-height: 1.35;
+    }
+
+    .card-summary {
+      font-size: var(--text-sm);
+      color: var(--text-muted);
+      line-height: 1.55;
+      margin-bottom: 1rem;
+    }
+
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .card-action {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .btn-launch {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(135deg, #0284c7, var(--color-info));
+      color: #ffffff;
+      text-decoration: none;
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      transition: all 0.15s ease;
+      box-shadow: 0 4px 12px var(--color-info-glow);
+    }
+
+    .btn-launch:hover {
+      filter: brightness(1.15);
+      transform: translateY(-1px);
+    }
+
+    .btn-launch.disabled {
+      background: var(--bg-surface-elevated);
+      color: var(--text-dim);
+      box-shadow: none;
+      cursor: not-allowed;
+      pointer-events: none;
+      border: 1px solid var(--border-subtle);
+    }
+  </style>
 </head>
 <body class="theme-dark">
-  <!-- Application Container -->
-  <div id="app" class="app-container">
+  <div class="lab-shell">
     
-    <!-- Top Global Header -->
-    <header class="app-header" id="app-header">
-      <div class="header-left">
-        <a href="#/" class="brand-logo" id="brand-logo">
-          <span class="logo-icon">⚡</span>
-          <span class="logo-text">Tensor<span class="logo-accent">Play</span></span>
-          <span class="badge-lab">LAB</span>
+    <!-- Top Header -->
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="./index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+          <span style="background: linear-gradient(135deg, var(--color-info), var(--color-purple)); color: #fff; font-size: 0.65rem; font-weight: 800; padding: 1px 6px; border-radius: 4px;">LAB</span>
         </a>
-
-        <!-- Track & Lesson Pickers -->
-        <div class="nav-controls">
-          <div class="select-wrapper">
-            <label for="track-select" class="sr-only">Chọn Track</label>
-            <select id="track-select" class="select-input">
-              <option value="all">Tất cả Track</option>
-            </select>
-          </div>
-
-          <div class="select-wrapper">
-            <label for="lesson-select" class="sr-only">Chọn Bài Học</label>
-            <select id="lesson-select" class="select-input select-lesson">
-              <option value="" disabled selected>Đang tải bài học...</option>
-            </select>
-          </div>
-        </div>
       </div>
 
-      <div class="header-right">
-        <!-- Progress Indicator -->
-        <div class="progress-indicator" id="progress-indicator" title="Tiến độ học tập tổng thể">
-          <span class="progress-label">Tiến độ:</span>
-          <div class="progress-track">
-            <div class="progress-bar-fill" id="progress-bar-fill" style="width: 0%;"></div>
-          </div>
-          <span class="progress-percent" id="progress-percent">0%</span>
-        </div>
-
-        <!-- Utility Buttons -->
-        <button id="btn-shortcuts" class="btn-icon" title="Phím tắt bàn phím (?)">
-          <span class="kbd-hint">?</span>
-        </button>
-
-        <button id="btn-reset-progress" class="btn-ghost" title="Làm lại từ đầu">
-          Làm mới tiến độ
-        </button>
+      <div class="lab-header-right">
+        <span style="font-size: var(--text-xs); color: var(--text-muted);">
+          Deep Learning Systems Interactive Visual Sandboxes
+        </span>
       </div>
     </header>
 
-    <!-- Main Workspace (3-Zone Grid) -->
-    <main class="workspace-grid" id="workspace-grid">
+    <!-- Catalog Body -->
+    <div class="catalog-container">
       
-      <!-- CỘT 1: CÂU CHUYỆN & DẪN DẮT (Socratic Narrative) -->
-      <section class="zone-column zone-narrative" id="zone-narrative">
-        <div class="zone-header">
-          <span class="zone-tag">Cột 1 • Dẫn Dắt & Kịch Bản</span>
-          <span class="step-badge" id="step-badge">Bước 1 / 8</span>
-        </div>
-        
-        <div class="zone-content narrative-scrollable">
-          <div class="lesson-meta-bar" id="lesson-meta-bar">
-            <!-- Injected by engine: Course mapping, Tags, Difficulty -->
-          </div>
-
-          <h2 class="step-heading" id="step-heading">Đang tải nội dung...</h2>
-
-          <div class="card-problem" id="card-problem">
-            <div class="card-icon">❓</div>
-            <div class="card-body">
-              <h3 class="card-title">Vấn Đề Thực Tế</h3>
-              <p class="card-text" id="problem-text">...</p>
-            </div>
-          </div>
-
-          <div class="card-challenge" id="card-challenge">
-            <div class="card-icon">🔧</div>
-            <div class="card-body">
-              <h3 class="card-title">Thử Thách Của Bạn</h3>
-              <p class="card-text" id="challenge-text">...</p>
-            </div>
-          </div>
-
-          <div class="card-takeaway" id="card-takeaway">
-            <div class="card-icon">💡</div>
-            <div class="card-body">
-              <h3 class="card-title">Đúc Kết Tư Duy</h3>
-              <p class="card-text" id="takeaway-text">...</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Step Navigation Footer -->
-        <div class="zone-footer step-nav-bar">
-          <button id="btn-prev-step" class="btn-secondary" title="Phím tắt: Mũi tên Trái (←)">
-            ◀ Bước Trước
-          </button>
-          
-          <div class="step-dots" id="step-dots">
-            <!-- Rendered dynamically -->
-          </div>
-
-          <button id="btn-next-step" class="btn-primary" title="Phím tắt: Mũi tên Phải (→)">
-            Bước Kế Tiếp ▶
-          </button>
-        </div>
-      </section>
-
-      <!-- Resizer Splitter 1 -->
-      <div class="column-resizer" id="resizer-1" data-resizes="zone-narrative"></div>
-
-      <!-- CỘT 2: SÂN CHƠI TƯƠNG TÁC (Interactive Sandbox) -->
-      <section class="zone-column zone-sandbox" id="zone-sandbox">
-        <div class="zone-header">
-          <span class="zone-tag">Cột 2 • Sân Chơi Tương Tác</span>
-          <div class="sandbox-actions">
-            <button id="btn-reset-canvas" class="btn-ghost-sm" title="Phím tắt: R">
-              ↺ Reset Bước
-            </button>
-          </div>
-        </div>
-
-        <div class="zone-content sandbox-scrollable">
-          <!-- Presets Quick-Try Bar -->
-          <div class="presets-container" id="presets-container">
-            <span class="presets-title">Thử nhanh tình huống:</span>
-            <div class="presets-buttons" id="presets-buttons">
-              <!-- Dynamically populated from lesson presets -->
-            </div>
-          </div>
-
-          <!-- Dynamic Lesson Canvas Container -->
-          <div class="canvas-mount-point" id="canvas-mount-point">
-            <!-- Custom Canvas Component injected here -->
-          </div>
-        </div>
-      </section>
-
-      <!-- Resizer Splitter 2 -->
-      <div class="column-resizer" id="resizer-2" data-resizes="zone-sandbox"></div>
-
-      <!-- CỘT 3: LIVE MATH & TELEMETRY (Real-time Telemetry) -->
-      <section class="zone-column zone-telemetry" id="zone-telemetry">
-        <div class="zone-header">
-          <span class="zone-tag">Cột 3 • Live Math & RAM C++</span>
-          <span class="live-indicator"><span class="pulse-dot"></span> LIVE</span>
-        </div>
-
-        <div class="zone-content telemetry-scrollable">
-          <!-- Live Math Formula Card -->
-          <div class="telemetry-card">
-            <div class="telemetry-card-title">
-              <span>📐 Công Thức Toán Sống</span>
-            </div>
-            <div class="katex-container" id="katex-formula-mount">
-              <!-- KaTeX injected here -->
-            </div>
-          </div>
-
-          <!-- Score & Output Card -->
-          <div class="telemetry-card">
-            <div class="telemetry-card-title">
-              <span>📊 Phân Tích Điểm Số & Quyết Định</span>
-            </div>
-            <div class="score-display-group" id="score-display-mount">
-              <!-- Score breakdown injected here -->
-            </div>
-          </div>
-
-          <!-- C++ Memory & Hardware Telemetry -->
-          <div class="telemetry-card">
-            <div class="telemetry-card-title">
-              <span>💾 Bộ Nhớ RAM C++ (Row-major 1D)</span>
-            </div>
-            <div class="memory-visualizer-mount" id="memory-visualizer-mount">
-              <!-- Memory array component injected here -->
-            </div>
-          </div>
-        </div>
-      </section>
-
-    </main>
-
-    <!-- Mobile Bottom Tab Navigation (Only visible on screens < 900px) -->
-    <nav class="mobile-tabs-bar" id="mobile-tabs-bar">
-      <button class="mobile-tab-btn active" data-tab="zone-narrative">
-        <span class="tab-icon">📖</span>
-        <span class="tab-text">Dẫn Dắt</span>
-      </button>
-      <button class="mobile-tab-btn" data-tab="zone-sandbox">
-        <span class="tab-icon">🎮</span>
-        <span class="tab-text">Sân Chơi</span>
-      </button>
-      <button class="mobile-tab-btn" data-tab="zone-telemetry">
-        <span class="tab-icon">📐</span>
-        <span class="tab-text">Toán & RAM</span>
-      </button>
-    </nav>
-
-    <!-- Keyboard Shortcuts Modal Overlay -->
-    <div class="modal-overlay hidden" id="modal-shortcuts">
-      <div class="modal-card">
-        <div class="modal-header">
-          <h3 class="modal-title">⌨️ Phím Tắt Bàn Phím Toàn Cục</h3>
-          <button class="modal-close" id="btn-close-modal">✕</button>
-        </div>
-        <div class="modal-body" id="modal-shortcuts-body">
-          <!-- Populated from core/shortcuts.js -->
-        </div>
-        <div class="modal-footer">
-          <span>Nhấn <kbd>Esc</kbd> hoặc click ra ngoài để đóng</span>
-        </div>
+      <div class="hero-section">
+        <h1 class="hero-title">Khám Phá Bản Chất Hệ Thống AI</h1>
+        <p class="hero-subtitle">
+          Mỗi bài học là một <strong>Sandbox tương tác độc lập</strong>. Không cần cài đặt cồng kềnh, không phụ thuộc thứ tự — mở thẳng ví dụ để chạm tay vào toán học và kỹ nghệ bộ nhớ.
+        </p>
       </div>
+
+      <!-- Track Filters -->
+      <div class="track-filters" id="track-filters">
+        <button class="track-filter-btn active" data-track="all">Tất Cả Track</button>
+        <button class="track-filter-btn" data-track="hw0">Track 0: Tensor & C++ RAM</button>
+        <button class="track-filter-btn" data-track="hw1">Track 1: Autograd Engine</button>
+        <button class="track-filter-btn" data-track="hw2">Track 2: Modules & Conv2D</button>
+        <button class="track-filter-btn" data-track="hw3">Track 3: GPU CUDA</button>
+        <button class="track-filter-btn" data-track="hw4">Track 4: Transformers & LLMs</button>
+      </div>
+
+      <!-- Cards Grid Mount -->
+      <div class="cards-grid" id="cards-grid">
+        <!-- Rendered dynamically from catalog.json -->
+      </div>
+
     </div>
 
   </div>
 
-  <!-- Application Entrypoint -->
-  <script type="module" src="./core/engine.js"></script>
+  <script type="module">
+    import { isLessonCompleted } from './shared/progress.js';
+
+    async function initCatalog() {
+      const gridEl = document.getElementById('cards-grid');
+      const filterBtns = document.querySelectorAll('.track-filter-btn');
+
+      try {
+        const res = await fetch('./examples/catalog.json');
+        const catalog = await res.json();
+
+        function renderCards(selectedTrack) {
+          const filtered = selectedTrack === 'all'
+            ? catalog
+            : catalog.filter(c => c.track === selectedTrack);
+
+          gridEl.innerHTML = filtered.map(item => {
+            const isDone = isLessonCompleted(item.id);
+            const isReady = item.status === 'ready';
+
+            return `
+              <div class="catalog-card">
+                <div class="card-top">
+                  <div class="card-meta">
+                    <span class="tp-badge tp-badge-step" style="border-color: rgba(6, 182, 212, 0.3);">
+                      ${item.track.toUpperCase()} • Bài ${item.order}
+                    </span>
+                    ${isDone ? `<span style="font-size: 0.75rem; color: var(--color-positive); font-weight: 700;">✓ Hoàn thành</span>` : ''}
+                  </div>
+
+                  <h3 class="card-title">${item.title}</h3>
+                  <p class="card-summary">${item.summary}</p>
+                </div>
+
+                <div>
+                  <div class="card-tags">
+                    ${(item.tags || []).map(t => `<span class="tp-badge tp-badge-tag">#${t}</span>`).join('')}
+                  </div>
+
+                  <div class="card-action">
+                    <span style="font-size: var(--text-xs); color: var(--text-dim);">
+                      ⏱️ ~${item.estimatedMinutes} phút
+                    </span>
+
+                    ${isReady ? `
+                      <a href="${item.path}" class="btn-launch">
+                        Trải Nghiệm Ngay ▶
+                      </a>
+                    ` : `
+                      <span class="btn-launch disabled">
+                        Đang Phát Triển...
+                      </span>
+                    `}
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+
+        renderCards('all');
+
+        filterBtns.forEach(btn => {
+          btn.addEventListener('click', () => {
+            filterBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderCards(btn.getAttribute('data-track'));
+          });
+        });
+
+      } catch (e) {
+        gridEl.innerHTML = `<div style="color: var(--color-negative); padding: 2rem;">Lỗi tải catalog.json: ${e.message}</div>`;
+      }
+    }
+
+    initCatalog();
+  </script>
 </body>
 </html>

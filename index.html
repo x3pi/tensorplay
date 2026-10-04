@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TensorPlay - Sân Chơi Trực Quan Hóa Hệ Thống Học Sâu (DLSys Visual Lab)</title>
+  <meta name="description" content="Nền tảng học tập tương tác trực quan hóa toán học & kỹ nghệ hệ thống AI (Deep Learning Systems). Biến công thức trừu tượng thành các khối vật lý phản hồi tức thì.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- KaTeX CDN (Pin v0.16.21) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+
+  <!-- Core Styles -->
+  <link rel="stylesheet" href="./core/styles/tokens.css">
+  <link rel="stylesheet" href="./core/styles/layout.css">
+  <link rel="stylesheet" href="./core/styles/components.css">
+</head>
+<body class="theme-dark">
+  <!-- Application Container -->
+  <div id="app" class="app-container">
+    
+    <!-- Top Global Header -->
+    <header class="app-header" id="app-header">
+      <div class="header-left">
+        <a href="#/" class="brand-logo" id="brand-logo">
+          <span class="logo-icon">⚡</span>
+          <span class="logo-text">Tensor<span class="logo-accent">Play</span></span>
+          <span class="badge-lab">LAB</span>
+        </a>
+
+        <!-- Track & Lesson Pickers -->
+        <div class="nav-controls">
+          <div class="select-wrapper">
+            <label for="track-select" class="sr-only">Chọn Track</label>
+            <select id="track-select" class="select-input">
+              <option value="all">Tất cả Track</option>
+            </select>
+          </div>
+
+          <div class="select-wrapper">
+            <label for="lesson-select" class="sr-only">Chọn Bài Học</label>
+            <select id="lesson-select" class="select-input select-lesson">
+              <option value="" disabled selected>Đang tải bài học...</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <!-- Progress Indicator -->
+        <div class="progress-indicator" id="progress-indicator" title="Tiến độ học tập tổng thể">
+          <span class="progress-label">Tiến độ:</span>
+          <div class="progress-track">
+            <div class="progress-bar-fill" id="progress-bar-fill" style="width: 0%;"></div>
+          </div>
+          <span class="progress-percent" id="progress-percent">0%</span>
+        </div>
+
+        <!-- Utility Buttons -->
+        <button id="btn-shortcuts" class="btn-icon" title="Phím tắt bàn phím (?)">
+          <span class="kbd-hint">?</span>
+        </button>
+
+        <button id="btn-reset-progress" class="btn-ghost" title="Làm lại từ đầu">
+          Làm mới tiến độ
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace (3-Zone Grid) -->
+    <main class="workspace-grid" id="workspace-grid">
+      
+      <!-- CỘT 1: CÂU CHUYỆN & DẪN DẮT (Socratic Narrative) -->
+      <section class="zone-column zone-narrative" id="zone-narrative">
+        <div class="zone-header">
+          <span class="zone-tag">Cột 1 • Dẫn Dắt & Kịch Bản</span>
+          <span class="step-badge" id="step-badge">Bước 1 / 8</span>
+        </div>
+        
+        <div class="zone-content narrative-scrollable">
+          <div class="lesson-meta-bar" id="lesson-meta-bar">
+            <!-- Injected by engine: Course mapping, Tags, Difficulty -->
+          </div>
+
+          <h2 class="step-heading" id="step-heading">Đang tải nội dung...</h2>
+
+          <div class="card-problem" id="card-problem">
+            <div class="card-icon">❓</div>
+            <div class="card-body">
+              <h3 class="card-title">Vấn Đề Thực Tế</h3>
+              <p class="card-text" id="problem-text">...</p>
+            </div>
+          </div>
+
+          <div class="card-challenge" id="card-challenge">
+            <div class="card-icon">🔧</div>
+            <div class="card-body">
+              <h3 class="card-title">Thử Thách Của Bạn</h3>
+              <p class="card-text" id="challenge-text">...</p>
+            </div>
+          </div>
+
+          <div class="card-takeaway" id="card-takeaway">
+            <div class="card-icon">💡</div>
+            <div class="card-body">
+              <h3 class="card-title">Đúc Kết Tư Duy</h3>
+              <p class="card-text" id="takeaway-text">...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step Navigation Footer -->
+        <div class="zone-footer step-nav-bar">
+          <button id="btn-prev-step" class="btn-secondary" title="Phím tắt: Mũi tên Trái (←)">
+            ◀ Bước Trước
+          </button>
+          
+          <div class="step-dots" id="step-dots">
+            <!-- Rendered dynamically -->
+          </div>
+
+          <button id="btn-next-step" class="btn-primary" title="Phím tắt: Mũi tên Phải (→)">
+            Bước Kế Tiếp ▶
+          </button>
+        </div>
+      </section>
+
+      <!-- Resizer Splitter 1 -->
+      <div class="column-resizer" id="resizer-1" data-resizes="zone-narrative"></div>
+
+      <!-- CỘT 2: SÂN CHƠI TƯƠNG TÁC (Interactive Sandbox) -->
+      <section class="zone-column zone-sandbox" id="zone-sandbox">
+        <div class="zone-header">
+          <span class="zone-tag">Cột 2 • Sân Chơi Tương Tác</span>
+          <div class="sandbox-actions">
+            <button id="btn-reset-canvas" class="btn-ghost-sm" title="Phím tắt: R">
+              ↺ Reset Bước
+            </button>
+          </div>
+        </div>
+
+        <div class="zone-content sandbox-scrollable">
+          <!-- Presets Quick-Try Bar -->
+          <div class="presets-container" id="presets-container">
+            <span class="presets-title">Thử nhanh tình huống:</span>
+            <div class="presets-buttons" id="presets-buttons">
+              <!-- Dynamically populated from lesson presets -->
+            </div>
+          </div>
+
+          <!-- Dynamic Lesson Canvas Container -->
+          <div class="canvas-mount-point" id="canvas-mount-point">
+            <!-- Custom Canvas Component injected here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Resizer Splitter 2 -->
+      <div class="column-resizer" id="resizer-2" data-resizes="zone-sandbox"></div>
+
+      <!-- CỘT 3: LIVE MATH & TELEMETRY (Real-time Telemetry) -->
+      <section class="zone-column zone-telemetry" id="zone-telemetry">
+        <div class="zone-header">
+          <span class="zone-tag">Cột 3 • Live Math & RAM C++</span>
+          <span class="live-indicator"><span class="pulse-dot"></span> LIVE</span>
+        </div>
+
+        <div class="zone-content telemetry-scrollable">
+          <!-- Live Math Formula Card -->
+          <div class="telemetry-card">
+            <div class="telemetry-card-title">
+              <span>📐 Công Thức Toán Sống</span>
+            </div>
+            <div class="katex-container" id="katex-formula-mount">
+              <!-- KaTeX injected here -->
+            </div>
+          </div>
+
+          <!-- Score & Output Card -->
+          <div class="telemetry-card">
+            <div class="telemetry-card-title">
+              <span>📊 Phân Tích Điểm Số & Quyết Định</span>
+            </div>
+            <div class="score-display-group" id="score-display-mount">
+              <!-- Score breakdown injected here -->
+            </div>
+          </div>
+
+          <!-- C++ Memory & Hardware Telemetry -->
+          <div class="telemetry-card">
+            <div class="telemetry-card-title">
+              <span>💾 Bộ Nhớ RAM C++ (Row-major 1D)</span>
+            </div>
+            <div class="memory-visualizer-mount" id="memory-visualizer-mount">
+              <!-- Memory array component injected here -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Mobile Bottom Tab Navigation (Only visible on screens < 900px) -->
+    <nav class="mobile-tabs-bar" id="mobile-tabs-bar">
+      <button class="mobile-tab-btn active" data-tab="zone-narrative">
+        <span class="tab-icon">📖</span>
+        <span class="tab-text">Dẫn Dắt</span>
+      </button>
+      <button class="mobile-tab-btn" data-tab="zone-sandbox">
+        <span class="tab-icon">🎮</span>
+        <span class="tab-text">Sân Chơi</span>
+      </button>
+      <button class="mobile-tab-btn" data-tab="zone-telemetry">
+        <span class="tab-icon">📐</span>
+        <span class="tab-text">Toán & RAM</span>
+      </button>
+    </nav>
+
+    <!-- Keyboard Shortcuts Modal Overlay -->
+    <div class="modal-overlay hidden" id="modal-shortcuts">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3 class="modal-title">⌨️ Phím Tắt Bàn Phím Toàn Cục</h3>
+          <button class="modal-close" id="btn-close-modal">✕</button>
+        </div>
+        <div class="modal-body" id="modal-shortcuts-body">
+          <!-- Populated from core/shortcuts.js -->
+        </div>
+        <div class="modal-footer">
+          <span>Nhấn <kbd>Esc</kbd> hoặc click ra ngoài để đóng</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Application Entrypoint -->
+  <script type="module" src="./core/engine.js"></script>
+</body>
+</html>

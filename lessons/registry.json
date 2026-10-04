@@ -1,0 +1,23 @@
+{
+  "version": "1.0.0",
+  "tracks": [
+    { "id": "hw0", "title": "Track 0: Nền Tảng Tensor & Bộ Nhớ C++" },
+    { "id": "hw1", "title": "Track 1: Động Cơ Autograd (Needle Engine)" },
+    { "id": "hw2", "title": "Track 2: Module Nơ-ron & Tối Ưu Conv2D" },
+    { "id": "hw3", "title": "Track 3: Tăng Tốc Phần Cứng GPU (CUDA Architecture)" },
+    { "id": "hw4", "title": "Track 4: Kiến Trúc Transformer & LLM Systems" }
+  ],
+  "lessons": [
+    {
+      "id": "bai_01_robot_vision",
+      "dir": "bai_01_robot_vision",
+      "title": "Bài 1: Tự Chế Tạo 'Mắt' Cho Robot",
+      "trackId": "hw0",
+      "order": 1,
+      "totalSteps": 8,
+      "difficulty": "beginner",
+      "estimatedMinutes": 8,
+      "tags": ["computer-vision", "linear-algebra", "dot-product", "c-plus-plus-memory"]
+    }
+  ]
+}

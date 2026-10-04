@@ -1,0 +1,114 @@
+{
+  "id": "bai_01_robot_vision",
+  "title": "Bài 1: Tự Chế Tạo 'Mắt' Cho Robot",
+  "stage": "04_candle_and_dl_systems",
+  "courseMapping": {
+    "course": "CMU 10-414 / 10-714",
+    "track": "HW0: Tensor Basics & C++ Memory",
+    "topic": "Ma trận 1D Flatten, Dot Product & Trọng số âm"
+  },
+  "difficulty": "beginner",
+  "estimatedMinutes": 8,
+  "tags": ["computer-vision", "linear-algebra", "dot-product", "c-plus-plus-memory"],
+  "totalSteps": 8,
+  "presets": [
+    {
+      "id": "horizontal_sign",
+      "label": "Ảnh Chuẩn (Gạch Ngang)",
+      "description": "Hai pixel hàng trên sáng, hai pixel hàng dưới tối",
+      "state": { "pixels": [1, 1, 0, 0], "weights": [1, 1, -1, -1] }
+    },
+    {
+      "id": "vertical_sign",
+      "label": "Ảnh Gạch Dọc",
+      "description": "Hai pixel cột trái sáng, hai pixel cột phải tối",
+      "state": { "pixels": [1, 0, 1, 0], "weights": [1, 1, -1, -1] }
+    },
+    {
+      "id": "dusty_sign",
+      "label": "Ảnh Dính Bụi",
+      "description": "Một ô dưới bị mờ nhẹ do bụi bẩn trên ống kính",
+      "state": { "pixels": [1, 1, 0.5, 0], "weights": [1, 1, -1, -1] }
+    },
+    {
+      "id": "headlight_glare",
+      "label": "Đèn Pha Chói Lóa",
+      "description": "Cả 4 pixel đều sáng rực cực đại do xe ngược chiều",
+      "state": { "pixels": [1, 1, 1, 1], "weights": [1, 1, -1, -1] }
+    }
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "badge": "Bước 1 / 8",
+      "heading": "Máy tính đọc ảnh như thế nào?",
+      "problem": "Ống kính camera của robot chỉ thu được các photon ánh sáng, chuyển hóa thành một mảng số nhị phân $2 \\times 2$ pixel (1 là sáng, 0 là tối). Máy tính hoàn toàn không có 'đôi mắt' sinh học.",
+      "challenge": "Hãy click vào hai ô vuông hàng trên để vẽ biển báo Gạch Ngang (Biển Dừng) và quan sát vector 1D được trải phẳng bên dưới.",
+      "takeaway": "Ảnh 2D trong bộ nhớ máy tính luôn được trải phẳng (flatten) thành một hàng số liên tục $X = [x_0, x_1, x_2, x_3]$ để xử lý.",
+      "assetsUsed": ["robot_camera.svg"]
+    },
+    {
+      "step": 2,
+      "badge": "Bước 2 / 8",
+      "heading": "Khuôn mẫu dập điểm: Phép nhân vô hướng (Dot Product)",
+      "problem": "Làm thế nào để robot biết ảnh chụp được có phải là biển Gạch Ngang hay không? Ta cần một 'khuôn mẫu dập' chứa các trọng số $W$.",
+      "challenge": "Gán trọng số $+1$ vào 2 ô trên và $0$ vào 2 ô dưới. Quan sát điểm số $Z = X \\cdot W$ tăng vọt lên $+2.0$ khi khớp ảnh.",
+      "takeaway": "Phép nhân vô hướng $Z = \\sum x_i w_i$ đo lường độ tương đồng: pixel sáng gặp trọng số dương sẽ cộng điểm thưởng!",
+      "assetsUsed": ["sign_horizontal.svg"]
+    },
+    {
+      "step": 3,
+      "badge": "Bước 3 / 8",
+      "heading": "Thử thách thực tế: Ống kính dính bụi",
+      "problem": "Khi chạy ngoài đường, camera bị bụi bám làm một ô pixel dưới mờ nhẹ (giá trị 0.5). Liệu robot có còn nhận ra biển báo không?",
+      "challenge": "Bấm nút thử nhanh 'Ảnh Dính Bụi' hoặc chỉnh pixel thứ ba thành 0.5. Quan sát điểm số $Z$.",
+      "takeaway": "Mô hình tuyến tính có độ chịu lỗi (robustness) nhất định nếu ngưỡng quyết định được đặt hợp lý ($Z > 1.0$).",
+      "assetsUsed": ["dust_particle.svg"]
+    },
+    {
+      "step": 4,
+      "badge": "Bước 4 / 8",
+      "heading": "Thảm họa đèn pha: Lỗ hổng của trọng số dương",
+      "problem": "Xe đối diện rọi đèn pha cực mạnh khiến cả 4 pixel đều sáng rực $X = [1, 1, 1, 1]$. Nếu khuôn dập chỉ có số 0 và dương, điểm $Z$ vẫn bằng $+2.0$, robot phanh gấp oan giữa đường!",
+      "challenge": "Bấm nút 'Đèn Pha Chói Lóa' để thấy cả 4 ô đều sáng. Robot đang nhầm lẫn nghiêm trọng!",
+      "takeaway": "Chỉ dùng trọng số dương (bằng chứng ủng hộ) là không đủ, mô hình sẽ bị đánh lừa bởi bất kỳ nguồn sáng cực đại nào.",
+      "assetsUsed": ["headlight_glare.svg"]
+    },
+    {
+      "step": 5,
+      "badge": "Bước 5 / 8",
+      "heading": "Vũ khí bí mật: Trọng số âm (Bằng chứng bác bỏ)",
+      "problem": "Làm sao để phạt điểm khi hai ô dưới bị sáng (bởi vì biển Gạch Ngang chân chính bắt buộc hai ô dưới phải tối đen)?",
+      "challenge": "Hãy đổi trọng số hai ô dưới thành $-1$. Quan sát điểm số của Đèn Pha ngay lập tức bị triệt tiêu về $0.0$!",
+      "takeaway": "Trọng số dương là bằng chứng ủng hộ, trọng số âm chính là 'bằng chứng bác bỏ' để triệt tiêu nhiễu!",
+      "assetsUsed": ["sign_horizontal.svg"]
+    },
+    {
+      "step": 6,
+      "badge": "Bước 6 / 8",
+      "heading": "Kiểm chứng độ bền vững (Robustness Test)",
+      "problem": "Sau khi thêm trọng số âm, liệu biển Gạch Ngang thật sự có còn nhận được điểm tối đa $+2.0$ không?",
+      "challenge": "Bấm lại nút 'Ảnh Chuẩn (Gạch Ngang)'. Kiểm tra điểm số $Z$.",
+      "takeaway": "Khi hai ô dưới tối ($0$), nhân với $-1$ vẫn bằng $0$. Trọng số âm chỉ phạt khi có photon sai vị trí!",
+      "assetsUsed": ["sign_horizontal.svg"]
+    },
+    {
+      "step": 7,
+      "badge": "Bước 7 / 8",
+      "heading": "Cuộc chiến phân loại: Biển Ngang vs Biển Dọc",
+      "problem": "Robot cần quyết định rẽ hay dừng. Ta tạo hai khuôn dập: Khuôn Ngang $W_{ngang} = [1, 1, -1, -1]$ và Khuôn Dọc $W_{doc} = [1, -1, 1, -1]$.",
+      "challenge": "Chuyển đổi qua lại giữa 'Ảnh Chuẩn' và 'Ảnh Gạch Dọc'. Quan sát thanh đo Softmax phân định người chiến thắng!",
+      "takeaway": "Tầng phân loại nhiều lớp (Multi-class Classification) thực chất là nhiều khuôn dập trọng số cùng cạnh tranh tính điểm.",
+      "assetsUsed": ["sign_vertical.svg"]
+    },
+    {
+      "step": 8,
+      "badge": "Bước 8 / 8",
+      "heading": "Kỹ nghệ C++: Trải phẳng bộ nhớ (Memory Offset)",
+      "problem": "Trong C++, ma trận $2 \\times 2$ được lưu dưới dạng con trỏ `float* ptr` 1D liên tục trong RAM. Làm sao compiler truy cập đúng ô pixel ở hàng $r$ và cột $c$?",
+      "challenge": "Click vào từng ô pixel trên bàn cờ và quan sát công thức `offset = r * N + c` cùng địa chỉ byte tương ứng trong RAM.",
+      "takeaway": "Mọi phép toán Tensor nhiều chiều trong C++/CUDA bản chất là các phép tính offset con trỏ trên mảng 1D liên tục.",
+      "assetsUsed": ["robot_camera.svg"]
+    }
+  ]
+}

@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bài 14: KV-Cache Anatomy - TensorPlay</title>
+  <meta name="description" content="Giải phẫu bộ đệm KV-Cache trong LLM Serving; biến độ phức tạp tính toán O(N^2) thành O(N); đo lường dung lượng VRAM tiêu hao.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- KaTeX CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+
+  <!-- Shared CSS -->
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+
+  <style>
+    .token-stream {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+      min-height: 44px;
+      padding: 0.5rem 1rem;
+      background: #090e17;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      width: 100%;
+    }
+    .token-bubble {
+      padding: 4px 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--color-info);
+      border-radius: var(--radius-pill);
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      font-weight: 700;
+      color: var(--color-info);
+      animation: popIn 0.25s ease;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.6); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .vram-slots {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      width: 100%;
+    }
+    .cache-slot {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 6px 10px;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 65px;
+      transition: all 0.2s ease;
+    }
+    .cache-slot.filled {
+      border-color: var(--color-positive);
+      background: rgba(16, 185, 129, 0.1);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.25);
+    }
+  </style>
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    
+    <!-- Top Header -->
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">
+          ← Về Danh Mục
+        </a>
+      </div>
+
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step" style="border-color: rgba(236, 72, 153, 0.4);">
+          Track 4: HW4 Transformer & LLM Systems
+        </span>
+      </div>
+    </header>
+
+    <!-- Main 3-Zone Grid -->
+    <main class="lab-grid">
+      
+      <!-- CỘT 1: DẪN DẮT SOCRATIC & HỆ THỐNG BÌNH LUẬN KIẾN THỨC -->
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt & Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <!-- CỘT 2: SÂN CHƠI TƯƠNG TÁC (CANVAS SANDBOX) -->
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Dòng Sinh Token & VRAM KV-Cache</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Reset</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; align-items: center; gap: 1.25rem;">
+          
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+
+          <!-- Generation Action Controls -->
+          <div style="display: flex; gap: 0.75rem; width: 100%;">
+            <button class="tp-btn tp-btn-primary" id="btn-next-token" style="flex: 2;">
+              ▶ Sinh Token Tiếp Theo
+            </button>
+            <button class="tp-btn tp-btn-ghost" id="btn-toggle-cache" style="flex: 1; border-color: var(--color-positive); color: var(--color-positive);">
+              ⚡ KV-Cache: BẬT
+            </button>
+          </div>
+
+          <!-- Generated Tokens Text Stream -->
+          <div style="width: 100%;">
+            <div style="font-size: var(--text-xs); color: var(--text-muted); font-weight: 700; margin-bottom: 4px;">
+              Chuỗi Văn Bản Đang Sinh:
+            </div>
+            <div class="token-stream" id="token-stream-container">
+              <!-- Injected token bubbles -->
+            </div>
+          </div>
+
+          <!-- VRAM KV-Cache Slots Tape -->
+          <div style="width: 100%; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <span style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--color-positive);">
+                💾 Ô Nhớ VRAM KV-Cache Của GPU
+              </span>
+              <span class="tp-badge" id="badge-cache-size">24.5 KB</span>
+            </div>
+
+            <div class="vram-slots" id="slots-container">
+              <!-- Injected cache slots -->
+            </div>
+
+            <div style="font-size: 0.7rem; color: var(--text-dim); margin-top: 8px;" id="desc-cache-op">
+              Khi có KV-Cache: Chỉ cần lưu thêm K và V của đúng 1 từ mới sinh, không cần tính lại quá khứ!
+            </div>
+          </div>
+
+          <!-- Latency Gauge Card -->
+          <div style="width: 100%; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem; display: flex; justify-content: space-around; text-align: center;">
+            <div>
+              <div style="font-size: 0.7rem; color: var(--text-dim);">Độ trễ từ hiện tại</div>
+              <div style="font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: var(--color-info);" id="txt-step-latency">10 ms</div>
+            </div>
+            <div style="border-left: 1px solid var(--border-subtle);"></div>
+            <div>
+              <div style="font-size: 0.7rem; color: var(--text-dim);">Tổng thời gian tích lũy</div>
+              <div style="font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: var(--color-positive);" id="txt-total-latency">30 ms</div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- CỘT 3: LIVE MATH & TELEMETRY C++ -->
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math & Phân Tích</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+          
+          <!-- Complexity KaTeX -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
+              📐 Độ Phức Tạp Tính Toán
+            </div>
+            <div id="katex-complexity-mount" style="min-height: 48px; background: #090d15; border-radius: var(--radius-sm); padding: 0.5rem; display: flex; align-items: center; justify-content: center; overflow-x: auto;"></div>
+          </div>
+
+          <!-- Memory Formula KaTeX -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
+              💾 Dung Lượng VRAM Tiêu Tốn
+            </div>
+            <div id="katex-memory-mount" style="min-height: 48px; background: #090d15; border-radius: var(--radius-sm); padding: 0.5rem; display: flex; align-items: center; justify-content: center; overflow-x: auto;"></div>
+          </div>
+
+          <!-- Systems Insight -->
+          <div style="background: #090e17; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem; font-size: var(--text-xs); line-height: 1.6; color: var(--text-dim);">
+            <div style="font-weight: 700; color: var(--color-warning); margin-bottom: 4px;">⚠️ Nút thắt VRAM của LLM:</div>
+            KV-Cache biến quá trình sinh text từ bài toán nặng tính toán (Compute-bound) thành bài toán nghẽn băng thông bộ nhớ (Memory-bound). Khi phục vụ đồng thời hàng trăm người dùng với context dài, KV-Cache có thể ngốn tới 80% VRAM của GPU!
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath } from '../../shared/katex-render.js';
+    import { LessonLogic, PRESETS } from './bai_14_kv_cache_anatomy.logic.js';
+
+    const STEPS = [
+      {
+        heading: "Cơn Ác Mộng Tính Lại Từ Đầu O(N²)",
+        problem: "Mỗi khi sinh thêm 1 từ mới, nếu không lưu lại kết quả cũ, mô hình phải chạy lại toàn bộ các từ từ đầu câu.",
+        challenge: "Tắt KV-Cache và bấm 'Sinh Token Tiếp Theo'. Xem độ trễ tăng dần theo từng từ như thế nào.",
+        takeaway: "Sinh từ thứ 1000 sẽ tốn gấp 1000 lần tài nguyên so với từ đầu tiên nếu không có Cache!"
+      },
+      {
+        heading: "Phép Màu KV-Cache: O(1) Mỗi Bước",
+        problem: "Làm sao để sinh từ thứ 1000 cũng nhanh y như từ thứ 1?",
+        challenge: "Bật KV-Cache lên và sinh từ. Độ trễ mỗi từ cố định ở mức 10ms!",
+        takeaway: "Ta chỉ tính đúng 1 vector Query của từ mới, còn Key và Value của quá khứ đã nằm sẵn trong VRAM."
+      },
+      {
+        heading: "Cái Giá Phải Trả: VRAM Phình To",
+        problem: "Tại sao các dịch vụ như ChatGPT đôi khi giới hạn độ dài ngữ cảnh?",
+        challenge: "Quan sát dung lượng VRAM tăng tuyến tính theo số token được lưu trong cache.",
+        takeaway: "Bộ đệm KV-Cache chiếm rất nhiều VRAM. Đây là lý do ra đời các công nghệ như PagedAttention (vLLM) và FlashDecoding."
+      }
+    ];
+
+    const CURATED_COMMENTS = [
+      {
+        id: "c1",
+        stepIndex: 1,
+        author: "Kỹ Sư LLM Serving (vLLM)",
+        badge: "Serving Optimization",
+        content: "Trong giai đoạn Prompt (Prefill), mô hình tính song song toàn bộ prompt. Nhưng ở giai đoạn Decode, mô hình sinh từng token một. KV-Cache biến bước Decode thành phép nhân ma trận-vector (GEMV) cực kỳ phụ thuộc vào băng thông bộ nhớ GPU!"
+      },
+      {
+        id: "c2",
+        stepIndex: 2,
+        author: "Chuyên Gia Phần Cứng GPU",
+        badge: "VRAM Budget",
+        content: "Với mô hình LLaMA-70B ở context 4096, mỗi người dùng (batch=1) tiêu tốn khoảng 2.6 GB VRAM chỉ riêng cho KV-Cache. Nếu phục vụ batch 32 người, KV-Cache đã ngốn tới hơn 80 GB VRAM!"
+      }
+    ];
+
+    const logic = new LessonLogic();
+
+    const wizard = createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 0,
+      onStepChange: (idx) => comments.setStep(idx)
+    });
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: "bai_14_kv_cache_anatomy",
+      initialStep: 0,
+      curatedComments: CURATED_COMMENTS,
+      allowUserNotes: true
+    });
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      onPick: (preset) => {
+        logic.applyPreset(preset.state);
+        updateCacheButton();
+        updateUI();
+      }
+    });
+
+    const btnNext = document.getElementById('btn-next-token');
+    const btnToggleCache = document.getElementById('btn-toggle-cache');
+
+    btnNext.addEventListener('click', () => {
+      logic.nextStep();
+      updateUI();
+    });
+
+    btnToggleCache.addEventListener('click', () => {
+      logic.onUserUpdate({ hasCache: !logic.state.hasCache });
+      updateCacheButton();
+      updateUI();
+    });
+
+    function updateCacheButton() {
+      if (logic.state.hasCache) {
+        btnToggleCache.textContent = "⚡ KV-Cache: BẬT";
+        btnToggleCache.className = "tp-btn tp-btn-primary";
+        btnToggleCache.style.borderColor = "var(--color-positive)";
+        btnToggleCache.style.color = "#fff";
+      } else {
+        btnToggleCache.textContent = "⚠️ KV-Cache: TẮT (Chậm)";
+        btnToggleCache.className = "tp-btn tp-btn-ghost";
+        btnToggleCache.style.borderColor = "var(--color-warning)";
+        btnToggleCache.style.color = "var(--color-warning)";
+      }
+    }
+
+    const tokenStream = document.getElementById('token-stream-container');
+    const slotsContainer = document.getElementById('slots-container');
+    const badgeCacheSize = document.getElementById('badge-cache-size');
+    const descCacheOp = document.getElementById('desc-cache-op');
+    const txtStepLatency = document.getElementById('txt-step-latency');
+    const txtTotalLatency = document.getElementById('txt-total-latency');
+    const katexComplexity = document.getElementById('katex-complexity-mount');
+    const katexMemory = document.getElementById('katex-memory-mount');
+
+    function updateUI() {
+      const res = logic.calculate();
+
+      // Render tokens
+      tokenStream.innerHTML = '';
+      res.generatedTokens.forEach((tok, i) => {
+        const span = document.createElement('span');
+        span.className = 'token-bubble';
+        span.textContent = tok;
+        if (i === res.generatedTokens.length - 1) {
+          span.style.borderColor = 'var(--color-warning)';
+          span.style.color = 'var(--color-warning)';
+        }
+        tokenStream.appendChild(span);
+      });
+
+      // Render VRAM slots
+      slotsContainer.innerHTML = '';
+      for (let i = 0; i < res.tokens.length; i++) {
+        const slot = document.createElement('div');
+        const isFilled = i < res.seqLen;
+        slot.className = `cache-slot ${isFilled ? 'filled' : ''}`;
+        slot.innerHTML = `
+          <span style="font-size: 0.6rem; color: var(--text-dim);">Slot ${i}</span>
+          <span style="font-weight: 700; color: ${isFilled ? 'var(--color-positive)' : 'var(--text-dim)'};">${isFilled ? 'K' + i + ', V' + i : '[Rỗng]'}</span>
+        `;
+        slotsContainer.appendChild(slot);
+      }
+
+      badgeCacheSize.textContent = `${res.totalCacheKb} KB`;
+      txtStepLatency.textContent = `${res.latencyThisStepMs} ms`;
+      txtTotalLatency.textContent = `${res.totalLatencyMs} ms`;
+
+      if (res.hasCache) {
+        txtStepLatency.style.color = "var(--color-info)";
+        descCacheOp.textContent = "Khi có KV-Cache: Chỉ cần nạp thêm K và V của 1 từ mới, tốc độ ổn định 10ms!";
+      } else {
+        txtStepLatency.style.color = "var(--color-negative)";
+        descCacheOp.textContent = `Không cache: Phải tính lại toàn bộ ${res.seqLen} token từ đầu, độ trễ tăng vọt lên ${res.latencyThisStepMs}ms!`;
+      }
+
+      renderMath(katexComplexity, res.formulaComplexityKaTeX, { displayMode: true });
+      renderMath(katexMemory, res.formulaMemoryKaTeX, { displayMode: true });
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      updateCacheButton();
+      updateUI();
+    });
+
+    updateUI();
+  </script>
+</body>
+</html>

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bài 12: Memory Coalescing & Bank Conflicts - TensorPlay</title>
+  <meta name="description" content="Gom giao dịch bộ nhớ DRAM trong Warp 32 luồng; so sánh đọc liền kề vs đọc nhảy cóc; hiện tượng nghẽn ngân hàng Bank Conflicts trong Shared Memory.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- KaTeX CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+
+  <!-- Shared CSS -->
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+
+  <style>
+    .warp-lane {
+      display: grid;
+      grid-template-columns: repeat(16, 1fr);
+      gap: 3px;
+      width: 100%;
+      background: #090e17;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 0.75rem;
+    }
+    .warp-dot {
+      height: 24px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      font-weight: 700;
+      transition: all 0.2s ease;
+    }
+    .efficiency-meter {
+      height: 14px;
+      border-radius: var(--radius-pill);
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      margin: 8px 0;
+    }
+    .efficiency-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ef4444, #f59e0b, #10b981);
+      transition: width 0.3s ease;
+    }
+  </style>
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    
+    <!-- Top Header -->
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">
+          ← Về Danh Mục
+        </a>
+      </div>
+
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step" style="border-color: rgba(245, 158, 11, 0.4);">
+          Track 3: HW3 GPU & CUDA Architecture
+        </span>
+      </div>
+    </header>
+
+    <!-- Main 3-Zone Grid -->
+    <main class="lab-grid">
+      
+      <!-- CỘT 1: DẪN DẮT SOCRATIC & HỆ THỐNG BÌNH LUẬN KIẾN THỨC -->
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt & Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <!-- CỘT 2: SÂN CHƠI TƯƠNG TÁC (CANVAS SANDBOX) -->
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Mô Phỏng Gom Giao Dịch Warp</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Reset</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; align-items: center; gap: 1.25rem;">
+          
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+
+          <!-- Stride Selector -->
+          <div style="display: flex; gap: 0.5rem; width: 100%; justify-content: center; flex-wrap: wrap;">
+            <button class="tp-btn tp-btn-primary" id="btn-s1" style="padding: 4px 12px; font-size: var(--text-xs);">Stride s = 1 (Liền kề)</button>
+            <button class="tp-btn tp-btn-ghost" id="btn-s2" style="padding: 4px 12px; font-size: var(--text-xs);">Stride s = 2</button>
+            <button class="tp-btn tp-btn-ghost" id="btn-s4" style="padding: 4px 12px; font-size: var(--text-xs);">Stride s = 4</button>
+            <button class="tp-btn tp-btn-ghost" id="btn-s8" style="padding: 4px 12px; font-size: var(--text-xs);">Stride s = 8</button>
+            <button class="tp-btn tp-btn-ghost" id="btn-s32" style="padding: 4px 12px; font-size: var(--text-xs);">Stride s = 32 (Quét cột)</button>
+          </div>
+
+          <!-- Warp 32 Threads Visual Lane -->
+          <div style="width: 100%; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="display: flex; justify-content: space-between; font-size: var(--text-xs); color: var(--text-muted); font-weight: 700; margin-bottom: 0.5rem;">
+              <span>Warp 32 Luồng Phát Yêu Cầu Đọc Bộ Nhớ</span>
+              <span id="badge-stride">s = 1</span>
+            </div>
+            <div class="warp-lane" id="warp-grid">
+              <!-- 32 thread dots -->
+            </div>
+          </div>
+
+          <!-- Bus Efficiency Card -->
+          <div style="width: 100%; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: var(--text-xs); font-weight: 700;">Hiệu Suất Tận Dụng Băng Thông Bus DRAM</span>
+              <span style="font-family: var(--font-mono); font-weight: 700; font-size: var(--text-sm);" id="val-efficiency">100.0%</span>
+            </div>
+
+            <div class="efficiency-meter">
+              <div class="efficiency-fill" id="fill-efficiency" style="width: 100%;"></div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: var(--text-xs); color: var(--text-dim); margin-top: 4px;">
+              <span>Số giao dịch phát ra: <strong id="val-transactions" style="color: var(--color-info);">1 giao dịch</strong></span>
+              <span>Dữ liệu lãng phí: <strong id="val-wasted" style="color: var(--color-positive);">0 Bytes</strong></span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- CỘT 3: LIVE MATH & TELEMETRY C++ -->
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math & Phân Tích</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+          
+          <!-- DRAM Bus Formula -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
+              📐 Giao Dịch Bus DRAM (128B Cache Line)
+            </div>
+            <div id="katex-dram-mount" style="min-height: 48px; background: #090d15; border-radius: var(--radius-sm); padding: 0.5rem; display: flex; align-items: center; justify-content: center; overflow-x: auto;"></div>
+          </div>
+
+          <!-- Bank Conflict Formula -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
+              📐 Xung Đột 32 Banks Shared Memory
+            </div>
+            <div id="katex-bank-mount" style="min-height: 48px; background: #090d15; border-radius: var(--radius-sm); padding: 0.5rem; display: flex; align-items: center; justify-content: center; overflow-x: auto;"></div>
+          </div>
+
+          <!-- Performance Verdict -->
+          <div id="card-verdict" style="background: rgba(16, 185, 129, 0.1); border: 1px solid var(--color-positive); border-radius: var(--radius-md); padding: 1rem; font-size: var(--text-xs); line-height: 1.6; color: var(--color-positive);">
+            <div style="font-weight: 700; margin-bottom: 4px;">✓ Giao Dịch Hoàn Hảo (Coalesced)</div>
+            Toàn bộ 32 luồng đọc 128 bytes liền nhau. Bộ điều khiển bộ nhớ gộp lại thành đúng 1 lệnh nạp duy nhất, không lãng phí một chu kỳ xung nhịp nào!
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath } from '../../shared/katex-render.js';
+    import { LessonLogic, PRESETS } from './bai_12_coalescing_and_banks.logic.js';
+
+    const STEPS = [
+      {
+        heading: "Bí Mật Của Băng Thông: Memory Coalescing",
+        problem: "Mỗi khi GPU đọc bộ nhớ DRAM, nó không đọc từng float 4 byte lẻ loi, mà luôn bốc nguyên một khối 128 byte (Cache Line).",
+        challenge: "Nhấn 'Stride s = 1': 32 luồng đọc 32 số float nằm sát cạnh nhau. Xem hiệu suất bus đạt 100%.",
+        takeaway: "Khi các luồng trong cùng 1 Warp truy cập địa chỉ liền kề, phần cứng gộp chúng lại thành đúng 1 giao dịch DRAM duy nhất."
+      },
+      {
+        heading: "Thảm Họa Quét Cột (Strided Access)",
+        problem: "Điều gì xảy ra nếu bạn duyệt ma trận theo cột với bước nhảy s = 32?",
+        challenge: "Nhấn 'Stride s = 32 (Quét cột)' và xem hiệu suất bus tụt dốc không phanh.",
+        takeaway: "32 luồng rơi vào 32 cache line khác nhau! GPU phải phát 32 giao dịch riêng biệt, 97% dữ liệu bốc lên bị vứt bỏ, làm chậm mô hình tới 32 lần!"
+      },
+      {
+        heading: "Xung Đột Ngân Hàng (Shared Memory Bank Conflicts)",
+        problem: "Trong Shared Memory, 32 luồng cũng có thể va chạm nhau nếu cùng truy cập vào một ngân hàng (Bank).",
+        challenge: "Xem công thức Live Math: bước nhảy s = 32 gây ra xung đột 32-way, các luồng phải xếp hàng tuần tự chờ nhau.",
+        takeaway: "Để tránh Bank Conflict khi chuyển vị ma trận, kỹ thuật kinh điển là Padding thêm 1 cột giả: `__shared__ float tile[32][33]`."
+      }
+    ];
+
+    const CURATED_COMMENTS = [
+      {
+        id: "c1",
+        stepIndex: 1,
+        author: "Kỹ Sư Kernel Optimizer",
+        badge: "Kỹ Thuật Chuyển Vị",
+        content: "Khi thực hiện phép chuyển vị (Transpose) ma trận trên GPU, nếu đọc hàng ghi cột thì việc ghi sẽ bị un-coalesced. Giải pháp tối ưu: Nạp theo hàng vào Shared Memory, sau đó đọc Shared Memory theo cột (đã thêm padding tránh bank conflict), rồi ghi lại DRAM theo hàng liền kề!"
+      },
+      {
+        id: "c2",
+        stepIndex: 2,
+        author: "Tác Giả Khóa Học DL Systems",
+        badge: "Padding Trick",
+        content: "Chiêu thức thêm padding `tile[32][33]` tuy tốn thêm một chút xíu shared memory nhưng giúp triệt tiêu hoàn toàn Bank Conflicts khi quét cột, giữ hiệu năng ở mức cực đại."
+      }
+    ];
+
+    const logic = new LessonLogic();
+
+    const wizard = createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 0,
+      onStepChange: (idx) => comments.setStep(idx)
+    });
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: "bai_12_coalescing_and_banks",
+      initialStep: 0,
+      curatedComments: CURATED_COMMENTS,
+      allowUserNotes: true
+    });
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      onPick: (preset) => {
+        logic.applyPreset(preset.state);
+        updateStrideButtons();
+        updateUI();
+      }
+    });
+
+    const strideBtns = {
+      1: document.getElementById('btn-s1'),
+      2: document.getElementById('btn-s2'),
+      4: document.getElementById('btn-s4'),
+      8: document.getElementById('btn-s8'),
+      32: document.getElementById('btn-s32')
+    };
+
+    Object.entries(strideBtns).forEach(([s, btn]) => {
+      btn.addEventListener('click', () => {
+        logic.onUserUpdate({ stride: Number(s) });
+        updateStrideButtons();
+        updateUI();
+      });
+    });
+
+    function updateStrideButtons() {
+      const cur = logic.state.stride;
+      Object.entries(strideBtns).forEach(([s, btn]) => {
+        btn.className = Number(s) === cur ? 'tp-btn tp-btn-primary' : 'tp-btn tp-btn-ghost';
+      });
+    }
+
+    const badgeStride = document.getElementById('badge-stride');
+    const warpGrid = document.getElementById('warp-grid');
+    const valEfficiency = document.getElementById('val-efficiency');
+    const fillEfficiency = document.getElementById('fill-efficiency');
+    const valTransactions = document.getElementById('val-transactions');
+    const valWasted = document.getElementById('val-wasted');
+    const katexDram = document.getElementById('katex-dram-mount');
+    const katexBank = document.getElementById('katex-bank-mount');
+    const cardVerdict = document.getElementById('card-verdict');
+
+    function updateUI() {
+      const res = logic.calculate();
+
+      badgeStride.textContent = `Bước nhảy s = ${res.stride}`;
+      valEfficiency.textContent = `${res.busEfficiencyPercent}%`;
+      fillEfficiency.style.width = `${res.busEfficiencyPercent}%`;
+      valTransactions.textContent = `${res.numTransactions} giao dịch`;
+
+      const wastedBytes = res.transferredBytes - res.usefulBytes;
+      valWasted.textContent = `${wastedBytes.toLocaleString()} Bytes`;
+      valWasted.style.color = wastedBytes === 0 ? 'var(--color-positive)' : 'var(--color-negative)';
+
+      // Render 32 warp dots
+      warpGrid.innerHTML = '';
+      for (let t = 0; t < 32; t++) {
+        const dot = document.createElement('div');
+        dot.className = 'warp-dot';
+        const color = res.stride === 1
+          ? 'var(--color-info)'
+          : (res.stride === 32 ? 'var(--color-negative)' : 'var(--color-warning)');
+        dot.style.background = `rgba(255, 255, 255, 0.05)`;
+        dot.style.border = `1px solid ${color}`;
+        dot.style.color = color;
+        dot.textContent = `T${t}`;
+        warpGrid.appendChild(dot);
+      }
+
+      if (res.stride === 1) {
+        cardVerdict.style.background = 'rgba(16, 185, 129, 0.1)';
+        cardVerdict.style.borderColor = 'var(--color-positive)';
+        cardVerdict.style.color = 'var(--color-positive)';
+        cardVerdict.innerHTML = `
+          <div style="font-weight: 700; margin-bottom: 4px;">✓ Giao Dịch Hoàn Hảo (Coalesced)</div>
+          Toàn bộ 32 luồng đọc 128 bytes liền nhau. Gộp thành đúng 1 lệnh nạp DRAM duy nhất, 100% bus efficiency!
+        `;
+      } else {
+        cardVerdict.style.background = 'rgba(239, 68, 68, 0.15)';
+        cardVerdict.style.borderColor = 'var(--color-negative)';
+        cardVerdict.style.color = '#fca5a5';
+        cardVerdict.innerHTML = `
+          <div style="font-weight: 700; margin-bottom: 4px;">⚠️ Nghẽn Bus DRAM & Bank Conflicts</div>
+          Bước nhảy s = ${res.stride} làm vỡ thành ${res.numTransactions} giao dịch. Lãng phí ${wastedBytes} bytes mỗi nhịp đồng hồ!
+        `;
+      }
+
+      renderMath(katexDram, res.formulaDramKaTeX, { displayMode: true });
+      renderMath(katexBank, res.formulaBankKaTeX, { displayMode: true });
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      updateStrideButtons();
+      updateUI();
+    });
+
+    updateUI();
+  </script>
+</body>
+</html>

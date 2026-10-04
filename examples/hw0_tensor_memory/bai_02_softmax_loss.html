@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bài 02: Softmax & Cơn Ác Mộng Lóa Sáng - TensorPlay</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">← Về Danh Mục</a>
+      </div>
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step">Track 0: HW0 Tensor & C++ Memory</span>
+      </div>
+    </header>
+
+    <main class="lab-grid">
+      <!-- CỘT 1: SOCRATIC & COMMENTS -->
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt & Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <!-- CỘT 2: SÂN CHƠI TƯƠNG TÁC -->
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Thanh Trượt Logits & Safe Switch</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Reset</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+          <div id="mount-preset-picker"></div>
+
+          <!-- Safe Switch Toggle -->
+          <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 1rem; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div style="font-weight: 700; color: #fff; font-size: var(--text-sm);">🛡️ Chế Độ Safe Softmax (Trừ max z)</div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted);">Bảo toàn độ ổn định số học bằng cách đưa số mũ về $\le 0$</div>
+            </div>
+            <label style="position: relative; display: inline-block; width: 48px; height: 26px;">
+              <input type="checkbox" id="safe-mode-toggle" style="opacity: 0; width: 0; height: 0;">
+              <span id="safe-mode-slider" style="position: absolute; cursor: pointer; inset: 0; background-color: rgba(255,255,255,0.2); border-radius: 26px; transition: .2s;"></span>
+            </label>
+          </div>
+
+          <!-- Logits Sliders -->
+          <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <div id="mount-slider-z0"></div>
+            <div id="mount-slider-z1"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CỘT 3: LIVE MATH & TELEMETRY -->
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math & Xác Suất</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+          <!-- KaTeX Formula Card -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
+              📐 Công Thức Softmax Đang Tính
+            </div>
+            <div id="katex-formula-mount" style="min-height: 52px; background: #090d15; border-radius: var(--radius-sm); padding: 0.5rem; display: flex; align-items: center; justify-content: center; overflow-x: auto;"></div>
+          </div>
+
+          <!-- Probability Bars -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.75rem;">
+              📊 Xác Suất Đầu Ra (0 - 100%)
+            </div>
+            <div id="mount-bar-p0"></div>
+            <div id="mount-bar-p1"></div>
+            <div id="mount-bar-loss" style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border-subtle);"></div>
+            <div id="verdict-banner" style="margin-top: 0.75rem; padding: 8px 12px; border-radius: var(--radius-sm); font-size: var(--text-xs); font-weight: 600;"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createLiveSlider } from '../../shared/components/LiveSlider.js';
+    import { createScoreBar } from '../../shared/components/ScoreBar.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath } from '../../shared/katex-render.js';
+    import { markCompleted } from '../../shared/progress.js';
+    import { LessonLogic, PRESETS } from './bai_02_softmax_loss.logic.js';
+
+    const STEPS = [
+      {
+        step: 1,
+        badge: 'Bước 1 / 5',
+        heading: 'Từ Điểm Số (Logits) Đến Xác Suất',
+        problem: 'Đầu ra mạng nơ-ron là các con số thực bất kỳ ($z \\in [-\\infty, +\\infty]$). Ta không thể dùng trực tiếp để đưa ra quyết định xác suất vì tổng của chúng không bằng 1.',
+        challenge: 'Hàm mũ $e^z$ biến mọi con số thành dương tính ($>0$) và phóng đại các điểm số cao. Softmax chuẩn hóa chúng: $P_i = \\frac{e^{z_i}}{\\sum e^{z_j}}$.',
+        takeaway: 'Softmax vừa là bộ chuẩn hóa xác suất vừa là bộ khuếch đại: người dẫn đầu sẽ nhận gần như toàn bộ xác suất.'
+      },
+      {
+        step: 2,
+        badge: 'Bước 2 / 5',
+        heading: 'Giới Hạn Phần Cứng: Cơn Ác Mộng Tràn Số FP32',
+        problem: 'Trong kiến trúc máy tính, số thực float32 chỉ lưu được giá trị tối đa $\\approx 3.4 \\times 10^{38}$. Khi $z > 88$, $\\text{exp}(z)$ chạm trần!',
+        challenge: 'Bấm nút "Đèn Pha Tràn Số (1000, 1000)". Quan sát công thức toán và thanh xác suất bên phải.',
+        takeaway: '$\\text{exp}(1000) = \\text{Infinity}$. Khi tính $\\frac{\\infty}{\\infty}$, phép toán trả về NaN (Not a Number)! Mô hình AI bị đóng băng hoàn toàn.'
+      },
+      {
+        step: 3,
+        badge: 'Bước 3 / 5',
+        heading: 'Kỹ Thuật Cứu Nguy: Safe Softmax',
+        problem: 'Làm thế nào để tính Softmax mà không bao giờ bị tràn số, ngay cả khi điểm $z$ lên tới $10,000$?',
+        challenge: 'Bật công tắc "Chế Độ Safe Softmax" ở Cột 2. Quan sát điều kỳ diệu xảy ra với công thức toán!',
+        takeaway: 'Bằng cách trừ đi giá trị cực đại $M = \\max(z)$, số mũ luôn $\\le 0$, giá trị $e^{z - M} \\in (0, 1]$, triệt tiêu 100% nguy cơ tràn số!'
+      },
+      {
+        step: 4,
+        badge: 'Bước 4 / 5',
+        heading: 'Chứng Minh Toán Học: Xác Suất Tuyệt Đối Không Đổi',
+        problem: 'Liệu việc trừ đi $\\max(z)$ có làm lệch xác suất đầu ra của mô hình không?',
+        challenge: 'Bấm nút "Khoảng Cách Lớn (1000, 990)". So sánh tỉ lệ giữa $P_0$ và $P_1$.',
+        takeaway: 'Toán học chứng minh: $\\frac{e^{z_i - M}}{\\sum e^{z_j - M}} = \\frac{e^{z_i} / e^M}{\\sum e^{z_j} / e^M} = \\frac{e^{z_i}}{\\sum e^{z_j}}$. Xác suất là bất biến đối với phép tịnh tiến!'
+      },
+      {
+        step: 5,
+        badge: 'Bước 5 / 5',
+        heading: 'Hàm Mất Mát Cross-Entropy Loss',
+        problem: 'Làm sao đo lường độ sai lầm của mô hình? Loss $= -\\log(P_{target})$.',
+        challenge: 'Kéo slider $z_0$ giảm dần để giảm $P_0$. Quan sát thanh Cross-Entropy Loss tăng vọt lên mức đỏ!',
+        takeaway: 'Nếu đoán đúng tự tin ($P \\to 1$), Loss $\\to 0$. Nếu đoán sai tự tin ($P \\to 0$), Loss phạt cực nặng $\\to \\infty$.'
+      }
+    ];
+
+    const COMMENTS = {
+      1: [
+        {
+          author: 'Nhà Toán Học',
+          avatar: '📐',
+          tag: 'Hàm Mũ',
+          tagType: 'math',
+          content: 'Hàm số mũ $\\exp(z)$ là hàm lồi tăng ngặt. Nó biến phép cộng ở không gian log thành phép nhân ở không gian xác suất: $e^{a+b} = e^a \\cdot e^b$.'
+        }
+      ],
+      2: [
+        {
+          author: 'Kỹ Sư Hệ Thống',
+          avatar: '💥',
+          tag: 'Bẫy FP32',
+          tagType: 'gotcha',
+          content: '90% lỗi "Loss: NaN" bí ẩn khi train mạng nơ-ron sâu trong PyTorch/Needle bắt nguồn từ việc tính Softmax hoặc log(0) mà quên kỹ thuật ổn định số học!'
+        }
+      ],
+      3: [
+        {
+          author: 'Cố Vấn DL Systems',
+          avatar: '🛡️',
+          tag: 'Safe Softmax',
+          tagType: 'systems',
+          content: 'Mọi thư viện như PyTorch `F.softmax` hay Needle `ops.softmax` bên dưới C++/CUDA đều tự động chèn bước tìm `max(z)` trước khi gọi hàm exp.'
+        }
+      ]
+    };
+
+    const logic = new LessonLogic();
+    const wizard = createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 1,
+      onStepChange: (stepNum) => {
+        comments.setStep(stepNum, COMMENTS[stepNum] || []);
+        if (stepNum === STEPS.length) markCompleted('bai_02_softmax_loss', true);
+      }
+    });
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: 'bai_02_softmax_loss',
+      initialStep: 1,
+      curatedComments: COMMENTS[1] || []
+    });
+
+    const presetsBar = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      onPick: (p) => {
+        const res = logic.applyPreset(p.state);
+        sliderZ0.setValue(logic.state.logits[0]);
+        sliderZ1.setValue(logic.state.logits[1]);
+        updateSafeToggleUI();
+        updateTelemetry(res);
+      }
+    });
+
+    const sliderZ0 = createLiveSlider(document.getElementById('mount-slider-z0'), {
+      label: 'Logit z0 (Điểm Biển Dừng)',
+      min: -10,
+      max: 1000,
+      step: 1,
+      initial: 2.0,
+      onChange: (v) => {
+        const res = logic.onUserUpdate({ logits: [v, logic.state.logits[1]] });
+        updateTelemetry(res);
+      }
+    });
+
+    const sliderZ1 = createLiveSlider(document.getElementById('mount-slider-z1'), {
+      label: 'Logit z1 (Điểm Đi Tiếp)',
+      min: -10,
+      max: 1000,
+      step: 1,
+      initial: 1.0,
+      onChange: (v) => {
+        const res = logic.onUserUpdate({ logits: [logic.state.logits[0], v] });
+        updateTelemetry(res);
+      }
+    });
+
+    const safeToggle = document.getElementById('safe-mode-toggle');
+    const safeSlider = document.getElementById('safe-mode-slider');
+    safeToggle.addEventListener('change', (e) => {
+      const res = logic.onUserUpdate({ isSafeMode: e.target.checked });
+      updateSafeToggleUI();
+      updateTelemetry(res);
+    });
+
+    function updateSafeToggleUI() {
+      safeToggle.checked = logic.state.isSafeMode;
+      safeSlider.style.backgroundColor = logic.state.isSafeMode ? 'var(--color-positive)' : 'rgba(255,255,255,0.2)';
+    }
+
+    const barP0 = createScoreBar(document.getElementById('mount-bar-p0'), {
+      label: 'Xác Suất P0 (Biển Dừng)',
+      value: 0.73,
+      min: 0,
+      max: 1,
+      variant: 'reward',
+      showPercentage: true
+    });
+
+    const barP1 = createScoreBar(document.getElementById('mount-bar-p1'), {
+      label: 'Xác Suất P1 (Đi Tiếp)',
+      value: 0.27,
+      min: 0,
+      max: 1,
+      variant: 'neutral',
+      showPercentage: true
+    });
+
+    const barLoss = createScoreBar(document.getElementById('mount-bar-loss'), {
+      label: 'Cross-Entropy Loss (-log P0)',
+      value: 0.31,
+      min: 0,
+      max: 5,
+      variant: 'penalty'
+    });
+
+    function updateTelemetry(res) {
+      renderMath(document.getElementById('katex-formula-mount'), res.formulaKaTeX);
+
+      barP0.setValue(isNaN(res.p0) ? 0 : res.p0, `P0 (Biển Dừng): ${isNaN(res.p0) ? 'NaN' : (res.p0 * 100).toFixed(1) + '%'}`);
+      barP1.setValue(isNaN(res.p1) ? 0 : res.p1, `P1 (Đi Tiếp): ${isNaN(res.p1) ? 'NaN' : (res.p1 * 100).toFixed(1) + '%'}`);
+      barLoss.setValue(isNaN(res.loss) ? 5 : Math.min(5, res.loss), `Cross-Entropy Loss: ${isNaN(res.loss) ? 'NaN' : res.loss.toFixed(3)}`);
+
+      const banner = document.getElementById('verdict-banner');
+      if (banner && res.verdict) {
+        banner.textContent = res.verdict.text;
+        banner.style.backgroundColor = res.verdict.type === 'danger' ? 'var(--color-negative-bg)' : (res.verdict.type === 'success' ? 'var(--color-positive-bg)' : 'rgba(255,255,255,0.05)');
+        banner.style.color = res.verdict.type === 'danger' ? 'var(--color-negative)' : (res.verdict.type === 'success' ? 'var(--color-positive)' : 'var(--text-muted)');
+        banner.style.border = `1px solid ${res.verdict.type === 'danger' ? 'var(--color-negative)' : (res.verdict.type === 'success' ? 'var(--color-positive)' : 'var(--border-subtle)')}`;
+      }
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      const res = logic.reset();
+      sliderZ0.setValue(logic.state.logits[0]);
+      sliderZ1.setValue(logic.state.logits[1]);
+      updateSafeToggleUI();
+      updateTelemetry(res);
+    });
+
+    updateTelemetry(logic.calculate());
+  </script>
+</body>
+</html>

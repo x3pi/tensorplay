@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bài 11: Tiled MatMul & Shared Memory - TensorPlay</title>
+  <meta name="description" content="Tối ưu nhân ma trận GPU bằng Shared Memory; kỹ thuật Tiling cắt nhỏ khối dữ liệu; rào chắn đồng bộ __syncthreads().">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- KaTeX CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+
+  <!-- Shared CSS -->
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+
+  <style>
+    .tile-matrix {
+      display: grid;
+      grid-template-columns: repeat(2, 38px);
+      gap: 4px;
+    }
+    .tile-cell {
+      width: 38px;
+      height: 38px;
+      background: #090e17;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--text-bright);
+    }
+    .sram-box {
+      background: rgba(16, 185, 129, 0.08);
+      border: 2px dashed var(--color-positive);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      text-align: center;
+      width: 100%;
+    }
+  </style>
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    
+    <!-- Top Header -->
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">
+          ← Về Danh Mục
+        </a>
+      </div>
+
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step" style="border-color: rgba(245, 158, 11, 0.4);">
+          Track 3: HW3 GPU & CUDA Architecture
+        </span>
+      </div>
+    </header>
+
+    <!-- Main 3-Zone Grid -->
+    <main class="lab-grid">
+      
+      <!-- CỘT 1: DẪN DẮT SOCRATIC & HỆ THỐNG BÌNH LUẬN KIẾN THỨC -->
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt & Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <!-- CỘT 2: SÂN CHƠI TƯƠNG TÁC (CANVAS SANDBOX) -->
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Tiling & Nạp Vào Shared Memory</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Reset</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; align-items: center; gap: 1.25rem;">
+          
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+
+          <!-- Phase Controls -->
+          <div style="display: flex; gap: 0.75rem; width: 100%; justify-content: center;">
+            <button class="tp-btn tp-btn-primary" id="btn-phase-0" style="flex: 1;">Pha 1: Tile (k = 0)</button>
+            <button class="tp-btn tp-btn-ghost" id="btn-phase-1" style="flex: 1;">Pha 2: Tile (k = 1)</button>
+          </div>
+
+          <!-- Fast On-Chip Shared Memory Container -->
+          <div class="sram-box">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <span style="font-size: var(--text-xs); font-weight: 700; color: var(--color-positive); text-transform: uppercase;">
+                ⚡ On-Chip Shared Memory (__shared__ SRAM ~20 chu kỳ)
+              </span>
+              <span class="tp-badge" style="background: rgba(16, 185, 129, 0.2); color: var(--color-positive);">SYNCHRONIZED</span>
+            </div>
+
+            <div style="display: flex; justify-content: space-around; align-items: center;">
+              <div>
+                <div style="font-size: 0.7rem; color: var(--text-dim); margin-bottom: 4px;">Tile A (2×2)</div>
+                <div class="tile-matrix" id="sram-tile-a"></div>
+              </div>
+
+              <div style="font-size: 1.5rem; color: var(--color-positive); font-weight: 700;">&times;</div>
+
+              <div>
+                <div style="font-size: 0.7rem; color: var(--text-dim); margin-bottom: 4px;">Tile B (2×2)</div>
+                <div class="tile-matrix" id="sram-tile-b"></div>
+              </div>
+            </div>
+
+            <div style="margin-top: 0.75rem; font-family: var(--font-mono); font-size: 0.7rem; color: #6ee7b7;">
+              <code>__syncthreads();</code> &rarr; Đảm bảo toàn bộ luồng trong block nạp xong trước khi tính toán!
+            </div>
+          </div>
+
+          <!-- Slow Global Memory (DRAM) Note -->
+          <div style="width: 100%; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem; font-size: var(--text-xs); color: var(--text-dim); line-height: 1.6;">
+            <span style="font-weight: 700; color: var(--color-warning);">🐢 Global Memory (VRAM/DRAM):</span>
+            Độ trễ cao (~400 chu kỳ). Nhờ chia Tile, mỗi phần tử từ DRAM chỉ cần đọc 1 lần duy nhất vào Shared Memory rồi tái sử dụng nhiều lần cho toàn bộ các luồng trong Block!
+          </div>
+
+        </div>
+      </section>
+
+      <!-- CỘT 3: LIVE MATH & TELEMETRY C++ -->
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math & Hiệu Năng</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+          
+          <!-- DRAM Savings KaTeX -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
+              📐 Giảm Tải Băng Thông DRAM
+            </div>
+            <div id="katex-dram-mount" style="min-height: 48px; background: #090d15; border-radius: var(--radius-sm); padding: 0.5rem; display: flex; align-items: center; justify-content: center; overflow-x: auto;"></div>
+          </div>
+
+          <!-- Speedup Factor Card -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1.25rem; text-align: center;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted);">
+              🚀 Băng Thông DRAM Tiết Kiệm
+            </div>
+            <div id="stat-reduction" style="font-family: var(--font-display); font-size: 2.25rem; font-weight: 800; color: var(--color-positive); margin: 0.5rem 0;">
+              2.0×
+            </div>
+            <div style="font-size: var(--text-xs); color: var(--text-dim);" id="desc-reduction">
+              Tile size = 2 giúp giảm số lượt đọc DRAM 2 lần.
+            </div>
+          </div>
+
+          <!-- Syncthreads Code -->
+          <div style="background: #06090e; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.85rem; font-family: var(--font-mono); font-size: 0.7rem; color: #94a3b8; line-height: 1.6;">
+            <div style="color: var(--color-warning); font-weight: 700; margin-bottom: 4px;">// cuda/tiled_matmul.cu</div>
+            <div>for (int k = 0; k &lt; N/TILE; ++k) {</div>
+            <div style="padding-left: 12px; color: #38bdf8;">sA[ty][tx] = A[...];  // Nạp DRAM &rarr; SRAM</div>
+            <div style="padding-left: 12px; color: #38bdf8;">sB[ty][tx] = B[...];</div>
+            <div style="padding-left: 12px; color: #10b981; font-weight: 700;">__syncthreads();     // Chờ nạp xong</div>
+            <div style="padding-left: 12px;">acc += sA[...] * sB[...]; // Tính toán siêu tốc</div>
+            <div style="padding-left: 12px; color: #10b981; font-weight: 700;">__syncthreads();     // Chờ tính xong</div>
+            <div>}</div>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath } from '../../shared/katex-render.js';
+    import { LessonLogic, PRESETS } from './bai_11_shared_memory_tiling.logic.js';
+
+    const STEPS = [
+      {
+        heading: "Bức Tường Bộ Nhớ (The Memory Wall)",
+        problem: "Nhân ma trận ngây thơ (Naive MatMul) đọc dữ liệu thẳng từ DRAM. Vì DRAM chậm gấp 20 lần so với chip tính toán, nhân GPU bị bỏ đói liên tục!",
+        challenge: "Xem công thức Naive DRAM: Cần tới 2*N³ lượt đọc bộ nhớ.",
+        takeaway: "Tốc độ tính toán của GPU vượt xa tốc độ cấp dữ liệu của DRAM."
+      },
+      {
+        heading: "Kho Chứa Thần Tốc: Shared Memory",
+        problem: "Làm sao để không phải đọc đi đọc lại cùng một hàng và cột từ DRAM?",
+        challenge: "Nhấn nút 'Pha 1' và 'Pha 2' để xem các luồng cùng nhau nạp 1 Tile nhỏ vào SRAM.",
+        takeaway: "Shared Memory nằm ngay trên chip SM, tốc độ truy cập chỉ mất ~20 chu kỳ so với ~400 chu kỳ của DRAM."
+      },
+      {
+        heading: "Rào Chắn Đồng Bộ: __syncthreads()",
+        problem: "Nếu một luồng tính toán trước khi các luồng khác kịp nạp xong dữ liệu vào SRAM thì sao?",
+        challenge: "Xem đoạn mã CUDA: Lệnh __syncthreads() bắt buộc mọi luồng trong block phải dừng lại chờ nhau.",
+        takeaway: "Không có __syncthreads() sẽ gây ra lỗi Race Condition làm kết quả ma trận bị rác ngẫu nhiên."
+      }
+    ];
+
+    const CURATED_COMMENTS = [
+      {
+        id: "c1",
+        stepIndex: 1,
+        author: "Kỹ Sư NVIDIA Architecture",
+        badge: "SRAM vs DRAM",
+        content: "Shared memory có thể xem là một L1 cache mà lập trình viên có toàn quyền kiểm soát (Software-managed cache). Nó cho phép lập trình viên tối ưu hoá triệt để việc tái sử dụng dữ liệu!"
+      },
+      {
+        id: "c2",
+        stepIndex: 2,
+        author: "Tác Giả Khóa Học DL Systems",
+        badge: "HW3 MatMul",
+        content: "Trong bài tập Needle HW3, Tiled MatMul tăng tốc gấp 10-15 lần so với bản naive ban đầu. Khi chuyển tiếp sang HW4 FlashAttention, ý tưởng Tiling vào Shared Memory này sẽ được tái sinh ở cấp độ cao hơn!"
+      }
+    ];
+
+    const logic = new LessonLogic();
+
+    const wizard = createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 0,
+      onStepChange: (idx) => comments.setStep(idx)
+    });
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: "bai_11_shared_memory_tiling",
+      initialStep: 0,
+      curatedComments: CURATED_COMMENTS,
+      allowUserNotes: true
+    });
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      onPick: (preset) => {
+        logic.applyPreset(preset.state);
+        updatePhaseButtons();
+        updateUI();
+      }
+    });
+
+    const btnP0 = document.getElementById('btn-phase-0');
+    const btnP1 = document.getElementById('btn-phase-1');
+
+    btnP0.addEventListener('click', () => {
+      logic.onUserUpdate({ currentPhase: 0 });
+      updatePhaseButtons();
+      updateUI();
+    });
+
+    btnP1.addEventListener('click', () => {
+      logic.onUserUpdate({ currentPhase: 1 });
+      updatePhaseButtons();
+      updateUI();
+    });
+
+    function updatePhaseButtons() {
+      if (logic.state.currentPhase === 0) {
+        btnP0.className = "tp-btn tp-btn-primary";
+        btnP1.className = "tp-btn tp-btn-ghost";
+      } else {
+        btnP0.className = "tp-btn tp-btn-ghost";
+        btnP1.className = "tp-btn tp-btn-primary";
+      }
+    }
+
+    const sramTileA = document.getElementById('sram-tile-a');
+    const sramTileB = document.getElementById('sram-tile-b');
+    const katexDram = document.getElementById('katex-dram-mount');
+    const statReduction = document.getElementById('stat-reduction');
+    const descReduction = document.getElementById('desc-reduction');
+
+    function updateUI() {
+      const res = logic.calculate();
+
+      // Render Tile A
+      sramTileA.innerHTML = '';
+      res.tileA.forEach(row => {
+        row.forEach(val => {
+          const c = document.createElement('div');
+          c.className = 'tile-cell';
+          c.textContent = val;
+          sramTileA.appendChild(c);
+        });
+      });
+
+      // Render Tile B
+      sramTileB.innerHTML = '';
+      res.tileB.forEach(row => {
+        row.forEach(val => {
+          const c = document.createElement('div');
+          c.className = 'tile-cell';
+          c.textContent = val;
+          sramTileB.appendChild(c);
+        });
+      });
+
+      statReduction.textContent = `${res.bandwidthReductionFactor}.0×`;
+      descReduction.textContent = `Tile size = ${res.tileSize} giúp giảm số lượt đọc DRAM ${res.bandwidthReductionFactor} lần.`;
+
+      renderMath(katexDram, res.formulaDramKaTeX, { displayMode: true });
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      updatePhaseButtons();
+      updateUI();
+    });
+
+    updateUI();
+  </script>
+</body>
+</html>

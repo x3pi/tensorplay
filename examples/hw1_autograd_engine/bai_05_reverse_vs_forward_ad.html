@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bài 05: Reverse-mode vs Forward-mode AD - TensorPlay</title>
+  <meta name="description" content="Tại sao Deep Learning luôn chọn Reverse-mode? So sánh chi phí 1 triệu lần chạy Forward-mode vs đúng 1 lượt dội ngược duy nhất.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- KaTeX CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+
+  <!-- Shared CSS -->
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+
+  <style>
+    .battle-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+    .battle-meter {
+      height: 12px;
+      border-radius: var(--radius-pill);
+      background: rgba(255, 255, 255, 0.05);
+      margin: 8px 0;
+      overflow: hidden;
+      display: flex;
+    }
+    .battle-fill-fwd {
+      background: linear-gradient(90deg, #f59e0b, #ef4444);
+      transition: width 0.3s ease;
+    }
+    .battle-fill-rev {
+      background: linear-gradient(90deg, #10b981, #06b6d4);
+      transition: width 0.3s ease;
+    }
+  </style>
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    
+    <!-- Top Header -->
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">
+          ← Về Danh Mục
+        </a>
+      </div>
+
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step" style="border-color: rgba(139, 92, 246, 0.4);">
+          Track 1: HW1 Autograd Engine
+        </span>
+      </div>
+    </header>
+
+    <!-- Main 3-Zone Grid -->
+    <main class="lab-grid">
+      
+      <!-- CỘT 1: DẪN DẮT SOCRATIC & HỆ THỐNG BÌNH LUẬN KIẾN THỨC -->
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt & Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <!-- CỘT 2: SÂN CHƠI TƯƠNG TÁC (CANVAS SANDBOX) -->
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Đấu Trường Độ Phức Tạp (JVP vs VJP)</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Reset</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; align-items: center; gap: 1.25rem;">
+          
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+
+          <!-- Battle Arenas -->
+          <div class="battle-card" style="border-color: rgba(239, 68, 68, 0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 700; color: #f87171;">⚔️ Forward-Mode AD (Jacobian-Vector Product)</span>
+              <span class="tp-badge" id="badge-fwd-passes">1,000 lượt chạy</span>
+            </div>
+            <div style="font-size: var(--text-xs); color: var(--text-dim); margin-top: 4px;">
+              Mỗi lượt chỉ tìm được đạo hàm theo đúng 1 tham số. Muốn tìm N tham số phải lặp lại N lần!
+            </div>
+            <div class="battle-meter">
+              <div class="battle-fill-fwd" id="bar-fwd" style="width: 90%;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: var(--text-xs); color: var(--text-muted);">
+              <span id="ops-fwd">100,000 FLOPs</span>
+              <span id="time-fwd">1.00 ms</span>
+            </div>
+          </div>
+
+          <div class="battle-card" style="border-color: rgba(16, 185, 129, 0.4);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 700; color: var(--color-positive);">⚡ Reverse-Mode AD (Vector-Jacobian Product / Backprop)</span>
+              <span class="tp-badge" id="badge-rev-passes" style="background: rgba(16, 185, 129, 0.2); color: var(--color-positive); border-color: var(--color-positive);">1 lượt dội duy nhất</span>
+            </div>
+            <div style="font-size: var(--text-xs); color: var(--text-dim); margin-top: 4px;">
+              Xuất phát từ 1 hàm mục tiêu Loss (M=1), dội ngược 1 lần duy nhất tìm ra đạo hàm của TẤT CẢ N tham số!
+            </div>
+            <div class="battle-meter">
+              <div class="battle-fill-rev" id="bar-rev" style="width: 5%;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: var(--text-xs); color: var(--text-muted);">
+              <span id="ops-rev">150 FLOPs</span>
+              <span id="time-rev">0.00 ms</span>
+            </div>
+          </div>
+
+          <!-- Parameter Sliders -->
+          <div style="width: 100%; display: flex; flex-direction: column; gap: 0.75rem;">
+            <div id="mount-slider-inputs"></div>
+            <div id="mount-slider-outputs"></div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- CỘT 3: LIVE MATH & TELEMETRY C++ -->
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math & Phân Tích</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+          
+          <!-- Complexity Comparison -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
+              📐 Độ Phức Tạp Lũy Tiến
+            </div>
+            <div id="katex-complexity-mount" style="min-height: 44px; background: #090d15; border-radius: var(--radius-sm); padding: 0.5rem; display: flex; align-items: center; justify-content: center; overflow-x: auto;"></div>
+          </div>
+
+          <!-- Speedup Showcase -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1.25rem; text-align: center;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted);">
+              🚀 Hệ Số Tăng Tốc Của Reverse-Mode
+            </div>
+            <div id="stat-speedup" style="font-family: var(--font-display); font-size: 2.5rem; font-weight: 800; color: var(--color-positive); margin: 0.5rem 0;">
+              666.7×
+            </div>
+            <div style="font-size: var(--text-xs); color: var(--text-dim);">
+              Nhanh hơn gấp hàng trăm tới hàng triệu lần khi N lớn!
+            </div>
+          </div>
+
+          <!-- Mini Function Gradient -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
+              📐 Gradient Hàm Mẫu f = x₁x₂ + x₂x₃
+            </div>
+            <div id="katex-gradient-mount" style="min-height: 44px; background: #090d15; border-radius: var(--radius-sm); padding: 0.5rem; display: flex; align-items: center; justify-content: center; overflow-x: auto;"></div>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createLiveSlider } from '../../shared/components/LiveSlider.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath } from '../../shared/katex-render.js';
+    import { LessonLogic, PRESETS } from './bai_05_reverse_vs_forward_ad.logic.js';
+
+    const STEPS = [
+      {
+        heading: "Nghịch Lý Đạo Hàm Trong Deep Learning",
+        problem: "Một mạng nơ-ron hiện đại có từ hàng triệu đến hàng trăm tỷ tham số (N >> 1), nhưng chỉ có đúng 1 con số đánh giá lỗi duy nhất là Loss (M = 1).",
+        challenge: "Kéo thanh trượt Số tham số N lên 10,000 xem Forward-mode AD kiệt sức như thế nào.",
+        takeaway: "Forward-mode tính theo từng cột của Jacobian, đòi hỏi N lần chạy đồ thị."
+      },
+      {
+        heading: "Phép Màu Của Reverse-Mode (Backprop)",
+        problem: "Làm sao chỉ cần 1 lần dội ngược duy nhất là gom đủ đạo hàm cho toàn bộ N tham số?",
+        challenge: "Chọn preset 'Mô hình DL (N = 10,000, M = 1)' và quan sát tỉ số tăng tốc.",
+        takeaway: "Reverse-mode tính theo từng hàng của Jacobian. Vì M=1, ta chỉ cần 1 vector adjoint dội từ ngọn về gốc!"
+      },
+      {
+        heading: "Khi Nào Thì Forward-Mode Chiến Thắng?",
+        problem: "Có trường hợp nào Forward-mode lại tốt hơn Reverse-mode không?",
+        challenge: "Chọn preset 'Động học Robot (N = 6, M = 6)' hoặc tăng số đầu ra M lên rất lớn.",
+        takeaway: "Khi số đầu ra M lớn hơn nhiều số đầu vào N (M >> N), Forward-mode sẽ hiệu quả hơn và không tốn RAM lưu activation."
+      }
+    ];
+
+    const CURATED_COMMENTS = [
+      {
+        id: "c1",
+        stepIndex: 0,
+        author: "Kiến Trúc Sư Deep Learning",
+        badge: "Độ Phức Tạp",
+        content: "Jacobian matrix có kích thước M x N. Forward-mode nhân J * v (Jacobian-Vector Product - JVP) tốn O(N) lần chạy. Reverse-mode nhân v^T * J (Vector-Jacobian Product - VJP) tốn O(M) lần chạy. Đây là định lý quan trọng nhất quyết định sự tồn tại của ngành Deep Learning!"
+      },
+      {
+        id: "c2",
+        stepIndex: 1,
+        author: "C++ Systems Engineer",
+        badge: "Bộ Nhớ RAM",
+        content: "Cái giá phải trả của Reverse-mode là BỘ NHỚ: Nó buộc phải lưu lại toàn bộ các activation trung gian trong lượt forward để phục vụ cho lượt dội ngược. Đó là lý do GPU của bạn bị Out Of Memory (OOM) khi training chứ hiếm khi bị khi inference!"
+      }
+    ];
+
+    const logic = new LessonLogic();
+
+    const wizard = createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 0,
+      onStepChange: (idx) => comments.setStep(idx)
+    });
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: "bai_05_reverse_vs_forward_ad",
+      initialStep: 0,
+      curatedComments: CURATED_COMMENTS,
+      allowUserNotes: true
+    });
+
+    const sliderInputs = createLiveSlider(document.getElementById('mount-slider-inputs'), {
+      min: 2,
+      max: 20000,
+      step: 100,
+      initial: logic.state.numInputs,
+      label: "Số tham số đầu vào (N)",
+      onChange: (val) => {
+        logic.onUserUpdate({ numInputs: val });
+        updateUI();
+      }
+    });
+
+    const sliderOutputs = createLiveSlider(document.getElementById('mount-slider-outputs'), {
+      min: 1,
+      max: 50,
+      step: 1,
+      initial: logic.state.numOutputs,
+      label: "Số mục tiêu đầu ra (M)",
+      onChange: (val) => {
+        logic.onUserUpdate({ numOutputs: val });
+        updateUI();
+      }
+    });
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      onPick: (preset) => {
+        logic.applyPreset(preset.state);
+        sliderInputs.setValue(preset.state.numInputs ?? logic.state.numInputs);
+        sliderOutputs.setValue(preset.state.numOutputs ?? logic.state.numOutputs);
+        updateUI();
+      }
+    });
+
+    const badgeFwd = document.getElementById('badge-fwd-passes');
+    const badgeRev = document.getElementById('badge-rev-passes');
+    const barFwd = document.getElementById('bar-fwd');
+    const barRev = document.getElementById('bar-rev');
+    const opsFwd = document.getElementById('ops-fwd');
+    const opsRev = document.getElementById('ops-rev');
+    const timeFwd = document.getElementById('time-fwd');
+    const timeRev = document.getElementById('time-rev');
+    const statSpeedup = document.getElementById('stat-speedup');
+    const katexComplexity = document.getElementById('katex-complexity-mount');
+    const katexGradient = document.getElementById('katex-gradient-mount');
+
+    function updateUI() {
+      const res = logic.calculate();
+
+      badgeFwd.textContent = `${res.forwardPasses.toLocaleString()} lượt chạy`;
+      badgeRev.textContent = `${res.reversePasses.toLocaleString()} lượt dội`;
+
+      opsFwd.textContent = `${res.forwardOps.toLocaleString()} FLOPs`;
+      opsRev.textContent = `${res.reverseOps.toLocaleString()} FLOPs`;
+
+      timeFwd.textContent = `${res.forwardTimeMs} ms`;
+      timeRev.textContent = `${res.reverseTimeMs} ms`;
+
+      statSpeedup.textContent = `${res.speedup.toLocaleString()}×`;
+
+      // Visual bar comparison
+      const total = res.forwardOps + res.reverseOps;
+      const fwdPercent = Math.min(99, Math.max(1, (res.forwardOps / total) * 100));
+      const revPercent = Math.min(99, Math.max(1, (res.reverseOps / total) * 100));
+      barFwd.style.width = `${fwdPercent}%`;
+      barRev.style.width = `${revPercent}%`;
+
+      renderMath(katexComplexity, res.formulaComplexityKaTeX, { displayMode: true });
+      renderMath(katexGradient, res.formulaGradientKaTeX, { displayMode: true });
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      sliderInputs.setValue(logic.state.numInputs);
+      sliderOutputs.setValue(logic.state.numOutputs);
+      updateUI();
+    });
+
+    updateUI();
+  </script>
+</body>
+</html>

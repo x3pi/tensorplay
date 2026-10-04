@@ -13,16 +13,20 @@ Mỗi bài học trong TensorPlay là một **"Hạt nhân Khái niệm" (Atomic
 ---
 
 ## 🏗️ Cấu Trúc Dự Án
+Không có app shell / router / registry trung tâm — mỗi ví dụ là 1 trang HTML tĩnh độc lập, dùng chung thư viện component trong `shared/`.
 ```text
 tensorplay/
-├── KE_HOACH_THIET_KE.md   # Kiến trúc & hợp đồng module bài học
-├── index.html             # Shell ứng dụng chính
+├── KE_HOACH_THIET_KE.md   # Kiến trúc, hợp đồng component & hợp đồng gói ví dụ
+├── index.html             # Trang danh mục, liệt kê 15 ví dụ theo track
 ├── package.json           # Scripts dev / build / test
-├── core/                  # Engine điều phối, layout 3 cột, KaTeX, theme, progress, shortcuts
-└── lessons/               # Kho bài học độc lập (mỗi bài kèm assets/ + logic.test.js riêng)
-    ├── registry.json      # Sổ đăng ký bài học & tags
-    ├── bai_01_robot_vision/   # Bài 1: Dập khuôn ma trận & bộ nhớ C++
-    └── ...
+├── shared/                # Component tái sử dụng (StepWizard, ValueGrid, LiveSlider, MemoryTape, ScoreBar, PresetPicker...)
+└── examples/              # Mỗi ví dụ = 3 file (.html / .logic.js / .logic.test.js), nhóm theo track
+    ├── catalog.json       # Metadata để index.html render thẻ ví dụ
+    ├── hw0_tensor_memory/     # Bài 01–03: Tensor & bộ nhớ C++
+    ├── hw1_autograd_engine/   # Bài 04–06: Autograd (Needle)
+    ├── hw2_modules_conv/      # Bài 07–09: Module & Conv2D
+    ├── hw3_cuda_architecture/ # Bài 10–12: CUDA
+    └── hw4_transformer_llm/   # Bài 13–15: Transformer & LLM Systems
 ```
 
 ## ⚙️ Chạy Dự Án

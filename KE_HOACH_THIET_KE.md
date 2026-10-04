@@ -10,15 +10,15 @@
    - Phản hồi tức thì (**Instant Feedback Loop**): Click/kéo chuột ở đâu thì đồ thị và công thức toán nhảy số tương ứng ngay lập tức.
 2. **Nguyên tắc "Hạt nhân Khái niệm Độc Lập" (Atomic Concept Sandbox):**
    - Mỗi bài tập chỉ tập trung giải quyết triệt để **đúng một 'Aha! Moment'** (một nút thắt tư duy duy nhất), không nhồi nhét.
-   - **Không có phụ thuộc cứng (Zero Hard Dependencies):** Người học có thể vào thẳng bất kỳ bài nào mà không bắt buộc phải hoàn thành các bài trước.
+   - **Không có phụ thuộc cứng (Zero Hard Dependencies):** Người học có thể mở thẳng file HTML của bất kỳ bài nào mà không bắt buộc phải hoàn thành các bài trước, không cần "khởi động" một app shell.
    - **Tự cấp dữ liệu mồi (Self-contained Presets):** Mỗi bài đi kèm sẵn các nút bấm thử nghiệm (vd: *Ảnh chuẩn*, *Ảnh dính bụi*, *Đèn pha*) để tương tác ngay lập tức.
-   - **Hỗ trợ Deep-link:** Mỗi bài/mỗi bước có URL hash riêng (ví dụ `/#/bai_01_robot_vision?step=4`) giúp dễ dàng chia sẻ, lưu bookmark hoặc nhúng vào tài liệu lý thuyết.
-3. **Kiến trúc đóng gói module độc lập (Package-per-Lesson):**
-   - Mỗi bài học là một **"gói tự trị" (autonomous package)** chứa đầy đủ logic toán, kịch bản dẫn dắt và **thư mục tài nguyên riêng** (hình ảnh SVG, icon, hiệu ứng âm thanh, mock data).
-   - Hệ thống cốt lõi (**Core Engine**) hoàn toàn độc lập với nội dung bài học. Thêm bài mới chỉ việc tạo thêm một thư mục bài học, không cần sửa lại mã nguồn giao diện.
+   - **URL thật, không cần router ảo:** Mỗi bài là 1 file `.html` thật, nhận tham số qua query string (`?step=4&preset=headlight_glare`) để dễ chia sẻ, bookmark, nhúng vào tài liệu lý thuyết — không cần một SPA router đứng giữa.
+3. **Thư viện Component Tái Sử Dụng (Shared Component Library), không phải Core Engine SPA:**
+   - Mỗi bài học là **1 trang HTML tĩnh độc lập** (3 file: `.html` + `.logic.js` + `.logic.test.js`), tự chạy, tự chứa kịch bản dẫn dắt.
+   - Toàn bộ phần "nhìn giống nhau, dùng lại được" (lưới tương tác, slider, thanh điểm số, khối công thức...) sống trong `shared/components/` — mỗi bài **import** những gì cần, không kế thừa một bộ khung ứng dụng nào cả. Thêm bài mới không đụng tới bài cũ, không cần sửa router/registry.
 4. **Thẩm mỹ cao cấp (Modern Developer Experience):**
    - Dark mode chuẩn công nghệ (Deep Slate / Obsidian glassmorphism), màu sắc neon phân biệt rõ ràng (Xanh lục = Trọng số dương / Thưởng, Đỏ cam = Trọng số âm / Phạt, Tím cyan = Tensor Logits).
-   - Chạy trực tiếp trên trình duyệt hoặc dev server siêu nhẹ, không phụ thuộc cồng kềnh.
+   - Mở trực tiếp bằng trình duyệt (`file://` hoặc `npm run dev`), không phụ thuộc cồng kềnh, không cần "biên dịch" để xem thử một bài.
 
 ---
 
@@ -27,271 +27,183 @@
 ```text
 tensorplay/
 ├── KE_HOACH_THIET_KE.md             # Tài liệu kiến trúc & kế hoạch này
-├── index.html                       # Trang ứng dụng duy nhất (Application Shell)
-├── package.json                     # Scripts: dev / build / test (Vite + Vitest)
-├── vite.config.js                   # Cấu hình dev server, build, và test runner (Vitest)
+├── index.html                       # Trang DANH MỤC: thẻ liên kết tới 15 ví dụ theo track, đọc catalog.json
+├── package.json                     # Scripts: dev / build / test (Vite + Vitest, chỉ devDependencies)
+├── vite.config.js                   # Multi-page build: quét toàn bộ examples/**/*.html làm entry point
 │
-├── core/                            # BỘ KHUNG ĐIỀU HÀNH DÙNG CHUNG (CORE ENGINE)
-│   ├── engine.js                    # State Machine: Quản lý tiến trình, bước học, event bus
-│   ├── router.js                    # Hash router: Điều hướng deep-link (#/lesson-id?step=N)
-│   ├── layout.js                    # Quản lý bố cục 3 cột ⇄ tab (responsive breakpoint)
-│   ├── progress.js                  # Đọc/ghi tiến độ học vào localStorage
-│   ├── shortcuts.js                 # Đăng ký phím tắt điều hướng toàn cục
-│   ├── styles/                      # Hệ thống Design Tokens & CSS dùng chung
-│   │   ├── tokens.css               # Màu sắc, font chữ, hiệu ứng đổ bóng glassmorphism
-│   │   ├── layout.css               # Grid 3 cột, splitters, tabs, breakpoint <900px
-│   │   └── components.css           # Nút bấm, thanh trượt slider, card thông số
-│   └── components/                  # Thư viện UI widgets tái sử dụng
-│       ├── KaTeXRenderer.js         # Khối hiển thị công thức toán học động (gọi KaTeX từ CDN)
-│       ├── MemoryVisualizer.js      # Khối mô phỏng thanh RAM C++ (1D array & pointer)
-│       └── ProbabilityBar.js        # Thanh đo phần trăm Softmax trực quan
+├── shared/                          # 🧩 THƯ VIỆN COMPONENT TÁI SỬ DỤNG (dùng chung MỌI ví dụ)
+│   ├── styles/
+│   │   ├── tokens.css               # Design tokens: màu, font, hiệu ứng glass (Mục VI)
+│   │   ├── layout.css               # .lab-grid 3 cột + breakpoint <900px → tab, THUẦN CSS không cần JS
+│   │   └── components.css           # Style cho mọi widget bên dưới
+│   ├── math.js                      # Hàm toán thuần dùng ≥2 bài: dot(), safeSoftmax(), relu(), clamp(), offset2D()
+│   ├── math.test.js                 # Vitest kiểm chứng math.js (chạy độc lập, không cần DOM)
+│   ├── katex-render.js              # renderMath(el, latex) — nạp KaTeX từ CDN một lần, cache instance
+│   ├── katex-lint.test.js           # Vitest quét toàn bộ examples/**/*.{html,js} chặn `\text{___}` / `_` trần
+│   └── components/                  # 🔧 6 COMPONENT NỀN TẢNG — xem Hợp Đồng ở Mục III
+│       ├── StepWizard.js            # Khung dẫn dắt Socratic (Cột 1): problem→challenge→takeaway, phím ←/→
+│       ├── ValueGrid.js             # Lưới ô N×N click/kéo đổi giá trị (pixel, ma trận, chỉ số thread...)
+│       ├── LiveSlider.js            # Thanh trượt số liên kết trực tiếp 1 giá trị trong state
+│       ├── MemoryTape.js            # Dải ô nhớ 1D, highlight offset con trỏ, báo lỗi out-of-bound
+│       ├── ScoreBar.js              # Thanh đo % / điểm số, màu theo token ngữ nghĩa (reward/penalty)
+│       └── PresetPicker.js          # Dãy nút bấm thử nhanh dữ liệu mồi
 │
-└── lessons/                         # DANH MỤC CÁC BÀI HỌC (MỖI BÀI MỘT GÓI ĐỘC LẬP)
-    ├── registry.json                # Sổ danh bạ đăng ký tất cả bài học
+└── examples/                        # 📦 MỖI VÍ DỤ = 3 FILE TĨNH, KHÔNG QUA ROUTER/ENGINE NÀO CẢ
+    ├── catalog.json                 # Metadata của 15 ví dụ để index.html render thẻ — KHÔNG dùng để load logic
     │
-    ├── bai_01_robot_vision/         # === GÓI BÀI TẬP 1 ===
-    │   ├── manifest.json            # Cấu hình bài học: Tiêu đề, số bước, câu hỏi
-    │   ├── logic.js                 # Thuật toán tính toán riêng của Bài 1
-    │   ├── logic.test.js            # ✅ Kiểm chứng tự động (Vitest) cho logic.js
-    │   ├── custom_canvas.js         # Giao diện lưới pixel 2x2 & khuôn mẫu dập
-    │   └── assets/                  # 🎨 TÀI NGUYÊN RIÊNG CỦA BÀI 1
-    │       ├── robot_camera.svg     # Hình minh họa camera robot
-    │       ├── sign_horizontal.svg  # Biển báo gạch ngang mẫu
-    │       ├── sign_vertical.svg    # Biển báo gạch dọc mẫu
-    │       └── dust_particle.svg    # Hạt bụi làm mờ pixel
+    ├── hw0_tensor_memory/           # === TRACK 0 (xem Mục IX) ===
+    │   ├── bai_01_robot_vision.html
+    │   ├── bai_01_robot_vision.logic.js
+    │   ├── bai_01_robot_vision.logic.test.js
+    │   ├── bai_02_softmax_loss.html
+    │   ├── bai_02_softmax_loss.logic.js
+    │   ├── bai_02_softmax_loss.logic.test.js
+    │   ├── bai_03_cache_locality.html
+    │   ├── bai_03_cache_locality.logic.js
+    │   ├── bai_03_cache_locality.logic.test.js
+    │   └── assets/                  # SVG riêng của track (robot_camera.svg, sun_glare.svg, ...)
     │
-    ├── bai_02_softmax_loss/         # === GÓI BÀI TẬP 2 ===
-    │   ├── manifest.json
-    │   ├── logic.js
-    │   ├── logic.test.js
-    │   ├── custom_canvas.js         # Thanh trượt logits & bộ mô phỏng lóa sáng
-    │   └── assets/                  # 🎨 TÀI NGUYÊN RIÊNG CỦA BÀI 2
-    │       ├── sun_glare.svg        # Hiệu ứng chói nắng gây tràn số
-    │       └── cliff_warning.svg    # Robot lao xuống vực vì đoán sai tự tin
-    │
-    ├── bai_03_sgd_cycle/            # === GÓI BÀI TẬP 3 ===
-    │   ├── manifest.json
-    │   ├── logic.js
-    │   ├── logic.test.js
-    │   └── assets/
-    │
-    ├── bai_04_nn_relu/              # === GÓI BÀI TẬP 4 ===
-    │   ├── manifest.json
-    │   ├── logic.js
-    │   ├── logic.test.js
-    │   └── assets/
-    │       └── water_valve_relu.svg # Hình ảnh van đóng/mở ReLU
-    │
-    ├── bai_05_minibatch/            # === GÓI BÀI TẬP 5 ===
-    │   ├── manifest.json
-    │   ├── logic.test.js
-    │   └── ...
-    │
-    └── bai_06_cpp_memory/           # === GÓI BÀI TẬP 6 ===
-        ├── manifest.json
-        ├── logic.test.js
-        └── ...
+    ├── hw1_autograd_engine/         # === TRACK 1: bài 04–06 (cùng mẫu 3 file) ===
+    ├── hw2_modules_conv/            # === TRACK 2: bài 07–09 ===
+    ├── hw3_cuda_architecture/       # === TRACK 3: bài 10–12 ===
+    └── hw4_transformer_llm/         # === TRACK 4: bài 13–15 ===
 ```
 
-> **Lưu ý về `core/lib/`:** Phiên bản trước của kế hoạch có vendor KaTeX cục bộ. Sau khi cân nhắc, dự án chọn **tải KaTeX qua CDN** (jsdelivr/cdnjs, pin version cụ thể trong `<script>`/`<link>` của `index.html`) để giữ repo nhẹ và không cần commit file build của bên thứ ba. Đổi lại, ứng dụng yêu cầu kết nối mạng khi chạy lần đầu (có thể cache qua Service Worker ở giai đoạn sau nếu cần offline).
+> **So với bản kế hoạch trước:** bỏ `core/engine.js` (state machine toàn app), `core/router.js` (hash router), và `lessons/registry.json` (sổ đăng ký bắt buộc để engine nạp bài). Lý do: với 15 bài độc lập theo triết lý "Atomic Concept Sandbox" ở Mục I.2, một app shell đứng giữa chỉ thêm tầng gián tiếp mà không giải quyết vấn đề học — mở thẳng file HTML quan trọng hơn.
 
 ---
 
-## 📐 III. Chuẩn Hóa Định Dạng Gói Bài Tập (Lesson Package Contract)
+## 🧩 III. Hợp Đồng Component Tái Sử Dụng (Shared Component Contract)
 
-Mỗi thư mục bài học trong `lessons/<ten_bai>/` tuân thủ một chuẩn giao tiếp thống nhất, đảm bảo tính tự trị và khả năng mở rộng không giới hạn:
+### 1. Quy Ước Chung (bắt buộc cho mọi component trong `shared/components/`)
+Mọi component là một **factory function thuần**, không class, không framework, nhận `container` (1 phần tử DOM đã có sẵn trong trang) và `options`:
 
-### 1. File Đặc Tả Bài Học (`manifest.json`)
-Chứa toàn bộ siêu dữ liệu, phân loại môn học, các nút thử nghiệm nhanh (presets) và kịch bản dẫn dắt theo phương pháp Socratic:
-```json
-{
-  "id": "bai_01_robot_vision",
-  "title": "Bài 1: Tự Chế Tạo 'Mắt' Cho Robot",
-  "stage": "04_candle_and_dl_systems",
-  "courseMapping": {
-    "course": "CMU 10-414 / 10-714",
-    "track": "HW0: Tensor Basics & C++ Memory",
-    "topic": "Ma trận 1D Flatten, Dot Product & Trọng số âm"
-  },
-  "difficulty": "beginner",
-  "estimatedMinutes": 8,
-  "tags": ["computer-vision", "linear-algebra", "dot-product", "c-plus-plus-memory"],
-  "totalSteps": 8,
-  "presets": [
-    {
-      "id": "horizontal_sign",
-      "label": "Ảnh Chuẩn (Gạch Ngang)",
-      "description": "Hai pixel hàng trên bật sáng, hai pixel hàng dưới tối",
-      "state": { "pixels": [1, 1, 0, 0] }
-    },
-    {
-      "id": "dusty_sign",
-      "label": "Ảnh Dính Bụi",
-      "description": "Một pixel dưới bị nhiễu mờ do bụi bẩn trên camera",
-      "state": { "pixels": [1, 1, 0.5, 0] }
-    },
-    {
-      "id": "headlight_glare",
-      "label": "Đèn Pha Chói Lóa",
-      "description": "Cả 4 pixel đều bị kích thích cực đại",
-      "state": { "pixels": [1, 1, 1, 1] }
-    }
-  ],
-  "steps": [
-    {
-      "step": 1,
-      "badge": "Bước 1 / 8",
-      "heading": "Máy tính đọc ảnh như thế nào?",
-      "problem": "Camera chỉ trả về các con số 0 và 1, máy tính chưa hiểu ý nghĩa hình học...",
-      "challenge": "Hãy click vào 4 ô vuông để vẽ biển báo Gạch Ngang và quan sát vector 1D bên dưới.",
-      "takeaway": "Ảnh 2D trong bộ nhớ máy tính luôn được trải phẳng (flatten) thành 1 hàng số liên tục.",
-      "assetsUsed": ["robot_camera.svg"]
-    },
-    {
-      "step": 4,
-      "badge": "Bước 4 / 8",
-      "heading": "Vũ khí bí mật: Trọng số âm",
-      "problem": "Đèn pha quá sáng khiến robot bị lóa, nhận nhầm là biển báo nguy hiểm...",
-      "challenge": "Hãy thử gán giá trị -1 vào hai ô bên dưới của khuôn mẫu dập trọng số.",
-      "takeaway": "Trọng số dương là bằng chứng ủng hộ, trọng số âm chính là 'bằng chứng bác bỏ'!",
-      "assetsUsed": ["dust_particle.svg"]
-    }
-  ]
+```javascript
+export function createX(container, options) {
+  // 1. Render DOM ban đầu vào container dựa trên options.initial
+  // 2. Gắn event listener (click/drag/input) → gọi options.onChange(newValue) khi người dùng tương tác
+  // 3. Trả về handle điều khiển từ bên ngoài (ví dụ khi LessonLogic.applyPreset() cần đồng bộ lại UI)
+  return {
+    setState(partial) { /* cập nhật DOM để khớp state mới, không re-render toàn bộ */ },
+    getState() { /* trả state hiện tại */ },
+    destroy() { /* gỡ listener — dùng khi cần dọn dẹp, hiếm khi cần với trang tĩnh 1 lần */ }
+  };
 }
 ```
+Quy ước này giống nhau cho cả 6 component nền tảng lẫn bất kỳ component mới thêm sau này (Mục III.3) — một khi đã học cách dùng 1 component, dùng component khác không cần học lại pattern.
 
-### 2. Thư Mục Tài Nguyên Riêng (`assets/`) & Cơ Chế Phân Giải Đường Dẫn
-- Mỗi bài học sở hữu một thư mục `assets/` riêng chứa file SVG, icon, âm thanh phản hồi hoặc mock data nhỏ.
-- **Quy tắc cô lập (Asset Isolation):** Tuyệt đối không dùng chung assets giữa các bài học để tránh phụ thuộc chéo. Nếu hai bài cần icon tương tự, mỗi bài giữ một bản sao hoặc chuyển vào `core/assets/` nếu là tài nguyên hệ thống chung (như logo ứng dụng, icon play/pause).
-- **Hàm phân giải URL chuẩn (`getAssetUrl`):**
-  Trong `core/engine.js`, cung cấp hàm helper:
-  ```javascript
-  // Trả về URL hợp lệ trong cả môi trường Vite Dev và Vite Production Bundle
-  getAssetUrl(lessonId, relativeAssetPath) {
-    return new URL(`../lessons/${lessonId}/assets/${relativeAssetPath}`, import.meta.url).href;
-  }
-  ```
+### 2. Sáu Component Nền Tảng (Foundational Six)
 
-### 3. File Thuật Toán Riêng Của Bài (`logic.js`)
-Xuất ra (export) lớp tính toán trạng thái độc lập, có thể chạy cả trong browser lẫn môi trường test không có DOM (headless Vitest):
+| Component | Vai trò | Options chính | Dùng đầu tiên ở |
+|---|---|---|---|
+| **StepWizard** | Cột 1 — khung Socratic: hiển thị `badge "Bước N/M"`, `problem`, `challenge`, `takeaway`; nút Trước/Sau + phím `←`/`→`; đọc `?step=` từ URL khi tải trang | `{ steps: [{heading,problem,challenge,takeaway}], initialStep, onStepChange }` | Bài 01 |
+| **ValueGrid** | Lưới N×N ô số, click để toggle hoặc kéo để "vẽ" giá trị liên tục | `{ rows, cols, initial, mode: 'toggle'\|'drag', onChange }` | Bài 01 (pixel 2×2), tái dùng ở Bài 08/10/13 |
+| **LiveSlider** | 1 thanh trượt số, hiển thị giá trị hiện tại cạnh thanh | `{ min, max, step, initial, label, onChange }` | Bài 02 (logits), tái dùng Bài 09 |
+| **MemoryTape** | Dải ô nhớ 1D ngang, highlight ô theo `offset`, đỏ nếu offset vượt biên | `{ length, values, highlightIndex, onOutOfBounds }` | Bài 01 (RAM C++), tái dùng Bài 11/12 |
+| **ScoreBar** | Thanh ngang đo giá trị 0–1 hoặc điểm số, đổi màu theo ngữ nghĩa reward/penalty | `{ value, min, max, variant: 'reward'\|'penalty'\|'neutral', label }` | Bài 01 (điểm số), tái dùng Bài 02/09/14 |
+| **PresetPicker** | Dãy nút bấm thử nhanh, mỗi nút gọi `logic.applyPreset(preset.state)` | `{ presets: [{id,label,state}], onPick }` | Mọi bài có `presets` |
+
+### 3. Backlog Component (chưa thiết kế vội — chỉ thiết kế khi chạm tới track tương ứng)
+Không thiết kế trước cho bài chưa làm tới — tránh đoán sai nhu cầu. Dự kiến cần thêm khi tới:
+- **FlowGraph** (Bài 04 đồ thị tính toán, có thể tái dùng ý tưởng ở Bài 13 attention flow).
+- **ValveGate** (Bài 06 van ReLU).
+- **BatchConveyor** (Bài 07 mini-batch, ý tưởng tile hoá có thể tái dùng ở Bài 11).
+- **Timeline/Scrubber** (Bài 14 sinh token từng bước — token-by-token playback).
+Mỗi component mới vẫn phải tuân Hợp Đồng ở Mục III.1.
+
+---
+
+## 📐 IV. Chuẩn Hóa Gói Ví Dụ (Example Page Contract)
+
+Mỗi ví dụ trong `examples/<track>/` chỉ gồm **đúng 3 file bắt buộc** (+ `assets/` nếu cần):
+
+### 1. File Thuật Toán (`<ten_bai>.logic.js`)
+Chạy được cả trong browser và Node (headless, không đụng DOM) — để test độc lập với UI:
 ```javascript
 export class LessonLogic {
-  constructor() {
-    this.reset();
-  }
+  constructor() { this.reset(); }
 
   reset() {
-    this.state = {
-      pixels: [1, 1, 0, 0],
-      weights: [1, 1, -1, -1]
-    };
+    this.state = { pixels: [1, 1, 0, 0], weights: [1, 1, -1, -1] };
     return this.calculate();
   }
 
-  // Nạp preset mồi dữ liệu nhanh cho người học thử nghiệm
   applyPreset(presetState) {
     this.state = { ...this.state, ...presetState };
     return this.calculate();
   }
 
-  // Được gọi mỗi khi người dùng tương tác trên Canvas (click, kéo slider)
   onUserUpdate(partialState) {
     this.state = { ...this.state, ...partialState };
     return this.calculate();
   }
 
-  // Tính toán kết quả cho Cột 3 (Toán & Bộ nhớ RAM)
   calculate() {
     const { pixels, weights } = this.state;
     const dotProduct = pixels.reduce((sum, p, i) => sum + p * weights[i], 0);
-    
     return {
       score: dotProduct,
       formulaKaTeX: `Z = \\sum_{i=1}^{4} x_i w_i = ${dotProduct.toFixed(1)}`,
       cppOffset: 3,
-      cppValue: dotProduct,
-      isCorrect: dotProduct > 0.8
+      cppValue: dotProduct
     };
   }
 }
+
+export const PRESETS = [
+  { id: "horizontal_sign", label: "Ảnh Chuẩn (Gạch Ngang)", state: { pixels: [1, 1, 0, 0] } },
+  { id: "dusty_sign", label: "Ảnh Dính Bụi", state: { pixels: [1, 1, 0.5, 0] } },
+  { id: "headlight_glare", label: "Đèn Pha Chói Lóa", state: { pixels: [1, 1, 1, 1] } }
+];
 ```
 
-### 4. Sổ Danh Bạ Toàn Cục (`lessons/registry.json`)
-Là danh bạ trung tâm để Core Engine tải danh sách bài học, phân loại theo Track DL Systems, hỗ trợ tìm kiếm và lọc theo tag:
-```json
-{
-  "version": "1.0.0",
-  "tracks": [
-    { "id": "hw0", "title": "Track 0: Nền Tảng Tensor & Bộ Nhớ C++" },
-    { "id": "hw1", "title": "Track 1: Động Cơ Autograd (Needle Engine)" },
-    { "id": "hw2", "title": "Track 2: Module Nơ-ron & Tối Ưu Conv2D" },
-    { "id": "hw3", "title": "Track 3: Tăng Tốc Phần Cứng GPU (CUDA Architecture)" },
-    { "id": "hw4", "title": "Track 4: Kiến Trúc Transformer & LLM Systems" }
-  ],
-  "lessons": [
-    {
-      "id": "bai_01_robot_vision",
-      "dir": "bai_01_robot_vision",
-      "title": "Bài 1: Tự Chế Tạo 'Mắt' Cho Robot",
-      "trackId": "hw0",
-      "order": 1,
-      "difficulty": "beginner",
-      "estimatedMinutes": 8,
-      "tags": ["computer-vision", "linear-algebra", "dot-product"]
-    },
-    {
-      "id": "bai_02_softmax_loss",
-      "dir": "bai_02_softmax_loss",
-      "title": "Bài 2: Softmax & Cơn Ác Mộng Lóa Sáng",
-      "trackId": "hw0",
-      "order": 2,
-      "difficulty": "beginner",
-      "estimatedMinutes": 10,
-      "tags": ["numerical-stability", "loss-function", "softmax"]
-    }
-  ]
-}
+### 2. File Kiểm Chứng (`<ten_bai>.logic.test.js`)
+```javascript
+import { describe, it, expect } from "vitest";
+import { LessonLogic } from "./bai_01_robot_vision.logic.js";
+
+describe("bai_01_robot_vision", () => {
+  it("đèn pha chói lóa bị trọng số âm triệt tiêu hoàn toàn", () => {
+    const logic = new LessonLogic();
+    const result = logic.applyPreset({ pixels: [1, 1, 1, 1] });
+    expect(result.score).toBe(0);
+  });
+});
 ```
 
-### 5. Quy Tắc Nội Dung KaTeX An Toàn Trong `manifest.json`
-Mọi chuỗi KaTeX chèn vào `problem`, `challenge`, `formulaKaTeX` **phải tuân thủ chuẩn chống lỗi hiển thị**:
-- Ô trống trong ma trận/vector toán học: dùng `?` (ví dụ `\begin{bmatrix} ? & ? \\ ? & ? \end{bmatrix}`), **tuyệt đối không** dùng `\text{___}` vì KaTeX sẽ văng lỗi `ParseError`.
-- Ô trống trong văn bản dẫn dắt (ngoài môi trường toán): dùng code span Markdown `` `______` ``, không đặt trong `$...$`.
-- Bộ kiểm tra lint trong `npm test` sẽ tự động quét toàn bộ `manifest.json` để phát hiện ký tự `_` trần trong toán học.
+### 3. File Trang (`<ten_bai>.html`)
+Chứa: `<link>` tới `shared/styles/*.css` + KaTeX CDN, khung layout 3 cột (Mục V), và 1 `<script type="module">` import `shared/components/*` + `.logic.js` cùng tên, khai báo mảng `STEPS` (nội dung Socratic) trực tiếp trong script — không cần file JSON riêng vì không có engine nào khác đọc nó.
+
+### 4. Quy Tắc Nội Dung KaTeX An Toàn
+Mọi chuỗi KaTeX trong `STEPS`/`formulaKaTeX` **phải** dùng `?` cho ô trống trong `bmatrix` (không dùng `\text{___}` — gây `ParseError`); ô trống trong văn bản thường dùng code span `` `______` ``. Được quét tự động bởi `shared/katex-lint.test.js`.
 
 ---
 
-## 🖥️ IV. Thiết Kế Bố Cục Giao Diện "3 Cột Vàng" (The 3-Zone Workspace)
+## 🖥️ V. Thiết Kế Bố Cục Giao Diện "3 Cột Vàng" (The 3-Zone Workspace)
+
+Layout là **thuần CSS** (`shared/styles/layout.css`, class `.lab-grid`), mỗi trang `.html` chỉ cần gắn đúng class — không cần `layout.js` điều phối:
 
 ```
 +---------------------------------------------------------------------------------------------------------+
-| [LOGO] AI SYSTEMS VISUAL LAB     [Menu Bài Học ▼]     [Tiến độ: ●●●○○○○○]     [Phím tắt: ?] [Dark Mode] |
+| [LOGO] AI SYSTEMS VISUAL LAB         [← Về Danh Mục]              [Phím tắt: ?] [Dark Mode]             |
 +------------------------------------+------------------------------------+-------------------------------+
 |  CỘT 1: CÂU CHUYỆN & DẪN DẮT       |  CỘT 2: SÂN CHƠI TƯƠNG TÁC         |  CỘT 3: LIVE MATH & TELEMETRY |
-|  (30% Width - Socratic Narrative)  |  (45% Width - Interactive Canvas)  |  (25% Width - Real-time Data) |
+|  (30% Width — do StepWizard render) |  (45% Width — do ValueGrid/Slider render) | (25% Width — ScoreBar/MemoryTape) |
 |                                    |                                    |                               |
 |  📌 BƯỚC 4: VŨ KHÍ TRỌNG SỐ ÂM    |  [ KHU VỰC THAO TÁC TRỰC QUAN ]    |  📐 CÔNG THỨC TOÁN SỐNG:      |
-|                                    |                                    |                               |
-|  ❓ Vấn Đề Thực Tế:                |   Ảnh đầu vào X (Click để bật/tắt):|  Z = X · W                    |
-|  Đèn pha xe đối diện làm sáng cả   |   +---+---+                        |  Z = [1, 1, 1, 1] · [1, 1,    |
-|  4 ô pixel, robot tưởng là gạch    |   | 1 | 1 | (Sáng)                 |                      -1, -1]^T|
-|  ngang nên phanh gấp nguy hiểm!    |   +---+---+                        |  Z = 1 + 1 - 1 - 1 = 0.0      |
-|                                    |   | 1 | 1 | (Sáng)                 |                               |
-|  🔧 Thử Thách Của Bạn:             |   +---+---+                        |  📊 PHÂN TÍCH ĐIỂM SỐ:        |
-|  Hãy chỉnh trọng số ở 2 ô dưới     |                  ×                 |  Điểm biển Dừng : [ 0.0 ] ░░  |
-|  thành số âm để trừ điểm!          |   Khuôn mẫu W (Thanh trượt số):    |  Điểm Đi thẳng  : [ 0.0 ] ░░  |
-|                                    |   +-----+-----+                    |  => Đèn pha bị triệt tiêu!    |
-|  🔎 Đúc Kết:                       |   | +1  | +1  | (Xanh: Thưởng)     |                               |
-|  Trọng số âm chính là "bằng chứng  |   +-----+-----+                    |  💾 BỘ NHỚ RAM C++ (Row-major)|
-|  bác bỏ".                          |   | -1  | -1  | (Đỏ: Phạt)         |  Mảng Z_flat[4]:              |
-|                                    |   +-----+-----+                    |  [ 0.0,  0.0,  0.0,  0.0 ]    |
-|  [◀ Bước trước]     [Bước sau ▶]   |   [ Reset Ảnh ]  [ Thử Đèn Pha ]   |  Offset: r*N + c = index [3]  |
+|  ❓ Vấn Đề: Đèn pha xe đối diện     |   Ảnh đầu vào X (ValueGrid):       |  Z = X · W                    |
+|  làm sáng cả 4 ô pixel...          |   +---+---+                        |  Z = 1 + 1 - 1 - 1 = 0.0      |
+|  🔧 Thử Thách: chỉnh trọng số ở    |   | 1 | 1 | (Sáng)                 |  📊 ScoreBar: [ 0.0 ] ░░       |
+|  2 ô dưới thành số âm              |   +---+---+                        |  💾 MemoryTape (Row-major):   |
+|  🔎 Đúc Kết: trọng số âm là         |   | 1 | 1 | (Sáng)                 |  [ 0.0, 0.0, 0.0, 0.0 ]       |
+|  "bằng chứng bác bỏ"               |   +---+---+                        |  Offset: r*N + c = index [3]  |
+|  [◀ Bước trước]   [Bước sau ▶]     |   [ PresetPicker: Reset | Đèn Pha ] |                               |
 +------------------------------------+------------------------------------+-------------------------------+
 ```
 
 ---
 
-## 🎨 V. Hệ Thống Thẩm Mỹ & Phong Cách Đồ Họa (Visual Aesthetics)
+## 🎨 VI. Hệ Thống Thẩm Mỹ & Phong Cách Đồ Họa (Visual Aesthetics)
 
 - **Màu nền chủ đạo:** Dark OLED slate (`#0B0F17`, `#121824`, `#1A2234`).
 - **Màu ngữ nghĩa (Semantic Palette):**
@@ -308,119 +220,107 @@ Mọi chuỗi KaTeX chèn vào `problem`, `challenge`, `formulaKaTeX` **phải t
 
 ---
 
-## 📱 VI. Khả Năng Tiếp Cận & Responsive Fallback (Accessibility & Breakpoints)
+## 📱 VII. Khả Năng Tiếp Cận & Responsive Fallback (Accessibility & Breakpoints)
 
-1. **Breakpoint < 900px (tablet/mobile):** Layout 3 cột gập thành **thanh tab dưới cùng** (Câu Chuyện / Sân Chơi / Toán Học), chỉ hiển thị 1 cột tại một thời điểm. `core/layout.js` chịu trách nhiệm chuyển đổi chế độ Grid ⇄ Tab dựa trên `matchMedia('(max-width: 900px)')`.
-2. **Không phụ thuộc hoàn toàn vào màu sắc:** Mọi cặp ngữ nghĩa Xanh (Thưởng) / Đỏ (Phạt) đều đi kèm **ký hiệu hình học dự phòng** (`+` / `−`, hoặc icon ✓ / ✕) để người dùng mù màu vẫn phân biệt được, không chỉ dựa vào hue.
-3. **Tương phản & kích thước chữ:** Văn bản chính tối thiểu đạt tỉ lệ tương phản WCAG AA trên nền Dark OLED; công thức KaTeX không nhỏ hơn 16px để đọc rõ trên màn hình nhỏ.
-4. **Điều hướng bàn phím:** Toàn bộ thao tác chuyển bước/bài học phải thực hiện được bằng bàn phím (xem mục VII.2), không bắt buộc dùng chuột.
+1. **Breakpoint < 900px (tablet/mobile):** `.lab-grid` tự gập 3 cột thành **thanh tab dưới cùng** (Câu Chuyện / Sân Chơi / Toán Học) bằng thuần CSS `@media (max-width: 900px)` — không cần JS điều phối.
+2. **Không phụ thuộc hoàn toàn vào màu sắc:** Mọi cặp ngữ nghĩa Xanh (Thưởng) / Đỏ (Phạt) đều đi kèm **ký hiệu hình học dự phòng** (`+` / `−`, hoặc icon ✓ / ✕).
+3. **Tương phản & kích thước chữ:** Văn bản chính tối thiểu đạt tỉ lệ tương phản WCAG AA trên nền Dark OLED; công thức KaTeX không nhỏ hơn 16px.
+4. **Điều hướng bàn phím:** `StepWizard` tự xử lý `←`/`→`; `?` mở panel trợ giúp phím tắt; `Esc` đóng overlay — không bắt buộc dùng chuột để hoàn thành bất kỳ bài nào.
 
 ---
 
-## ⌨️ VII. Điều Hướng, Deep-linking & Lưu Tiến Độ (Navigation & State Engine)
+## 🔗 VIII. Điều Hướng & Lưu Tiến Độ (Navigation & Progress — không cần Router)
 
-### 1. Hash Router & Deep-linking (`core/router.js`)
-Để đảm bảo nguyên tắc **Khái niệm Hạt nhân Độc lập (Atomic Concept Sandbox)**, bất kỳ bài học hoặc trạng thái nào cũng có thể được truy cập trực tiếp qua URL hash:
-- **Cấu trúc URL:** `/#/<lesson_id>?step=<N>&preset=<preset_id>`
-  - Ví dụ: `/#/bai_01_robot_vision?step=4&preset=headlight_glare`
-- **Cơ chế xử lý router:**
-  - Khi người dùng dán link, `core/router.js` phân tích chuỗi hash, yêu cầu `core/engine.js` nạp động module bài tương ứng.
-  - Tự động nhảy đến bước `step=4` và áp dụng `preset=headlight_glare` mà **không đòi hỏi người dùng phải làm từ bước 1**.
-  - Khi người dùng chuyển bước hoặc click preset trong giao diện, URL hash được cập nhật tự động bằng `history.replaceState` (không làm tải lại trang).
-  - Nếu URL hash trống hoặc không hợp lệ, hệ thống tự động điều hướng về bài học gần nhất lưu trong `localStorage`, hoặc mặc định là bài đầu tiên trong `registry.json`.
+### 1. URL Thật Thay Cho Hash Router
+Không có `router.js`. Mỗi bài tự đọc tham số của chính nó khi tải trang:
+- `examples/hw0_tensor_memory/bai_01_robot_vision.html?step=4&preset=headlight_glare`
+- `StepWizard` đọc `?step=` để nhảy thẳng bước N; `PresetPicker`/`LessonLogic` đọc `?preset=` để áp dụng ngay — đọc một lần bằng `new URLSearchParams(location.search)`, không cần thư viện routing.
+- Khi người dùng đổi bước/preset, cập nhật URL bằng `history.replaceState` (tùy chọn, không bắt buộc vì trang đã hoạt động đúng dù không có query string).
 
-### 2. Lưu Tiến Độ Học (`core/progress.js`)
-- Tiến độ được lưu vào `localStorage` dưới khóa `tensorplay:progress`, dạng:
-  ```json
-  {
-    "bai_01_robot_vision": { "lastStep": 4, "completed": false, "completedSteps": [1, 2, 3] },
-    "bai_02_softmax_loss": { "lastStep": 1, "completed": false, "completedSteps": [] }
-  }
-  ```
-- Chỉ dấu `[Tiến độ: ●●●○○○○○]` ở header tính bằng tổng số bước đã hoàn thành chia cho tổng số bước của toàn bộ `registry.json`, đọc trực tiếp từ `progress.js` — không hard-code.
-- Reset tiến độ là một hành động rõ ràng (nút "Làm lại từ đầu" trong menu), không tự động xóa khi người dùng tải lại trang.
+### 2. Lưu Tiến Độ Học (`shared/progress.js`, tiện ích nhỏ — không phải "engine")
+- Lưu vào `localStorage` khóa `tensorplay:progress`, dạng `{ "bai_01_robot_vision": { "lastStep": 4, "completed": false } }`.
+- `index.html` (trang danh mục) đọc key này để hiện dấu ✓ trên thẻ ví dụ đã hoàn thành — chỉ là hiển thị phụ trợ, không khoá quyền truy cập bài nào cả (đúng triết lý Zero Hard Dependencies ở Mục I.2).
 
-### 3. Bảng Phím Tắt Toàn Cục (`core/shortcuts.js`)
+### 3. Bảng Phím Tắt (được `StepWizard` đăng ký cục bộ trên mỗi trang)
 | Phím | Hành động |
 |---|---|
-| `←` / `→` | Lùi / Tiến một bước trong bài học hiện tại |
-| `1`–`9` | Nhảy trực tiếp đến Preset 1–9 của bài học hiện tại |
-| `R` | Reset trạng thái Canvas về giá trị mặc định của bước hiện tại |
-| `?` | Mở/đóng panel trợ giúp phím tắt (overlay mờ, không điều hướng rời trang) |
-| `Esc` | Đóng mọi overlay / modal đang mở |
-
-Panel trợ giúp (`?`) hiển thị chính bảng này, tự sinh từ cấu hình trong `shortcuts.js` để không bị lệch tài liệu.
+| `←` / `→` | Lùi / Tiến một bước |
+| `R` | Reset trạng thái Canvas về mặc định |
+| `?` | Mở/đóng panel trợ giúp phím tắt |
+| `Esc` | Đóng overlay đang mở |
 
 ---
 
-## 🗺️ VIII. Lộ Trình Ánh Xạ Khóa Học DL Systems (CMU 10-414 / 10-714 Mapping)
+## 🗺️ IX. Lộ Trình Ánh Xạ Khóa Học DL Systems (CMU 10-414 / 10-714 Mapping)
 
-Dự án TensorPlay được cấu trúc xoay quanh 5 bài tập lớn (Homework tracks) kinh điển của bộ môn Deep Learning Systems (CMU 10-414 / 10-714). Tuy nhiên, **mỗi bài tập lớn được bóc tách thành các bài học tương tác độc lập (Atomic Visual Sandboxes)**, người học có thể chọn bất kỳ chủ đề nào để trải nghiệm ngay lập tức:
+Dự án TensorPlay xoay quanh 5 track kinh điển của Deep Learning Systems (CMU 10-414/10-714), mỗi track bóc tách thành các ví dụ độc lập trong `examples/<track>/`:
 
-### Track 0: Nền Tảng Tensor & Kỹ Nghệ Bộ Nhớ C++ (HW0 Track)
+### Track 0 — `hw0_tensor_memory/`: Nền Tảng Tensor & Kỹ Nghệ Bộ Nhớ C++
 *Trọng tâm: Chuyển dịch tư duy từ vòng lặp toán học sang layout bộ nhớ máy tính thực tế.*
-- **Bài 01: Robot Vision & Vector Dot Product (`bai_01_robot_vision`)**
-  - *Ý tưởng trực quan:* Nhận diện biển báo gạch ngang $2 \times 2$. Trọng số âm làm "bằng chứng bác bỏ" triệt tiêu đèn pha chói lóa.
-  - *Góc nhìn C++:* Trải phẳng 2D thành 1D mảng liên tục, công thức dịch chuyển con trỏ `offset = r * N + c`.
-- **Bài 02: Softmax & Cơn Ác Mộng Lóa Sáng (`bai_02_softmax_loss`)**
-  - *Ý tưởng trực quan:* Đèn pha công suất cực đại đẩy logits lên $+1000 \to e^{1000} \to$ văng lỗi `Infinity` / `NaN`.
-  - *Kỹ nghệ hệ thống:* Thanh gạt "Safe Softmax": trừ đi giá trị cực đại $\max(z)$ trước khi tính $\exp$, bảo toàn độ ổn định số học mà xác suất không đổi.
-- **Bài 03: Row-Major vs Col-Major Cache Locality (`bai_03_cache_locality`)**
-  - *Ý tưởng trực quan:* Trực quan hóa đường quét của đầu đọc CPU. Quét theo hàng (Row-major) nạp trúng cache L1 (Cache Hit xanh mướt); quét theo cột (Col-major) gây Cache Miss đỏ rực làm chậm hệ thống 10 lần.
+- **Bài 01 — Robot Vision & Vector Dot Product:** Nhận diện biển báo gạch ngang $2\times2$. Trọng số âm là "bằng chứng bác bỏ" triệt tiêu đèn pha chói lóa. Trải phẳng 2D→1D, `offset = r*N + c`.
+- **Bài 02 — Softmax & Cơn Ác Mộng Lóa Sáng:** Logits $\to +1000 \to e^{1000} \to$ `Infinity`/`NaN`. "Safe Softmax": trừ $\max(z)$ trước khi `exp`.
+- **Bài 03 — Row-Major vs Col-Major Cache Locality:** Đầu đọc CPU quét hàng (Cache Hit) vs quét cột (Cache Miss, chậm ~10 lần).
 
-### Track 1: Động Cơ Tự Động Tính Đạo Hàm (Needle Autograd Engine - HW1 Track)
-*Trọng tâm: Xây dựng đồ thị tính toán (Computational Graph DAG) và lan truyền ngược.*
-- **Bài 04: The Computational Graph Flow (`bai_04_autograd_graph`)**
-  - *Ý tưởng trực quan:* Các node phép tính ($+, \times, \text{ReLU}$) như các trạm trung chuyển nước. Nước chảy xuôi tạo kết quả (Forward Pass), sóng dội ngược mang gradient về từng tham số (Backward Pass).
-  - *Kỹ nghệ hệ thống:* Thứ tự duyệt tô-pô (Topological Sort) và cơ chế tích lũy gradient `node.grad += out_grad * local_grad`.
-- **Bài 05: Reverse-mode vs Forward-mode AD (`bai_05_reverse_vs_forward_ad`)**
-  - *Ý tưởng trực quan:* Bài toán 1 triệu đầu vào tham số nhưng chỉ có 1 đầu ra hàm Loss. So sánh trực tiếp: Forward-mode tốn 1 triệu lần chạy; Reverse-mode chỉ tốn đúng 1 lượt dội ngược duy nhất!
-- **Bài 06: Van Kích Hoạt & Lời Nguyền Trọng Số 0 (`bai_06_activation_valves`)**
-  - *Ý tưởng trực quan:* Van một chiều cơ học ReLU. Dòng gradient bị khóa chặt khi đầu vào âm (Dead ReLU).
-  - *Lời nguyền khởi tạo:* Thử khởi tạo toàn bộ trọng số bằng 0 $\to$ toàn bộ tầng ẩn nhận gradient giống hệt nhau $\to$ mạng nơ-ron bị "tê liệt tư duy".
+### Track 1 — `hw1_autograd_engine/`: Động Cơ Tự Động Tính Đạo Hàm (Needle)
+*Trọng tâm: Đồ thị tính toán (DAG) và lan truyền ngược.*
+- **Bài 04 — The Computational Graph Flow:** Node phép tính như trạm trung chuyển nước; Forward xuôi, Backward dội ngược gradient.
+- **Bài 05 — Reverse-mode vs Forward-mode AD:** 1 triệu input, 1 output Loss — Reverse-mode chỉ tốn 1 lượt dội ngược.
+- **Bài 06 — Van Kích Hoạt & Lời Nguyền Trọng Số 0:** Van ReLU khóa gradient âm; khởi tạo trọng số = 0 → tê liệt đối xứng toàn tầng ẩn.
 
-### Track 2: Thư Viện Nơ-ron & Phép Chập Tối Ưu (HW2 Track)
-*Trọng tâm: Khái niệm Module, xử lý theo lô (batching) và biến đổi hình học ma trận.*
-- **Bài 07: Mini-Batching Assembly Line (`bai_07_minibatch_assembly`)**
-  - *Ý tưởng trực quan:* Băng chuyền công nghiệp xử lý lô dữ liệu $B=2, B=4$ song song thay vì từng mẫu đơn lẻ.
-  - *Kỹ nghệ hệ thống:* Tính toán dung lượng bộ nhớ tạm thời (Activation Buffer) tăng tuyến tính theo kích thước lô $B \times C \times H \times W$.
-- **Bài 08: Conv2D & Thần Chú Im2col (`bai_08_conv2d_im2col`)**
-  - *Ý tưởng trực quan:* Tại sao máy tính ghét 6 vòng lặp `for` lồng nhau của phép chập?
-  - *Phép màu Im2col:* Mở cuộn từng vùng trượt ảnh thành các cột ma trận và biến toàn bộ phép tích chập thành một phép nhân ma trận (GEMM) đơn lẻ siêu tốc.
-- **Bài 09: Ổn Định Nội Bộ Với BatchNorm (`bai_09_batch_norm_dynamics`)**
-  - *Ý tưởng trực quan:* Kéo dãn và dịch chuyển phân phối điểm số của từng batch về trung bình 0, phương sai 1.
-  - *Sự khác biệt chế độ:* Công tắc chuyển đổi giữa Training (tính mean/var theo batch) và Inference (sử dụng Running Mean/Variance tích lũy).
+### Track 2 — `hw2_modules_conv/`: Thư Viện Nơ-ron & Phép Chập Tối Ưu
+*Trọng tâm: Module, batching, biến đổi hình học ma trận.*
+- **Bài 07 — Mini-Batching Assembly Line:** Băng chuyền xử lý lô $B=2,4$ song song; Activation Buffer tăng tuyến tính theo $B\times C\times H\times W$.
+- **Bài 08 — Conv2D & Thần Chú Im2col:** Mở cuộn vùng trượt thành cột ma trận, biến tích chập thành GEMM.
+- **Bài 09 — Ổn Định Nội Bộ Với BatchNorm:** Chuẩn hóa batch về mean 0/var 1; Training (mean/var theo batch) vs Inference (Running Stats).
 
-### Track 3: Tăng Tốc Phần Cứng GPU (CUDA Architecture - HW3 Track)
-*Trọng tâm: Mô hình tính toán song song hàng loạt (SIMT) và hệ thống phân cấp bộ nhớ GPU.*
-- **Bài 10: CUDA Grid, Blocks & Threads (`bai_10_cuda_threads`)**
-  - *Ý tưởng trực quan:* Một sân vận động chứa hàng ngàn công nhân (threads). Ánh xạ chỉ số công việc `int idx = blockIdx.x * blockDim.x + threadIdx.x`.
-  - *Tình huống biên:* Xử lý an toàn khi kích thước dữ liệu không chia hết cho kích thước khối (Boundary Guard `if (idx < N)`).
-- **Bài 11: Tiled Matrix Multiplication & Shared Memory (`bai_11_shared_memory_tiling`)**
-  - *Ý tưởng trực quan:* DRAM ngoài của GPU giống như kho hàng xa xôi; Shared Memory giống như mặt bàn làm việc ngay trước mặt từng khối thread.
-  - *Kỹ thuật Tiling:* Chia ma trận thành các block $2 \times 2$, nạp chung vào Shared Memory bằng hàm đồng bộ `__syncthreads()`, cắt giảm 80% lưu lượng truy cập DRAM chậm chạp.
-- **Bài 12: Memory Coalescing & Bank Conflicts (`bai_12_coalescing_and_banks`)**
-  - *Ý tưởng trực quan:* Trạm thu phí cao tốc. Các thread đọc bộ nhớ liền kề nhau được gom thành 1 giao dịch bus duy nhất (Coalesced Access); đọc nhảy cóc phân tán làm nghẽn bus bộ nhớ.
+### Track 3 — `hw3_cuda_architecture/`: Tăng Tốc Phần Cứng GPU
+*Trọng tâm: SIMT và hệ thống phân cấp bộ nhớ GPU.*
+- **Bài 10 — CUDA Grid, Blocks & Threads:** `idx = blockIdx.x*blockDim.x + threadIdx.x`; Boundary Guard `if (idx < N)`.
+- **Bài 11 — Tiled MatMul & Shared Memory:** DRAM xa xôi vs Shared Memory gần; Tiling $2\times2$ + `__syncthreads()`.
+- **Bài 12 — Memory Coalescing & Bank Conflicts:** Đọc liền kề gộp 1 giao dịch bus vs đọc nhảy cóc nghẽn bus.
 
-### Track 4: Kiến Trúc Transformer & LLM Systems (HW4 Track)
-*Trọng tâm: Cơ chế chú ý (Attention), bộ nhớ đệm suy luận (KV-Cache) và tối ưu hóa I/O.*
-- **Bài 13: Scaled Dot-Product Self-Attention (`bai_13_self_attention`)**
-  - *Ý tưởng trực quan:* Chiếu đèn pin tìm kiếm. Query tìm kiếm Key tương ứng để tạo bảng điểm tương đồng, nhân chia tỉ lệ $\sqrt{d}$ để tránh bão hòa Softmax.
-  - *Mặt nạ Causal Mask:* Tam giác che phủ tương lai cho các mô hình tự hồi quy (Autoregressive LLM).
-- **Bài 14: KV-Cache Anatomy (`bai_14_kv_cache_anatomy`)**
-  - *Ý tưởng trực quan:* Tại sao khi sinh từng từ (token-by-token generation), ta không cần tính lại toàn bộ lịch sử từ đầu?
-  - *Bảng đệm KV-Cache:* Giữ lại vector $K, V$ của các từ đã qua, chỉ tính Query cho từ mới nhất. Tiết kiệm từ độ phức tạp $O(N^2)$ xuống $O(N)$ tính toán thừa.
-- **Bài 15: Trực Quan Hóa FlashAttention Tiling (`bai_15_flash_attention_concept`)**
-  - *Ý tưởng trực quan:* Tại sao ma trận Attention $N \times N$ là thủ phạm gây tràn bộ nhớ GPU khi văn bản dài?
-  - *Kỹ thuật FlashAttention:* Cắt nhỏ ma trận thành từng block nạp vào SRAM của GPU, tính toán Softmax trực tuyến (Online Softmax Scaling) mà không bao giờ phải lưu toàn bộ ma trận $N \times N$ khổng lồ ra HBM.
+### Track 4 — `hw4_transformer_llm/`: Kiến Trúc Transformer & LLM Systems
+*Trọng tâm: Attention, KV-Cache, tối ưu I/O.*
+- **Bài 13 — Scaled Dot-Product Self-Attention:** Query/Key tạo bảng điểm, chia $\sqrt{d}$; Causal Mask tam giác.
+- **Bài 14 — KV-Cache Anatomy:** Giữ $K,V$ cũ, chỉ tính Query mới — $O(N^2) \to O(N)$.
+- **Bài 15 — Trực Quan Hóa FlashAttention Tiling:** Cắt block vào SRAM, Online Softmax, tránh lưu $N\times N$ ra HBM.
 
 ---
 
-## 🛠️ IX. Ngăn Xếp Công Nghệ & Quy Trình Phát Triển (Tech Stack & Dev Workflow)
+## 🛠️ X. Ngăn Xếp Công Nghệ & Quy Trình Phát Triển (Tech Stack & Dev Workflow)
 
-- **Dev server & build:** [Vite](https://vite.dev) — `npm run dev` cho HMR khi phát triển, `npm run build` xuất ra thư mục tĩnh `dist/` (đã có trong `.gitignore`). Không dùng framework UI nặng nề (React/Vue/Angular); `core/engine.js` tự quản lý state bằng vanilla JS tinh gọn và chuẩn DOM API.
-- **KaTeX:** Nạp qua CDN (jsdelivr/cdnjs), pin phiên bản cụ thể trong `<link>`/`<script>` của `index.html` (ví dụ `katex@0.16.21`) để giữ repo siêu nhẹ và không commit file build bên thứ ba.
-- **`package.json` scripts:**
+- **Dev server & build:** [Vite](https://vite.dev) ở **chế độ multi-page** — mở trực tiếp `npm run dev` rồi vào URL của từng file `.html` (Vite tự serve mọi `.html` trong project, không cần khai báo entry cho dev). Build production cần liệt kê entry thủ công vì Rollup không tự quét thư mục:
+  ```javascript
+  // vite.config.js
+  import { defineConfig } from "vite";
+  import { readdirSync, statSync } from "node:fs";
+  import { join } from "node:path";
+
+  function findHtmlFiles(dir, out = []) {
+    for (const name of readdirSync(dir)) {
+      const full = join(dir, name);
+      if (statSync(full).isDirectory()) findHtmlFiles(full, out);
+      else if (name.endsWith(".html")) out.push(full);
+    }
+    return out;
+  }
+
+  export default defineConfig({
+    build: {
+      rollupOptions: {
+        input: Object.fromEntries(
+          ["index.html", ...findHtmlFiles("examples")].map((f) => [
+            f.replace(/[\\/]/g, "_").replace(/\.html$/, ""),
+            f
+          ])
+        )
+      }
+    }
+  });
+  ```
+- **Không dùng framework UI nặng (React/Vue/Angular)** — mọi component là vanilla JS + DOM API chuẩn (Mục III).
+- **KaTeX:** Nạp qua CDN (jsdelivr/cdnjs), pin phiên bản cụ thể (ví dụ `katex@0.16.21`) trong mỗi file `.html`.
+- **`package.json`:**
   ```json
   {
     "name": "tensorplay",
@@ -430,95 +330,73 @@ Dự án TensorPlay được cấu trúc xoay quanh 5 bài tập lớn (Homework
       "dev": "vite",
       "build": "vite build",
       "preview": "vite preview",
-      "test": "vitest run",
-      "test:watch": "vitest"
+      "test": "vitest run"
     },
-    "devDependencies": {
-      "vite": "^6.0.0",
-      "vitest": "^3.0.0"
-    }
+    "devDependencies": { "vite": "^6.0.0", "vitest": "^3.0.0" }
   }
   ```
-- **Không có runtime dependency bên thứ ba ngoài KaTeX (CDN)** — giữ đúng triết lý tải trang tức thì, chạy nhẹ trên mọi thiết bị và dễ dàng nhúng.
+- **Không có runtime dependency bên thứ ba ngoài KaTeX (CDN).** Vì không còn SPA router, **deploy cũng đơn giản hơn**: mọi host static (GitHub Pages/Cloudflare Pages) chạy đúng ngay, không cần cấu hình fallback route cho URL ảo.
 
 ---
 
-## ✅ X. Chiến Lược Kiểm Thử & Kiểm Chứng Tự Động (Testing & Verification)
+## ✅ XI. Chiến Lược Kiểm Thử & Kiểm Chứng Tự Động (Testing & Verification)
 
-Theo quy chuẩn thiết kế bài tập toán học, **mọi logic tính toán trong `logic.js` bắt buộc phải có test tự động kiểm chứng đi kèm**:
+Theo quy chuẩn thiết kế bài tập toán học, **mọi `*.logic.js` bắt buộc có `*.logic.test.js` đi kèm**:
 
-1. **Kiểm thử logic số học từng bài (`lessons/<id>/logic.test.js`):**
-   - Kiểm tra kết quả tính toán khớp 100% với giá trị kỳ vọng ở từng bước trong `manifest.json`.
-   - Bao phủ các trường hợp biên quan trọng:
-     - Bài 01: `pixels = [1, 1, 1, 1]` kết hợp `weights = [1, 1, -1, -1]` phải ra đúng `score = 0.0` (đèn pha bị triệt tiêu).
-     - Bài 02: `logits = [1000, 1000]` với Softmax thường sinh ra `NaN`, nhưng Safe Softmax phải trả về xác suất hợp lệ `[0.5, 0.5]`.
-     - Bài 06: Trọng số khởi tạo bằng 0 cho ra gradient bằng nhau ở mọi hidden unit, chứng minh lời nguyền đối xứng.
-     - Bài 14: KV-Cache tái sử dụng các slice vector cũ và chỉ bổ sung đúng 1 slot cho token mới.
-2. **Kiểm tra cú pháp KaTeX an toàn (KaTeX Safety Lint):**
-   - Viết test quét tự động toàn bộ file `manifest.json` trong `lessons/**/manifest.json`.
-   - Chặn đứng mọi chuỗi chứa `_` trần trong toán học hoặc `\text{___}` trước khi bài học được thêm vào `registry.json`.
-3. **Quy tắc cổng chất lượng (Quality Gate):** Lệnh `npm test` phải xanh 100% mới được coi là hoàn tất gói bài học.
+1. **Kiểm thử logic số học từng bài** (`examples/<track>/<ten_bai>.logic.test.js`):
+   - Khớp 100% giá trị kỳ vọng ở các preset/bước quan trọng.
+   - Bao phủ trường hợp biên: Bài 01 `pixels=[1,1,1,1]` → `score=0` (đèn pha triệt tiêu); Bài 02 `logits=[1000,1000]` → Safe Softmax phải ra `[0.5,0.5]` không `NaN`; Bài 06 trọng số = 0 → gradient bằng nhau mọi hidden unit; Bài 14 KV-Cache chỉ thêm đúng 1 slot mỗi token mới.
+2. **`shared/math.test.js`:** kiểm `dot()`, `safeSoftmax()`, `relu()`, `offset2D()` — vì các hàm này được tái dùng ở nhiều bài, lỗi ở đây ảnh hưởng dây chuyền.
+3. **`shared/katex-lint.test.js`:** quét toàn bộ `examples/**/*.{html,js}`, chặn `_` trần trong `$...$`/`bmatrix` hoặc `\text{___}`.
+4. **Cổng chất lượng:** `npm test` phải xanh 100% trước khi một ví dụ được thêm vào `examples/catalog.json`.
 
 ---
 
-## 📝 XI. Hướng Dẫn Thêm Bài Học Mới (Contributor Checklist)
+## 📝 XII. Hướng Dẫn Thêm Bài Học Mới (Contributor Checklist)
 
-Để thêm một bài học mới vào TensorPlay, người đóng góp chỉ cần thực hiện 7 bước tuần tự:
-
-1. **Tạo thư mục:** `lessons/<ten_bai>/` theo đúng Hợp Đồng Gói Bài Tập (Mục III).
-2. **Khai báo `manifest.json`:** Viết kịch bản dẫn dắt Socratic (`problem` $\to$ `challenge` $\to$ `takeaway`), định nghĩa các presets thử nhanh và khai báo thông tin `courseMapping`.
-3. **Cung cấp `assets/` riêng:** Đặt các hình minh họa SVG, icon vào thư mục `lessons/<ten_bai>/assets/`.
-4. **Viết `logic.js`:** Kế thừa hoặc tuân theo mẫu `class LessonLogic` (chứa `onUserUpdate`, `applyPreset`, `calculate`).
-5. **Viết `logic.test.js`:** Bao phủ các mốc giá trị trong `manifest.json` và trường hợp biên đặc thù.
-6. **Chạy kiểm chứng:** Thực thi `npm test`, xác nhận tất cả test số học và lint KaTeX đều pass.
-7. **Đăng ký vào `registry.json`:** Thêm thông tin bài học mới vào `lessons/registry.json`. Kiểm tra trên trình duyệt: cả giao diện 3 cột và giao diện mobile tab đều hiển thị mượt mà.
+1. Chọn thư mục track `examples/<track>/`, tạo 3 file `<ten_bai>.html` / `.logic.js` / `.logic.test.js` (Mục IV).
+2. Viết `.logic.js`: class `LessonLogic` (`reset/applyPreset/onUserUpdate/calculate`) + export `PRESETS`.
+3. Viết `.logic.test.js` bao phủ mốc giá trị + trường hợp biên; chạy `npm test` xanh.
+4. Dựng `.html`: import CSS dùng chung + KaTeX CDN, chọn component cần từ `shared/components/` (Mục III.2), khai báo `STEPS` Socratic ngay trong script.
+5. Thêm `assets/` SVG riêng của track nếu cần.
+6. Thêm 1 entry vào `examples/catalog.json` (id, title, track, path, tags, difficulty, estimatedMinutes, summary).
+7. Kiểm tra bằng tay: desktop 3 cột, mobile tab (<900px), điều hướng hoàn toàn bằng bàn phím.
 
 ---
 
-## 🚀 XII. Lộ Trình Triển Khai Chi Tiết (Execution Roadmap)
+## 🚀 XIII. Lộ Trình Triển Khai Chi Tiết (Execution Roadmap)
 
-### Giai Đoạn 0: Khởi Tạo Môi Trường & Tooling Cơ Bản
-- [ ] Khởi tạo `package.json` với `vite` và `vitest`.
-- [ ] Tạo file `vite.config.js` tối giản hỗ trợ module import.
-- [ ] Dựng `index.html` tích hợp font (`Outfit`, `Fira Code`) và KaTeX qua CDN.
-- [ ] Kiểm tra lệnh `npm run dev` và `npm test` hoạt động mượt mà.
+### Giai Đoạn 0: Khởi Tạo Tooling
+- [ ] `npm init`, cài `vite` + `vitest` làm devDependencies; viết `vite.config.js` (multi-page, Mục X).
+- [ ] Dựng `index.html` (trang danh mục trống) + `examples/catalog.json` rỗng `[]`.
+- [ ] Xác nhận `npm run dev` và `npm test` chạy được (dù chưa có nội dung).
 
-### Giai Đoạn 1: Dựng Bộ Khung Nền Tảng (Core Framework Shell)
-- [ ] Dựng hệ thống Design Tokens CSS (`core/styles/tokens.css`, `layout.css`, `components.css`).
-- [ ] Xây dựng bộ khung điều phối `core/engine.js` (State Machine, Event Bus, dynamic lesson loader).
-- [ ] Triển khai `core/router.js` hỗ trợ deep-linking `/#/<lesson_id>?step=<N>&preset=<id>`.
-- [ ] Xây dựng layout 3 cột linh hoạt với thanh điều khiển splitters và breakpoint <900px gập tab (`core/layout.js`).
-- [ ] Xây dựng `core/progress.js` (quản lý lưu trữ localStorage) và `core/shortcuts.js` (bảng phím tắt toàn cục).
-- [ ] Hoàn thiện `core/components/KaTeXRenderer.js` hỗ trợ render công thức toán học thời gian thực.
+### Giai Đoạn 1: Dựng Thư Viện Component Nền Tảng (`shared/`)
+- [ ] `shared/styles/` (tokens, layout, components) theo Mục V–VI.
+- [ ] `shared/math.js` + `shared/math.test.js`.
+- [ ] `shared/katex-render.js` + `shared/katex-lint.test.js`.
+- [ ] 6 component nền tảng trong `shared/components/` theo đúng Hợp Đồng Mục III.1 — **chỉ cần đủ cho Bài 01–03**, chưa cần hoàn thiện cho các bài sau.
 
-### Giai Đoạn 2: Triển Khai Gói Bài Thí Điểm (Pilot Track HW0)
-- [ ] **Bài 01 (`bai_01_robot_vision`):** Lưới pixel $2 \times 2$, khuôn dập trọng số âm, triệt tiêu đèn pha, mô phỏng ô nhớ RAM 1D.
-- [ ] **Bài 02 (`bai_02_softmax_loss`):** Thanh trượt Logits lóa sáng $0 \to 1000$, hiện tượng tràn số FP32 `NaN`, cần gạt Safe Softmax.
-- [ ] **Bài 03 (`bai_03_cache_locality`):** Mô phỏng đầu đọc CPU Cache Hit vs Cache Miss khi duyệt mảng Row-Major vs Col-Major.
+### Giai Đoạn 2: Triển Khai Track 0 (`hw0_tensor_memory/`)
+- [ ] **Bài 01:** ValueGrid pixel $2\times2$, LiveSlider/PresetPicker trọng số, MemoryTape RAM, ScoreBar điểm số.
+- [ ] **Bài 02:** LiveSlider logits $0\to1000$, hiện tượng `NaN`, cần gạt Safe Softmax, ScoreBar xác suất.
+- [ ] **Bài 03:** ValueGrid mô phỏng Cache Hit/Miss khi quét Row-major vs Col-major.
+- [ ] Cập nhật `examples/catalog.json` với 3 entry, kiểm tra `index.html` hiển thị đúng.
 
-### Giai Đoạn 3: Triển Khai Track HW1 (Autograd Engine Needle)
-- [ ] **Bài 04 (`bai_04_autograd_graph`):** Trực quan hóa dòng chảy xuôi Forward Pass và sóng dội ngược Backward Pass trên DAG.
-- [ ] **Bài 05 (`bai_05_reverse_vs_forward_ad`):** So sánh chi phí tính toán giữa Reverse-mode và Forward-mode AD.
-- [ ] **Bài 06 (`bai_06_activation_valves`):** Van cơ học ReLU chặn dòng gradient và hiện tượng tê liệt nơ-ron khi khởi tạo trọng số bằng 0.
+### Giai Đoạn 3: Track 1 (`hw1_autograd_engine/`) — Bài 04–06
+- [ ] Thiết kế component mới **FlowGraph** (Mục III.3) khi bắt đầu Bài 04.
+- [ ] **Bài 04/05/06** theo nội dung Mục IX.
 
-### Giai Đoạn 4: Triển Khai Track HW2 (Modules & Convolutions)
-- [ ] **Bài 07 (`bai_07_minibatch_assembly`):** Băng chuyền xử lý song song Mini-batch $B=2, B=4$ và bộ đệm Activation Buffer.
-- [ ] **Bài 08 (`bai_08_conv2d_im2col`):** Trực quan hóa phép mở cuộn Im2col biến phép chập thành GEMM siêu tốc.
-- [ ] **Bài 09 (`bai_09_batch_norm_dynamics`):** Động lực học chuẩn hóa BatchNorm (Training vs Inference Running Stats).
+### Giai Đoạn 4: Track 2 (`hw2_modules_conv/`) — Bài 07–09
+- [ ] Thiết kế **BatchConveyor** khi bắt đầu Bài 07; tái dùng ValueGrid cho Im2col (Bài 08), LiveSlider+ScoreBar cho BatchNorm (Bài 09).
 
-### Giai Đoạn 5: Triển Khai Track HW3 (CUDA Programming)
-- [ ] **Bài 10 (`bai_10_cuda_threads`):** Ánh xạ lưới luồng Grid, Block, Thread và xử lý phần tử biên.
-- [ ] **Bài 11 (`bai_11_shared_memory_tiling`):** Bộ nhớ nhanh Shared Memory, kỹ thuật Tiling MatMul và rào cản `__syncthreads()`.
-- [ ] **Bài 12 (`bai_12_coalescing_and_banks`):** Trực quan hóa Memory Coalescing và giải quyết Bank Conflicts.
+### Giai Đoạn 5: Track 3 (`hw3_cuda_architecture/`) — Bài 10–12
+- [ ] Tái dùng ValueGrid làm lưới thread (Bài 10); MemoryTape mở rộng 2 cấp (DRAM/Shared Memory) cho Bài 11–12.
 
-### Giai Đoạn 6: Triển Khai Track HW4 (Transformers & LLM Systems)
-- [ ] **Bài 13 (`bai_13_self_attention`):** Chiếu đèn pin Self-Attention $Q \times K^T / \sqrt{d}$ và tam giác che phủ Causal Mask.
-- [ ] **Bài 14 (`bai_14_kv_cache_anatomy`):** Bảng đệm KV-Cache trong suy luận LLM, cắt giảm độ phức tạp tính toán thừa.
-- [ ] **Bài 15 (`bai_15_flash_attention_concept`):** Ý tưởng Tiling FlashAttention tính Softmax trực tuyến trong SRAM.
+### Giai Đoạn 6: Track 4 (`hw4_transformer_llm/`) — Bài 13–15
+- [ ] Thiết kế **Timeline/Scrubber** cho Bài 14; tái dùng ValueGrid làm ma trận Attention (Bài 13/15).
 
-### Giai Đoạn 7: Tinh Chỉnh, Đóng Gói & Đăng Ký Tên Miền
-- [ ] Kiểm thử toàn diện trên desktop và mobile với `npm test` đạt 100% độ bao phủ.
-- [ ] Đóng gói `npm run build` xuất ra static bundle tối ưu.
-- [ ] Cấu hình PWA (Service Worker) để hỗ trợ học offline không cần mạng.
-- [ ] Thiết lập domain chính thức (ví dụ `tensorplay.dev`) và CI/CD deploy tự động qua GitHub Pages / Cloudflare Pages.
-
+### Giai Đoạn 7: Hoàn Thiện & Phát Hành
+- [ ] `npm test` xanh 100% cho toàn bộ 15 bài + `shared/`.
+- [ ] Kiểm tra breakpoint <900px và điều hướng bàn phím trên cả 15 trang.
+- [ ] `npm run build`, deploy static bundle (GitHub Pages/Cloudflare Pages) — không cần cấu hình fallback route.

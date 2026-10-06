@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bài 24: RNN &amp; BPTT — Vì Sao Cần Transformer? - TensorPlay</title>
+  <meta name="description" content="Trực quan hóa lan truyền ngược qua thời gian (BPTT), căn bệnh tiêu biến và bùng nổ gradient trong RNN, đường cao tốc LSTM và bước chuyển dịch sang Self-Attention.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+
+  <style>
+    .timeline-chain {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 0.6rem 0.2rem;
+    }
+    .node-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 42px;
+      padding: 6px 4px;
+      background: #0b0f19;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+    }
+    .node-arrow {
+      color: var(--text-dim);
+      font-size: 0.75rem;
+    }
+  </style>
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">← Về Danh Mục</a>
+      </div>
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step" style="border-color: rgba(236, 72, 153, 0.4);">Track 4: Transformer &amp; LLM</span>
+      </div>
+    </header>
+
+    <main class="lab-grid">
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt &amp; Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Bàn Thí Nghiệm Chuỗi Tuần Hoàn</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Đặt Lại</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">🔁 Cơ Chế Ô Ẩn (Recurrent Cell)</div>
+            <div class="tp-seg" id="seg-mode">
+              <button data-v="linear">Tuyến Tính</button>
+              <button data-v="tanh">Hàm Tanh</button>
+              <button data-v="lstm_highway">Cao Tốc LSTM (f ≈ 0.95)</button>
+            </div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">⛓️ Chuỗi Trạng Thái Ẩn Qua Thời Gian: $h_1 \to h_T$</div>
+            <div class="timeline-chain" id="timeline-chain"></div>
+            <div class="tp-matrix-caption">Tín hiệu $x_1 = 1$ được nạp ở $t=1$. Trạng thái truyền liên tục qua $T$ bước.</div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-ctrl-grid">
+              <div id="mount-w-slider"></div>
+              <div id="mount-t-slider"></div>
+            </div>
+            <div style="margin-top: 0.6rem;">
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; cursor: pointer; color: var(--text-muted);">
+                <input type="checkbox" id="chk-clipping"> Kích hoạt Gradient Clipping (Cắt gọt nếu $|g| > 5.0$)
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math &amp; Telemetry</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div class="tp-panel">
+            <div class="tp-panel-title">📐 Đạo Hàm Dội Ngược Theo Thời Gian (BPTT)</div>
+            <div class="tp-math-box" id="katex-formula"></div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">📉 Biên Độ Gradient Ngược Dòng: $\partial L / \partial h_t$</div>
+            <div style="position: relative;">
+              <div class="tp-vbars" id="grad-bars"></div>
+            </div>
+            <div class="tp-vbar-labels" id="grad-labels"></div>
+            <div class="tp-matrix-caption">Từ $t = T$ (Loss bên phải) truyền ngược về $t = 1$ (Quá khứ bên trái)</div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">📊 Đo Đạc Dòng Gradient</div>
+            <table class="tp-kv-table" id="stats-table"></table>
+          </div>
+
+          <div class="tp-verdict" id="verdict"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createLiveSlider } from '../../shared/components/LiveSlider.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
+    import { markCompleted } from '../../shared/progress.js';
+    import { LessonLogic, PRESETS, CLIP_THRESHOLD } from './rnn_bptt.logic.js';
+
+    const LESSON_ID = 'rnn_bptt';
+
+    const STEPS = [
+      {
+        step: 1, badge: 'Bước 1 / 5',
+        heading: 'Lan truyền ngược qua thời gian (BPTT)',
+        problem: 'Để xử lý chuỗi văn bản hoặc video dài, mạng RNN tái sử dụng một trọng số $w$ duy nhất qua mọi bước thời gian $t = 1 \\dots T$. Làm sao tính đạo hàm từ hàm mất mát $L = h_T$ dội ngược về từ đầu tiên $x_1$?',
+        mechanism: 'Theo quy tắc chuỗi, gradient phải đi qua toàn bộ chuỗi mắt xích liên tục:\n$$\\frac{\\partial L}{\\partial x_1} = \\frac{\\partial h_T}{\\partial h_{T-1}} \\cdot \\frac{\\partial h_{T-1}}{\\partial h_{T-2}} \\cdots \\frac{\\partial h_2}{\\partial h_1} \\cdot \\frac{\\partial h_1}{\\partial x_1}$$\nMỗi bước thời gian tương đương với việc nhân thêm một ma trận Jacobian.',
+        action: '👉 Thao tác (Cột 2): Giữ preset "Tiêu Biến (w=0.5)".\n👁️ Quan sát (Cột 3): Cột gradient dội ngược từ $t=10$ về $t=1$ co nhỏ dần theo cấp số nhân.',
+        takeaway: 'Mạng RNN thực chất là một mạng cực sâu được gấp nếp (unrolled) qua thời gian.'
+      },
+      {
+        step: 2, badge: 'Bước 2 / 5',
+        heading: 'Căn bệnh tiêu biến: Mất trí nhớ ngắn hạn',
+        problem: 'Nếu $|w| < 1$ (ví dụ $w = 0.5$), thì sau 10 bước thời gian, gradient dội về còn lại bao nhiêu?',
+        mechanism: 'Đạo hàm là $w^{T-1} = 0.5^9 \\approx 0.00195$. Tín hiệu bị suy hao hơn 500 lần! Khi $T = 50$, $0.5^{49} \\approx 10^{-15}$, gradient hoàn toàn biến mất. RNN không thể học được phụ thuộc xa (long-range dependencies).',
+        action: '👉 Thao tác (Cột 2): Thử kéo thanh Độ dài chuỗi $T$ từ 5 lên 15.\n👁️ Quan sát (Cột 3): Gradient tại $t=1$ sụt về 0 tuyệt đối.',
+        takeaway: 'Vanishing gradient khiến RNN nguyên bản chỉ nhớ được khoảng 5 đến 10 từ gần nhất.'
+      },
+      {
+        step: 3, badge: 'Bước 3 / 5',
+        heading: 'Căn bệnh bùng nổ & Chiếc kéo Gradient Clipping',
+        problem: 'Nếu $|w| > 1$ (ví dụ $w = 1.5$), gradient sẽ phóng đại ra sao?',
+        mechanism: '$1.5^9 \\approx 38.44$. Nếu $T = 20$, $1.5^{19} \\approx 2216$! Gradient cực lớn khiến trọng số nhảy vọt qua rìa vực thẳm và làm mô hình tràn số NaN. Để ngăn chặn, Mikolov đề xuất Gradient Clipping: nếu $\\lVert g \\rVert > \\tau$, ta cắt ngắn vector $g \\leftarrow g \\cdot \\frac{\\tau}{\\lVert g \\rVert}$.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Bùng Nổ (w=1.5)" rồi bấm "Cứu Bùng Nổ bằng Clipping".\n👁️ Quan sát (Cột 3): Bảng thống kê hiển thị gradient thô bị kìm hãm về đúng ngưỡng an toàn 5.0.',
+        takeaway: 'Gradient clipping chỉ giải quyết được bùng nổ, không thể cứu được tiêu biến.'
+      },
+      {
+        step: 4, badge: 'Bước 4 / 5',
+        heading: 'LSTM Highway: Cổng quên mở lối cao tốc',
+        problem: 'Làm thế nào để gradient có thể đi ngược hàng trăm bước mà không bị suy hao?',
+        mechanism: 'Kiến trúc LSTM (Hochreiter & Schmidhuber, 1997) thiết kế một kênh nhớ thẳng (cell state $c_t$). Đạo hàm $\\frac{\\partial c_t}{\\partial c_{t-1}} = f_t$ (cổng quên). Nếu cổng quên mở $f_t \\approx 0.95$, gradient được bảo toàn $0.95^9 \\approx 0.63$ thay vì suy sụp về 0!',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Cao Tốc LSTM (f=0.95) 🛣️".\n👁️ Quan sát (Cột 3): Các cột gradient giữ nguyên độ cao ổn định từ tương lai về quá khứ.',
+        takeaway: 'Đường dẫn cộng tính (Additive residual/highway) là chìa khóa vàng cho mọi kiến trúc mạng sâu (từ LSTM đến ResNet).'
+      },
+      {
+        step: 5, badge: 'Bước 5 / 5',
+        heading: 'Cổ chai tuần tự và Sự ra đời của Transformer',
+        problem: 'Dù LSTM giải quyết được tiêu biến, tại sao thế giới AI vẫn chuyển dịch hoàn toàn sang Transformer?',
+        mechanism: 'Vì RNN mang tính tuần tự cố hữu: $h_t$ bắt buộc phải đợi $h_{t-1}$ tính xong mới được chạy. Mạng không thể tận dụng hàng nghìn nhân CUDA song song của GPU (Bài 21). Transformer loại bỏ hoàn toàn đệ quy thời gian, dùng Self-Attention (Bài 25) để kết nối mọi cặp từ với độ dài đường dẫn $O(1)$ và tính toán song song 100%!',
+        action: '👉 Thao tác (Cột 1): Bấm chuyển sang Bài 25 trong mục lục sau khi hoàn thành.\n👁️ Quan sát (Cột 3): Kết luận xác nhận đã mở khóa cánh cổng bước vào kỷ nguyên Transformer.',
+        takeaway: 'Tạm biệt $O(T)$ tuần tự của RNN — Chào đón $O(1)$ song song hóa của Transformer!'
+      }
+    ];
+
+    const STEP_COMMENTS = {
+      1: [{
+        id: 'rnn1', author: 'Nhà Toán Học AI', role: 'Math', avatar: '📐', tag: 'Giải tích chuỗi', tagType: 'math',
+        content: 'BPTT không có gì bí ẩn: nó chính là giải tích đạo hàm hàm hợp áp dụng trên đồ thị tính toán được duỗi thẳng theo trục thời gian (unfolded computational graph).'
+      }],
+      3: [{
+        id: 'rnn3', author: 'Kỹ Sư Backend', role: 'Systems', avatar: '⚙️', tag: 'Kỹ thuật huấn luyện', tagType: 'gotcha',
+        content: 'Trong PyTorch, lệnh `torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=5.0)` là chuẩn bắt buộc khi huấn luyện các mô hình xử lý chuỗi.'
+      }],
+      5: [{
+        id: 'rnn5', author: 'Chuyên Gia GPU', role: 'GPU', avatar: '⚡', tag: 'Hiệu năng hệ thống', tagType: 'systems',
+        content: 'GPU cực kỳ thích tính toán ma trận lớn một lần (GEMM) hơn là hàng nghìn phép nhân ma trận nhỏ nối đuôi nhau. Transformer khai phóng tối đa sức mạnh của phần cứng GPU.'
+      }]
+    };
+
+    const logic = new LessonLogic();
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
+    });
+
+    createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 1,
+      onStepChange: (n) => {
+        comments.setStep(n, STEP_COMMENTS[n] || []);
+        if (n === STEPS.length) markCompleted(LESSON_ID, true);
+      }
+    });
+
+    const sW = createLiveSlider(document.getElementById('mount-w-slider'), {
+      label: 'Trọng số lặp $w$', min: 0.1, max: 1.6, step: 0.1, initial: logic.state.w,
+      onChange: (v) => { logic.onUserUpdate({ w: v }); presets.setActive(null); render(); }
+    });
+
+    const sT = createLiveSlider(document.getElementById('mount-t-slider'), {
+      label: 'Độ dài chuỗi $T$', min: 2, max: 20, step: 1, initial: logic.state.T,
+      onChange: (v) => { logic.onUserUpdate({ T: v }); presets.setActive(null); render(); }
+    });
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      initialActiveId: 'vanish_linear',
+      onPick: (p) => {
+        logic.applyPreset(p.state);
+        sW.setValue(logic.state.w);
+        sT.setValue(logic.state.T);
+        document.getElementById('chk-clipping').checked = logic.state.clipping;
+        render();
+      }
+    });
+
+    function bindSeg(id, key) {
+      document.querySelectorAll(`#${id} button`).forEach(btn => btn.addEventListener('click', () => {
+        logic.onUserUpdate({ [key]: btn.dataset.v });
+        presets.setActive(null);
+        render();
+      }));
+    }
+    bindSeg('seg-mode', 'mode');
+
+    document.getElementById('chk-clipping').addEventListener('change', (e) => {
+      logic.onUserUpdate({ clipping: e.target.checked });
+      presets.setActive(null);
+      render();
+    });
+
+    function render() {
+      const r = logic.calculate();
+      const s = logic.state;
+
+      document.querySelectorAll('#seg-mode button').forEach(b => b.classList.toggle('active', b.dataset.v === s.mode));
+
+      // Timeline chain
+      const chainEl = document.getElementById('timeline-chain');
+      let chainHtml = '';
+      r.h.forEach((val, idx) => {
+        const t = idx + 1;
+        chainHtml += `
+          <div class="node-cell ${t === 1 ? 'pos' : (t === s.T ? 'hl' : '')}">
+            <span style="color:var(--text-dim);font-size:0.6rem;">t=${t}</span>
+            <span style="font-weight:700;">${val.toFixed(2)}</span>
+          </div>
+        `;
+        if (t < s.T) chainHtml += `<span class="node-arrow">→</span>`;
+      });
+      chainEl.innerHTML = chainHtml;
+
+      renderMath(document.getElementById('katex-formula'), r.formulaKaTeX, { displayMode: true });
+
+      // Grad bars
+      const maxG = Math.max(...r.gradProfile, 1.0);
+      const H = 114;
+      document.getElementById('grad-bars').innerHTML = r.gradProfile.map((g, idx) => {
+        const t = idx + 1;
+        const cl = t === 1 ? (r.status === 'vanishing' ? 'bad' : (r.status === 'exploding' ? 'bad' : 'good')) : '';
+        const clampedH = Math.max(2, Math.min(H, (Math.abs(g) / maxG) * H));
+        return `<div class="tp-vbar ${cl}" style="height:${clampedH}px" title="t=${t}: grad = ${g.toExponential(2)}"></div>`;
+      }).join('');
+      document.getElementById('grad-labels').innerHTML = r.gradProfile.map((_, idx) => `<span>${idx + 1}</span>`).join('');
+
+      document.getElementById('stats-table').innerHTML = `
+        <tr><td>Độ dài chuỗi bước T</td><td>${s.T}</td></tr>
+        <tr><td>Gradient ban đầu tại t=T</td><td>1.0000</td></tr>
+        <tr><td>Gradient thô dội về t=1</td><td>${r.rawGradX1.toExponential(4)}</td></tr>
+        <tr><td>Gradient sau clipping</td><td style="font-weight:700; color:${r.isClipped ? 'var(--color-warning)' : 'var(--text-main)'}">${r.finalGradX1.toFixed(4)} ${r.isClipped ? '✂️ (Đã cắt)' : ''}</td></tr>
+        <tr><td>Trạng thái tín hiệu</td><td>${r.status === 'vanishing' ? '🥶 Tiêu biến (< 0.01)' : (r.status === 'exploding' ? '🔥 Bùng nổ (> 10.0)' : '✅ Ổn định')}</td></tr>
+      `;
+
+      const verdict = document.getElementById('verdict');
+      verdict.className = `tp-verdict ${r.verdict.type}`;
+      verdict.textContent = r.verdict.text;
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      sW.setValue(logic.state.w);
+      sT.setValue(logic.state.T);
+      document.getElementById('chk-clipping').checked = false;
+      presets.setActive('vanish_linear');
+      render();
+    });
+
+    renderAllInlineMath(document.querySelector('.col-sandbox'));
+    render();
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

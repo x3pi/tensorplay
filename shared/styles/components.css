@@ -1020,3 +1020,174 @@ div[id$="-mount"],
     padding: 0.25rem 0.15rem;
   }
 }
+
+/* ==========================================================================
+   Lesson Utility Panels (dùng chung cho các bài bổ sung: Strides, Optimizer, RNN...)
+   ========================================================================== */
+.tp-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.9rem 1rem;
+  width: 100%;
+}
+
+.tp-panel-title {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+  margin-bottom: 0.6rem;
+}
+
+.tp-math-box {
+  min-height: 44px;
+  background: #090d15;
+  border-radius: var(--radius-sm);
+  padding: 0.45rem 0.6rem;
+  overflow-x: auto;
+  text-align: center;
+}
+
+.tp-verdict {
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1.5;
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+}
+.tp-verdict.success { background: var(--color-positive-bg); color: var(--color-positive); border-color: rgba(16, 185, 129, 0.35); }
+.tp-verdict.warning { background: var(--color-warning-bg); color: var(--color-warning); border-color: rgba(245, 158, 11, 0.35); }
+.tp-verdict.danger  { background: var(--color-negative-bg); color: var(--color-negative); border-color: rgba(239, 68, 68, 0.35); }
+
+/* Segmented toggle (chọn chế độ) */
+.tp-seg {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+}
+.tp-seg button {
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.tp-seg button:hover { color: var(--text-main); background: rgba(255, 255, 255, 0.05); }
+.tp-seg button.active { background: var(--color-info-bg); color: var(--color-info); border-color: rgba(56, 189, 248, 0.45); }
+
+.tp-field-label {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+/* Bảng số nhỏ hiển thị ma trận */
+.tp-mini-matrix {
+  border-collapse: separate;
+  border-spacing: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+.tp-mini-matrix td {
+  min-width: 44px;
+  padding: 6px 8px;
+  text-align: center;
+  background: #0b0f19;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-main);
+}
+.tp-mini-matrix td.pos { color: var(--color-positive); border-color: rgba(16, 185, 129, 0.35); }
+.tp-mini-matrix td.neg { color: var(--color-negative); border-color: rgba(239, 68, 68, 0.35); }
+.tp-mini-matrix td.hl  { background: var(--color-info-bg); border-color: var(--color-info); box-shadow: 0 0 10px var(--color-info-glow); }
+.tp-mini-matrix td.clickable { cursor: pointer; }
+.tp-mini-matrix td.clickable:hover { border-color: rgba(56, 189, 248, 0.6); }
+
+.tp-matrix-caption {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  text-align: center;
+  margin-top: 4px;
+  font-family: var(--font-mono);
+}
+
+/* Biểu đồ cột dọc đơn giản */
+.tp-vbars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 120px;
+  padding: 6px 4px 0;
+  background: #090d15;
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+}
+.tp-vbar {
+  flex: 1;
+  min-width: 10px;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(180deg, var(--color-info), rgba(56, 189, 248, 0.35));
+  transition: height 0.25s ease;
+  position: relative;
+}
+.tp-vbar.warn { background: linear-gradient(180deg, var(--color-warning), rgba(245, 158, 11, 0.35)); }
+.tp-vbar.bad  { background: linear-gradient(180deg, var(--color-negative), rgba(239, 68, 68, 0.35)); }
+.tp-vbar.good { background: linear-gradient(180deg, var(--color-positive), rgba(16, 185, 129, 0.35)); }
+.tp-vbar-labels {
+  display: flex;
+  gap: 3px;
+  padding: 2px 4px 0;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-dim);
+}
+.tp-vbar-labels span { flex: 1; min-width: 10px; text-align: center; }
+
+.tp-kv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+.tp-kv-table td {
+  padding: 5px 6px;
+  border-bottom: 1px dashed var(--border-subtle);
+  color: var(--text-muted);
+}
+.tp-kv-table td:last-child {
+  text-align: right;
+  font-family: var(--font-mono);
+  color: var(--text-main);
+}
+
+/* Khối mã nguồn nhỏ trong cột Telemetry */
+.tp-code-box {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  white-space: pre-wrap;
+  background: #090d15;
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.75rem;
+  color: #e2e8f0;
+  line-height: 1.6;
+}
+.tp-ctrl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.5rem 1rem;
+  width: 100%;
+}

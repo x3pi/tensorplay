@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bài 15: Khởi Tạo Kaiming — Giữ Tín Hiệu Qua Mạng Sâu - TensorPlay</title>
+  <meta name="description" content="Vì sao khởi tạo trọng số quá nhỏ làm tín hiệu tiêu biến, quá lớn làm bùng nổ, và vì sao Kaiming chọn phương sai 2/n cho mạng ReLU.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">← Về Danh Mục</a>
+      </div>
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step" style="border-color: rgba(16, 185, 129, 0.4);">Track 2: Modules &amp; CNN</span>
+      </div>
+    </header>
+
+    <main class="lab-grid">
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt &amp; Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Bàn Chọn Khởi Tạo</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Đặt Lại</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">🎲 Phương sai trọng số $\sigma^2$ (fan-in $n = 4$)</div>
+            <div class="tp-seg" id="seg-scheme">
+              <button data-v="small">$0.01$</button>
+              <button data-v="xavier">Xavier $1/n$</button>
+              <button data-v="kaiming">Kaiming $2/n$</button>
+              <button data-v="big">$1$</button>
+            </div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">⚡ Hàm kích hoạt giữa các tầng</div>
+            <div class="tp-seg" id="seg-act">
+              <button data-v="relu">ReLU (chặn nửa âm)</button>
+              <button data-v="linear">Tuyến tính (không chặn)</button>
+            </div>
+          </div>
+
+          <div class="tp-panel">
+            <div id="mount-depth"></div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">🧮 Vì sao lại là $n \cdot \sigma^2 \cdot k$?</div>
+            <div class="tp-math-box">$z = \sum_{i=1}^{n} w_i h_i \;\Rightarrow\; \mathbb{E}[z^2] = n \cdot \sigma^2 \cdot \mathbb{E}[h^2]$</div>
+            <div class="tp-matrix-caption" style="text-align: left; font-family: inherit;">Cộng $n$ số hạng độc lập thì phương sai cộng dồn. ReLU giữ lại một nửa phía dương nên $\mathbb{E}[\mathrm{ReLU}(z)^2] = \tfrac{1}{2}\mathbb{E}[z^2]$, tức $k = \tfrac{1}{2}$.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math &amp; Telemetry</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div class="tp-panel">
+            <div class="tp-panel-title">📐 Hệ số khuếch đại mỗi tầng</div>
+            <div class="tp-math-box" id="katex-gain"></div>
+            <div class="tp-math-box" id="katex-energy" style="margin-top: 0.5rem;"></div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">📊 Năng lượng tín hiệu qua từng tầng (thang log, đường đứt = 1)</div>
+            <div style="position: relative;">
+              <div class="tp-vbars" id="energy-bars"></div>
+              <div id="one-line" style="position: absolute; left: 0; right: 0; border-top: 2px dashed var(--color-positive); pointer-events: none;"></div>
+            </div>
+            <div class="tp-vbar-labels" id="energy-labels"></div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">🏁 So sánh 4 cách khởi tạo (cùng độ sâu &amp; kích hoạt)</div>
+            <table class="tp-kv-table" id="cmp-table"></table>
+          </div>
+
+          <div class="tp-verdict" id="verdict"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createLiveSlider } from '../../shared/components/LiveSlider.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath, renderAllInlineMath, renderInlineMath } from '../../shared/katex-render.js';
+    import { markCompleted } from '../../shared/progress.js';
+    import { LessonLogic, PRESETS, INIT_SCHEMES } from './kaiming_init.logic.js';
+
+    const LESSON_ID = 'kaiming_init';
+
+    const STEPS = [
+      {
+        step: 1, badge: 'Bước 1 / 5',
+        heading: 'Truyền tin qua 10 tầng: trò chơi \"tam sao thất bản\"',
+        problem: 'Mạng nhận diện biển báo có 10 tầng ẩn, mỗi tầng 4 nơ-ron. Nếu mỗi tầng làm tín hiệu yếu đi một nửa, thì đến tầng 10 tín hiệu còn bao nhiêu?',
+        mechanism: 'Mỗi tầng nhân năng lượng tín hiệu với cùng một hệ số $g$. Sau $L$ tầng: $E_L = g^L$. Với $g = 0.5$: $0.5^{10} \\approx 0.001$. Với $g = 2$: $2^{10} = 1024$. Chỉ $g = 1$ mới giữ được tín hiệu.',
+        action: '👉 Thao tác (Cột 2): Bấm lần lượt \"Xavier + ReLU\" và \"Số lớn 1 + ReLU\".\n👁️ Quan sát (Cột 3): Các cột năng lượng tụt dần hoặc vọt dần theo cấp số nhân.',
+        takeaway: 'Lũy thừa biến một sai lệch nhỏ ở mỗi tầng thành thảm họa ở mạng sâu.'
+      },
+      {
+        step: 2, badge: 'Bước 2 / 5',
+        heading: 'Hệ số $g$ đến từ đâu?',
+        problem: 'Hệ số $g$ phụ thuộc vào những gì mà ta có thể chọn?',
+        mechanism: 'Một nơ-ron cộng $n$ tích $w_i h_i$. Phương sai của tổng = tổng phương sai, nên năng lượng nhân thêm $n \\cdot \\sigma^2$. ReLU chặn phần âm, giữ lại một nửa năng lượng ($k = \\tfrac{1}{2}$):\n$$g = n \\cdot \\sigma^2 \\cdot k$$\nVới $n = 4$ và $\\sigma^2 = 0.01$: $g = 4 \\cdot 0.01 \\cdot 0.5 = 0.02$.',
+        action: '👉 Thao tác (Cột 2): Bấm preset \"Số nhỏ 0.01 + ReLU\".\n👁️ Quan sát (Cột 3): $g = 0.02$, sau 10 tầng năng lượng cỡ $10^{-17}$.',
+        takeaway: '\"Khởi tạo số nhỏ cho an toàn\" là sai lầm phổ biến: nó giết tín hiệu ở mạng sâu.'
+      },
+      {
+        step: 3, badge: 'Bước 3 / 5',
+        heading: 'Kaiming: chọn $\\sigma^2$ sao cho $g = 1$',
+        problem: 'Muốn $g = n \\cdot \\sigma^2 \\cdot \\tfrac{1}{2} = 1$ thì phải chọn $\\sigma^2$ bằng bao nhiêu?',
+        mechanism: 'Giải ra $\\sigma^2 = 2/n$. Với $n = 4$: $\\sigma^2 = 0.5$. Đây là khởi tạo Kaiming (He et al., 2015), mặc định cho mạng ReLU.',
+        action: '👉 Thao tác (Cột 2): Bấm \"Kaiming + ReLU ✅\", kéo Số tầng lên 20.\n👁️ Quan sát (Cột 3): Mọi cột đều nằm đúng trên đường đứt bằng 1.',
+        takeaway: 'Kaiming không phải phép màu, chỉ là giải phương trình $g = 1$.'
+      },
+      {
+        step: 4, badge: 'Bước 4 / 5',
+        heading: 'Xavier không sai, chỉ là dành cho hàm khác',
+        problem: 'Xavier dùng $\\sigma^2 = 1/n$. Vì sao nó tốt với mạng tanh/tuyến tính nhưng làm mạng ReLU tiêu biến?',
+        mechanism: 'Với kích hoạt tuyến tính (hoặc tanh gần 0), $k = 1$ nên $g = n \\cdot \\tfrac{1}{n} = 1$. Thay bằng ReLU thì $k = \\tfrac{1}{2}$, $g = 0.5$, mất một nửa năng lượng mỗi tầng.',
+        action: '👉 Thao tác (Cột 2): So sánh \"Xavier + tuyến tính\" và \"Xavier + ReLU\".\n👁️ Quan sát (Cột 3): Bảng so sánh, cột Xavier đổi từ ✅ sang 🥶.',
+        takeaway: 'Khởi tạo phải khớp với hàm kích hoạt. Hệ số $2$ trong Kaiming chính là để bù cho ReLU.'
+      },
+      {
+        step: 5, badge: 'Bước 5 / 5',
+        heading: 'Gradient đi ngược cũng chịu cùng số phận',
+        problem: 'Tiêu biến ở chiều xuôi thì liên quan gì tới việc học?',
+        mechanism: 'Khi lan truyền ngược, gradient đi qua cùng các ma trận $W^T$ và cùng các van ReLU, nên cũng bị nhân $g$ mỗi tầng. Với $g = 0.5$ và 10 tầng, gradient về tới tầng đầu nhỏ đi khoảng 1000 lần: tầng đầu gần như đứng yên.',
+        action: '👉 Thao tác (Cột 2): Giữ \"Xavier + ReLU\", kéo Số tầng từ 3 lên 20.\n👁️ Quan sát (Cột 3): Kết luận chuyển từ vàng (tạm ổn) sang đỏ khi vượt khoảng 10 tầng.',
+        takeaway: 'Khởi tạo tốt là điều kiện để mạng sâu học được ngay từ bước đầu tiên. BatchNorm (Bài 18) là một cách khác để giữ $g \\approx 1$ trong suốt quá trình huấn luyện.'
+      }
+    ];
+
+    const STEP_COMMENTS = {
+      2: [{
+        id: 'ki2', author: 'Nhà Toán Học AI', role: 'Math', avatar: '📐', tag: 'Phương sai', tagType: 'math',
+        content: 'Giả định: trọng số và đầu vào độc lập, trọng số có trung bình 0. Khi đó $\\mathrm{Var}(\\sum w_i h_i) = n \\cdot \\mathrm{Var}(w) \\cdot \\mathbb{E}[h^2]$. Bài này theo dõi $\\mathbb{E}[h^2]$ và gọi nó là \"năng lượng\".'
+      }],
+      3: [{
+        id: 'ki3', author: 'Kỹ Sư Backend', role: 'Systems', avatar: '⚙️', tag: 'Needle HW2', tagType: 'systems',
+        content: 'Trong Needle, `init.kaiming_uniform(fan_in, fan_out)` lấy mẫu đều trên $[-b, b]$ với $b = \\sqrt{6 / n}$. Phân phối đều trên $[-b, b]$ có phương sai $b^2/3 = 2/n$, đúng bằng Kaiming.'
+      }],
+      4: [{
+        id: 'ki4', author: 'Nhà Nghiên Cứu', role: 'Research', avatar: '🔬', tag: 'Lời nguyền số 0', tagType: 'gotcha',
+        content: 'Trường hợp cực đoan $\\sigma^2 = 0$ (mọi trọng số bằng 0): mọi nơ-ron trong tầng cho ra cùng một giá trị và nhận cùng gradient, nên chúng mãi mãi giống hệt nhau. Ngẫu nhiên là để phá thế đối xứng này.'
+      }]
+    };
+
+    const logic = new LessonLogic();
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
+    });
+
+    createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 1,
+      onStepChange: (n) => {
+        comments.setStep(n, STEP_COMMENTS[n] || []);
+        if (n === STEPS.length) markCompleted(LESSON_ID, true);
+      }
+    });
+
+    const sDepth = createLiveSlider(document.getElementById('mount-depth'), {
+      label: 'Số tầng $L$', min: 1, max: 20, step: 1, initial: logic.state.depth,
+      onChange: (v) => { logic.onUserUpdate({ depth: v }); render(); }
+    });
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      initialActiveId: 'kaiming_relu',
+      onPick: (p) => { logic.applyPreset(p.state); render(); }
+    });
+
+    function bindSeg(id, key) {
+      document.querySelectorAll(`#${id} button`).forEach(btn => btn.addEventListener('click', () => {
+        logic.onUserUpdate({ [key]: btn.dataset.v });
+        presets.setActive(null);
+        render();
+      }));
+    }
+    bindSeg('seg-scheme', 'scheme');
+    bindSeg('seg-act', 'activation');
+
+    const fmt = (x) => (Math.abs(x) < 1e-3 || Math.abs(x) >= 1e4 ? x.toExponential(2) : String(Math.round(x * 1e4) / 1e4));
+    const ICON = { healthy: '✅', vanishing: '🥶', exploding: '🔥' };
+    const LG_MIN = -12, LG_MAX = 6;
+
+    function render() {
+      const r = logic.calculate();
+      const s = logic.state;
+
+      document.querySelectorAll('#seg-scheme button').forEach(b => b.classList.toggle('active', b.dataset.v === s.scheme));
+      document.querySelectorAll('#seg-act button').forEach(b => b.classList.toggle('active', b.dataset.v === s.activation));
+
+      renderMath(document.getElementById('katex-gain'), r.gainKaTeX, { displayMode: true });
+      renderMath(document.getElementById('katex-energy'), r.energyKaTeX, { displayMode: true });
+
+      const H = 114;
+      const h = (e) => {
+        const lg = Math.min(LG_MAX, Math.max(LG_MIN, Math.log10(e)));
+        return Math.max(2, ((lg - LG_MIN) / (LG_MAX - LG_MIN)) * H);
+      };
+      document.getElementById('energy-bars').innerHTML = r.profile.map((e, l) => {
+        const st = e < 1e-3 ? 'bad' : e > 1e3 ? 'bad' : Math.abs(Math.log10(e)) < 1e-9 ? 'good' : 'warn';
+        return `<div class="tp-vbar ${l === 0 ? '' : st}" style="height:${h(e)}px" title="Tầng ${l}: ${fmt(e)}"></div>`;
+      }).join('');
+      document.getElementById('energy-labels').innerHTML = r.profile.map((_, l) => `<span>${l}</span>`).join('');
+      document.getElementById('one-line').style.bottom = `${h(1)}px`;
+
+      document.getElementById('cmp-table').innerHTML = r.comparison.map(c => `
+        <tr style="${c.id === s.scheme ? 'background: rgba(56,189,248,0.08);' : ''}">
+          <td>${renderInlineMath(INIT_SCHEMES[c.id].label)}</td>
+          <td>g = ${fmt(c.gain)} → ${fmt(c.energy)} ${ICON[c.status]}</td>
+        </tr>`).join('');
+
+      const verdict = document.getElementById('verdict');
+      verdict.className = `tp-verdict ${r.verdict.type}`;
+      verdict.textContent = r.verdict.text;
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      sDepth.setValue(logic.state.depth);
+      presets.setActive('kaiming_relu');
+      render();
+    });
+
+    renderAllInlineMath(document.querySelector('.col-sandbox'));
+    render();
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

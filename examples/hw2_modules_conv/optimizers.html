@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bài 17: Động Học Của Các Bộ Tối Ưu — SGD vs Momentum vs Adam - TensorPlay</title>
+  <meta name="description" content="Trực quan hóa đường đi của SGD, Momentum và Adam trên hẻm núi dẹt (ill-conditioned ravine), hiệu ứng dao động ziczac và sức mạnh của bias correction trong Adam.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+
+  <style>
+    .contour-canvas-wrap {
+      width: 100%;
+      height: 240px;
+      background: #070a12;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      position: relative;
+      overflow: hidden;
+    }
+    .contour-svg {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">← Về Danh Mục</a>
+      </div>
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step" style="border-color: rgba(16, 185, 129, 0.4);">Track 2: Modules &amp; CNN</span>
+      </div>
+    </header>
+
+    <main class="lab-grid">
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt &amp; Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Bàn Thí Nghiệm Bộ Tối Ưu</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Đặt Lại</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">🏎️ Chọn Bộ Tối Ưu (Optimizer)</div>
+            <div class="tp-seg" id="seg-opt">
+              <button data-v="sgd">SGD Thuần Túy</button>
+              <button data-v="momentum">Momentum (β = 0.9)</button>
+              <button data-v="adam">Adam (Adaptive)</button>
+            </div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">🗺️ Bản Đồ Đường Đồng Mức &amp; Quỹ Đạo Hạ Đồi</div>
+            <div class="contour-canvas-wrap">
+              <svg class="contour-svg" id="contour-svg" viewBox="0 0 400 240"></svg>
+            </div>
+            <div class="tp-matrix-caption">Hàm $f(x, y) = \frac{1}{2}(0.2x^2 + 4y^2)$. Điểm vàng: Xuất phát $(-4, 1)$. Điểm xanh: Đích $(0, 0)$.</div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-ctrl-grid">
+              <div id="mount-lr-slider"></div>
+              <div id="mount-steps-slider"></div>
+            </div>
+            <div id="opt-extra-ctrl" style="margin-top: 0.6rem;">
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; cursor: pointer; color: var(--text-muted);">
+                <input type="checkbox" id="chk-bias-corr" checked> Hiệu chỉnh sai số khởi động (Bias Correction trong Adam)
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math &amp; Telemetry</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div class="tp-panel">
+            <div class="tp-panel-title">📐 Công Thức Cập Nhật Trọng Số</div>
+            <div class="tp-math-box" id="katex-formula"></div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">📉 Suy Giảm Hàm Mất Mát (Loss qua từng bước)</div>
+            <div style="position: relative;">
+              <div class="tp-vbars" id="loss-bars"></div>
+            </div>
+            <div class="tp-vbar-labels" id="loss-labels"></div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">📊 Thống Kê Hội Tụ</div>
+            <table class="tp-kv-table" id="stats-table"></table>
+          </div>
+
+          <div class="tp-verdict" id="verdict"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createLiveSlider } from '../../shared/components/LiveSlider.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
+    import { markCompleted } from '../../shared/progress.js';
+    import { LessonLogic, PRESETS } from './optimizers.logic.js';
+
+    const LESSON_ID = 'optimizers';
+
+    const STEPS = [
+      {
+        step: 1, badge: 'Bước 1 / 5',
+        heading: 'Cơn ác mộng thung lũng dẹt (Ill-conditioned Valley)',
+        problem: 'Trong bài toán tối ưu thực tế, một số tham số nhạy cảm gấp hàng chục lần tham số khác. Ví dụ hàm $f(x, y) = \\frac{1}{2}(0.2x^2 + 4y^2)$ có độ cong trục $y$ dốc gấp 20 lần trục $x$.',
+        mechanism: 'Gradient $\\nabla f = [0.2x, 4y]$. Vì thành phần đạo hàm theo $y$ quá lớn, vector gradient luôn chỉ thẳng vào vách núi thay vì hướng về đáy thung lũng dọc theo trục $x$.',
+        action: '👉 Thao tác (Cột 2): Chọn preset "SGD Mặc Định (lr=0.1)".\n👁️ Quan sát (Cột 2 & 3): SGD bước ziczac dội qua dội lại giữa hai bờ $y$, trong khi trục $x$ bò rất chậm chạp.',
+        takeaway: 'Tỉ số giữa độ cong lớn nhất và nhỏ nhất (Condition Number) quyết định độ khó của bài toán tối ưu đối với gradient bậc 1.'
+      },
+      {
+        step: 2, badge: 'Bước 2 / 5',
+        heading: 'Ranh giới bùng nổ: Tại sao không tăng learning rate?',
+        problem: 'Để trục $x$ đi nhanh hơn, liệu ta có thể tăng vọt $\\alpha = 0.55$ không?',
+        mechanism: 'Đạo hàm bậc hai trên trục $y$ là 4. Điều kiện hội tụ của phương trình sai phân $y_{t+1} = (1 - 4\\alpha) y_t$ đòi hỏi $|1 - 4\\alpha| < 1 \\implies \\alpha < 0.5$. Nếu $\\alpha = 0.55$, hệ số là $-1.2$, mỗi bước bước nhảy trên trục $y$ sẽ phóng đại 1.2 lần khiến quỹ đạo bay ra vô tận!',
+        action: '👉 Thao tác (Cột 2): Bấm preset "SGD Quá Lớn (lr=0.55) 💥".\n👁️ Quan sát (Cột 2): Quỹ đạo văng ra khỏi khung hình, đồ thị loss vọt lên đỏ rực.',
+        takeaway: 'Trong SGD thuần, chiều dốc nhất luôn kìm hãm tốc độ học của toàn bộ các chiều còn lại.'
+      },
+      {
+        step: 3, badge: 'Bước 3 / 5',
+        heading: 'Momentum: Tích lũy đà như hòn bi lăn dốc',
+        problem: 'Làm thế nào để triệt tiêu dao động ziczac trên trục $y$ và phóng nhanh dọc theo trục $x$?',
+        mechanism: 'Momentum bổ sung biến vận tốc $u_{t+1} = \\beta u_t + g_t$. Trên trục $y$, gradient đổi dấu liên tục nên cộng dồn triệt tiêu nhau. Trên trục $x$, gradient luôn cùng dấu âm nên vận tốc tích lũy nhân lên $\\frac{1}{1 - \\beta} = 10$ lần!',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Momentum (lr=0.1, β=0.9) 🚀".\n👁️ Quan sát (Cột 2 & 3): Quỹ đạo uốn cong mượt mà lao thẳng về gốc $(0, 0)$, loss giảm về dưới $0.01$ chỉ sau 40 bước.',
+        takeaway: 'Momentum đóng vai trò như một bộ lọc thông thấp (low-pass filter) lọc sạch nhiễu dao động tần số cao.'
+      },
+      {
+        step: 4, badge: 'Bước 4 / 5',
+        heading: 'Adam: Cân bằng bước nhảy riêng cho từng chiều',
+        problem: 'Nếu muốn mỗi chiều tự động điều chỉnh tốc độ độc lập mà không cần chỉnh tay?',
+        mechanism: 'Adam kết hợp cả Momentum ($m_t$, mô-men bậc 1) và RMSProp ($v_t = \\beta_2 v_{t-1} + (1-\\beta_2) g_t^2$, mô-men bậc 2). Khi chia cho $\\sqrt{v_t}$, chiều nào gradient lớn (như $y$) sẽ bị kìm hãm, chiều nào gradient nhỏ (như $x$) sẽ được phóng đại.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Adam Chuẩn (lr=0.1) ⚡".\n👁️ Quan sát (Cột 2 & 3): Các bước nhảy đều đặn đưa cả hai tọa độ $x, y$ tiến dần về 0 một cách cân đối.',
+        takeaway: 'Adam xấp xỉ ma trận đường chéo của Hessian, biến không gian elip méo mó thành không gian tròn trịa dễ tối ưu.'
+      },
+      {
+        step: 5, badge: 'Bước 5 / 5',
+        heading: 'Bẫy Cold Start: Sự cần thiết của Bias Correction',
+        problem: 'Tại sao công thức Adam lại cần cụm chia cho $(1 - \\beta_1^t)$ và $(1 - \\beta_2^t)$?',
+        mechanism: 'Vì $m_0 = 0, v_0 = 0$, ở các bước đầu $m_t$ và $v_t$ bị lệch mạnh về phía 0. Đặc biệt $\\beta_2 = 0.999$, ở bước 1 $v_1 = 0.001 g^2$ cực nhỏ, nếu không có hiệu chỉnh $\\frac{v_1}{1 - 0.999^1} = g^2$, mẫu số sẽ tính toán sai lệch!',
+        action: '👉 Thao tác (Cột 2): Chọn Adam và bỏ chọn checkbox "Hiệu chỉnh sai số khởi động".\n👁️ Quan sát (Cột 3): Bảng telemetry cảnh báo bước nhảy khởi động bị ảnh hưởng.',
+        takeaway: 'Bias correction giúp Adam ổn định ngay từ bước lặp đầu tiên $t=1$.'
+      }
+    ];
+
+    const STEP_COMMENTS = {
+      1: [{
+        id: 'opt1', author: 'Nhà Toán Học AI', role: 'Math', avatar: '📐', tag: 'Hessian & Độ cong', tagType: 'math',
+        content: 'Trục $y$ có độ cong $\\lambda_2 = 4$, trục $x$ có $\\lambda_1 = 0.2$. Tỉ số condition number $\\kappa = 4 / 0.2 = 20$. Với SGD, tỉ lệ co giảm lỗi sau mỗi bước là $\\left(\\frac{\\kappa - 1}{\\kappa + 1}\\right)^2 = (19/21)^2 \\approx 0.82$, cực kỳ chậm.'
+      }],
+      3: [{
+        id: 'opt3', author: 'Kỹ Sư Backend', role: 'Systems', avatar: '⚙️', tag: 'Needle HW2', tagType: 'systems',
+        content: 'Trong thư viện Needle HW2, class `SGD` nhận tham số `momentum`. Hãy nhớ cập nhật state `u` trong `self.u[p]` cho mỗi tensor tham số qua các epoch.'
+      }],
+      4: [{
+        id: 'opt4', author: 'Chuyên Gia CUDA', role: 'GPU', avatar: '⚡', tag: 'Tài nguyên bộ nhớ', tagType: 'gotcha',
+        content: 'Adam đòi hỏi lưu thêm cả $m$ và $v$ cho mọi tham số. Mô hình LLM 7 tỷ tham số (14GB weights) cần thêm 28GB RAM GPU chỉ để chứa optimizer states!'
+      }]
+    };
+
+    const logic = new LessonLogic();
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
+    });
+
+    createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 1,
+      onStepChange: (n) => {
+        comments.setStep(n, STEP_COMMENTS[n] || []);
+        if (n === STEPS.length) markCompleted(LESSON_ID, true);
+      }
+    });
+
+    const sLr = createLiveSlider(document.getElementById('mount-lr-slider'), {
+      label: 'Learning rate $\\alpha$', min: 0.02, max: 0.6, step: 0.02, initial: logic.state.lr,
+      onChange: (v) => { logic.onUserUpdate({ lr: v }); presets.setActive(null); render(); }
+    });
+
+    const sSteps = createLiveSlider(document.getElementById('mount-steps-slider'), {
+      label: 'Số bước $t$', min: 1, max: 60, step: 1, initial: logic.state.steps,
+      onChange: (v) => { logic.onUserUpdate({ steps: v }); presets.setActive(null); render(); }
+    });
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      initialActiveId: 'sgd_default',
+      onPick: (p) => {
+        logic.applyPreset(p.state);
+        sLr.setValue(logic.state.lr);
+        sSteps.setValue(logic.state.steps);
+        document.getElementById('chk-bias-corr').checked = logic.state.biasCorrection;
+        render();
+      }
+    });
+
+    function bindSeg(id, key) {
+      document.querySelectorAll(`#${id} button`).forEach(btn => btn.addEventListener('click', () => {
+        logic.onUserUpdate({ [key]: btn.dataset.v });
+        presets.setActive(null);
+        render();
+      }));
+    }
+    bindSeg('seg-opt', 'optimizer');
+
+    document.getElementById('chk-bias-corr').addEventListener('change', (e) => {
+      logic.onUserUpdate({ biasCorrection: e.target.checked });
+      presets.setActive(null);
+      render();
+    });
+
+    // Vẽ Contour SVG
+    function drawContour(svg, trajectory) {
+      // Map domain: x in [-4.5, 4.5] -> [20, 380], y in [-1.5, 1.5] -> [220, 20]
+      const toSvgX = (x) => 200 + (x / 4.5) * 180;
+      const toSvgY = (y) => 120 - (y / 1.5) * 100;
+
+      let html = '';
+
+      // Trục tọa độ
+      html += `<line x1="20" y1="120" x2="380" y2="120" stroke="#1f293d" stroke-width="1" stroke-dasharray="2,2"/>`;
+      html += `<line x1="200" y1="20" x2="200" y2="220" stroke="#1f293d" stroke-width="1" stroke-dasharray="2,2"/>`;
+
+      // Các đường elip đẳng mức: 0.5 * (0.2 x^2 + 4 y^2) = C
+      const levels = [0.1, 0.4, 1.0, 2.0, 3.6, 6.0];
+      levels.forEach(c => {
+        const rx = Math.sqrt((2 * c) / 0.2);
+        const ry = Math.sqrt((2 * c) / 4);
+        if (rx <= 4.5 && ry <= 1.5) {
+          html += `<ellipse cx="200" cy="120" rx="${(rx / 4.5) * 180}" ry="${(ry / 1.5) * 100}"
+            fill="none" stroke="rgba(56, 189, 248, 0.15)" stroke-width="1"/>`;
+        }
+      });
+
+      // Điểm đích (0, 0)
+      html += `<circle cx="200" cy="120" r="4" fill="var(--color-positive)"/>`;
+
+      // Đường quỹ đạo
+      if (trajectory && trajectory.length > 0) {
+        let pathD = '';
+        trajectory.forEach((p, idx) => {
+          const sx = toSvgX(Math.max(-4.5, Math.min(4.5, p[0])));
+          const sy = toSvgY(Math.max(-1.5, Math.min(1.5, p[1])));
+          pathD += (idx === 0 ? `M ${sx} ${sy}` : ` L ${sx} ${sy}`);
+        });
+
+        html += `<path d="${pathD}" fill="none" stroke="var(--color-warning)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+
+        // Vẽ các chấm từng bước
+        trajectory.forEach((p, idx) => {
+          if (idx % 2 === 0 || idx === trajectory.length - 1) {
+            const sx = toSvgX(Math.max(-4.5, Math.min(4.5, p[0])));
+            const sy = toSvgY(Math.max(-1.5, Math.min(1.5, p[1])));
+            const color = idx === 0 ? '#f59e0b' : (idx === trajectory.length - 1 ? 'var(--color-info)' : 'rgba(245, 158, 11, 0.6)');
+            html += `<circle cx="${sx}" cy="${sy}" r="${idx === 0 || idx === trajectory.length - 1 ? 4 : 2}" fill="${color}"/>`;
+          }
+        });
+      }
+
+      svg.innerHTML = html;
+    }
+
+    function render() {
+      const r = logic.calculate();
+      const s = logic.state;
+
+      document.querySelectorAll('#seg-opt button').forEach(b => b.classList.toggle('active', b.dataset.v === s.optimizer));
+      document.getElementById('opt-extra-ctrl').style.display = s.optimizer === 'adam' ? 'block' : 'none';
+
+      drawContour(document.getElementById('contour-svg'), r.trajectory);
+
+      // KaTeX formula
+      let formula = '';
+      if (s.optimizer === 'sgd') {
+        formula = `p_{t+1} = p_t - \\alpha \\nabla f(p_t) = p_t - ${s.lr} \\cdot [0.2x, 4y]`;
+      } else if (s.optimizer === 'momentum') {
+        formula = `u_{t+1} = 0.9 u_t + g_t, \\quad p_{t+1} = p_t - ${s.lr} \\cdot u_{t+1}`;
+      } else {
+        formula = `m_t = 0.9 m_{t-1} + 0.1 g_t, \\quad v_t = 0.999 v_{t-1} + 0.001 g_t^2 \\\\\n p_{t+1} = p_t - ${s.lr} \\frac{\\hat{m}_t}{\\sqrt{\\hat{v}_t} + 10^{-8}}`;
+      }
+      renderMath(document.getElementById('katex-formula'), formula, { displayMode: true });
+
+      // Loss bars
+      const validLosses = r.losses.map(l => (isNaN(l) ? 10 : Math.min(10, l)));
+      const maxL = Math.max(...validLosses, 3.6);
+      const H = 114;
+      document.getElementById('loss-bars').innerHTML = validLosses.map((L, t) => {
+        const cl = t === 0 ? '' : (L < 0.05 ? 'good' : (L > 5 ? 'bad' : 'warn'));
+        return `<div class="tp-vbar ${cl}" style="height:${Math.max(2, (L / maxL) * H)}px" title="Bước ${t}: Loss = ${L.toFixed(4)}"></div>`;
+      }).join('');
+      document.getElementById('loss-labels').innerHTML = validLosses.map((_, t) => (t % 5 === 0 ? `<span>${t}</span>` : `<span></span>`)).join('');
+
+      document.getElementById('stats-table').innerHTML = `
+        <tr><td>Bộ tối ưu hiện tại</td><td>${s.optimizer.toUpperCase()} (lr = ${s.lr})</td></tr>
+        <tr><td>Vị trí ban đầu</td><td>[-4.00, 1.00] (Loss = 3.6000)</td></tr>
+        <tr><td>Vị trí sau ${s.steps} bước</td><td>[${r.finalP[0].toFixed(3)}, ${r.finalP[1].toFixed(3)}]</td></tr>
+        <tr><td>Hàm mất mát hiện tại</td><td style="color:${r.finalLoss < 0.05 ? 'var(--color-positive)' : (r.isDiverged ? 'var(--color-negative)' : 'var(--text-main)')}; font-weight:700;">${r.finalLoss.toFixed(4)}</td></tr>
+      `;
+
+      const verdict = document.getElementById('verdict');
+      verdict.className = `tp-verdict ${r.verdict.type}`;
+      verdict.textContent = r.verdict.text;
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      sLr.setValue(logic.state.lr);
+      sSteps.setValue(logic.state.steps);
+      presets.setActive('sgd_default');
+      render();
+    });
+
+    renderAllInlineMath(document.querySelector('.col-sandbox'));
+    render();
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

@@ -257,35 +257,47 @@ Không có `router.js`. Mỗi bài tự đọc tham số của chính nó khi t�
 
 Dự án TensorPlay xoay quanh 5 track kinh điển của Deep Learning Systems, mỗi track bóc tách thành các ví dụ độc lập trong `examples/<track>/`:
 
-### Track 0 — `hw0_tensor_memory/`: Nền Tảng Tensor & Kỹ Nghệ Bộ Nhớ C++
+### Track 0 — `hw0_tensor_memory/`: Nền Tảng Tensor & Kỹ Nghệ Bộ Nhớ C++ (8 Bài)
 *Trọng tâm: Chuyển dịch tư duy từ vòng lặp toán học sang layout bộ nhớ máy tính thực tế.*
 - **Bài 01 — Robot Vision & Vector Dot Product:** Nhận diện biển báo gạch ngang $2\times2$. Trọng số âm là "bằng chứng bác bỏ" triệt tiêu đèn pha chói lóa. Trải phẳng 2D→1D, `offset = r*N + c`.
 - **Bài 02 — Softmax & Cơn Ác Mộng Lóa Sáng:** Logits $\to +1000 \to e^{1000} \to$ `Infinity`/`NaN`. "Safe Softmax": trừ $\max(z)$ trước khi `exp`.
-- **Bài 03 — Row-Major vs Col-Major Cache Locality:** Đầu đọc CPU quét hàng (Cache Hit) vs quét cột (Cache Miss, chậm ~10 lần).
+- **Bài 03 — Chu Trình Softmax Regression (Ma trận):** Forward $Z = X\theta \to$ Softmax $P \to$ Loss $\to$ Gradient $\nabla_\theta = X^T G \to$ Cập nhật SGD.
+- **Bài 04 — Mạng Nơ-ron 2 Tầng & Lan Truyền Ngược ReLU:** Van một chiều ReLU chặn dòng gradient ở nơ-ron âm ($Z_1 \le 0$). Đạo hàm dội ngược qua tầng ẩn.
+- **Bài 05 — Xử Lý Mini-batch $B=2$ & Phép Chuyển Vị $X^T$:** Mini-batch song song, trực giác hình học nhân ma trận $X^T G$ gom gradient.
+- **Bài 06 — Dò Tay Vòng Lặp Nhân Ma Trận C++:** Dò từng bước 3 vòng lặp `for (i, j, k)`, offset 1D `A[i * K + k]` và `B[k * N + j]`.
+- **Bài 07 — Robot Chết Đuối Vì Memory Leak:** Quên `free(grad)` hoặc `delete[]`, RAM tràn và OOM Killer tiêu diệt tiến trình.
+- **Bài 08 — Row-Major vs Col-Major Cache Locality:** CPU Cache L1/L2. Đọc theo dòng (Row-Major) Cache Hit vs quét cột Cache Miss chậm ~10 lần.
 
-### Track 1 — `hw1_autograd_engine/`: Động Cơ Tự Động Tính Đạo Hàm (Needle)
-*Trọng tâm: Đồ thị tính toán (DAG) và lan truyền ngược.*
-- **Bài 04 — The Computational Graph Flow:** Node phép tính như trạm trung chuyển nước; Forward xuôi, Backward dội ngược gradient.
-- **Bài 05 — Reverse-mode vs Forward-mode AD:** 1 triệu input, 1 output Loss — Reverse-mode chỉ tốn 1 lượt dội ngược.
-- **Bài 06 — Van Kích Hoạt & Lời Nguyền Trọng Số 0:** Van ReLU khóa gradient âm; khởi tạo trọng số = 0 → tê liệt đối xứng toàn tầng ẩn.
+### Track 1 — `hw1_autograd_engine/`: Động Cơ Tự Động Tính Đạo Hàm (5 Bài)
+*Trọng tâm: Đồ thị tính toán (DAG), quy tắc chuỗi, và kiểm tra tính đúng đắn của đạo hàm.*
+- **Bài 09 — Đồ Thị Tính Toán DAG & Sóng Dội Ngược:** Node phép tính; Topological Sort định đoạt trình tự tính đạo hàm dội ngược.
+- **Bài 10 — Reverse-mode vs Forward-mode AD:** 1 triệu input, 1 output Loss — Reverse-mode chỉ tốn 1 lượt dội ngược.
+- **Bài 11 — Gradient Của Broadcast (Cộng dồn):** Bias broadcast cho cả batch thì gradient phải cộng dồn theo trục batch. Bắt bug gán đè `=` và quên sum.
+- **Bài 12 — Kiểm Tra Gradient Bằng Số (Gradient Check):** Sai phân hữu hạn, đồ thị sai số chữ V, chọn $\varepsilon$, và bẫy float32 gây báo động giả.
+- **Bài 13 — Van Kích Hoạt & Lời Nguyền Trọng Số 0:** Van ReLU khóa gradient âm; khởi tạo trọng số = 0 → tê liệt đối xứng toàn tầng ẩn.
 
-### Track 2 — `hw2_modules_conv/`: Thư Viện Nơ-ron & Phép Chập Tối Ưu
-*Trọng tâm: Module, batching, biến đổi hình học ma trận.*
-- **Bài 07 — Mini-Batching Assembly Line:** Băng chuyền xử lý lô $B=2,4$ song song; Activation Buffer tăng tuyến tính theo $B\times C\times H\times W$.
-- **Bài 08 — Conv2D & Thần Chú Im2col:** Mở cuộn vùng trượt thành cột ma trận, biến tích chập thành GEMM.
-- **Bài 09 — Ổn Định Nội Bộ Với BatchNorm:** Chuẩn hóa batch về mean 0/var 1; Training (mean/var theo batch) vs Inference (Running Stats).
+### Track 2 — `hw2_modules_conv/`: Thư Viện Nơ-ron & Phép Chập Tối Ưu (6 Bài)
+*Trọng tâm: Module, khởi tạo, regularization, optimizer và phép biến đổi GEMM.*
+- **Bài 14 — Băng Chuyền Mini-Batching Assembly Line:** Dataloader đa tiến trình: Cân đối giữa Worker CPU và GPU, hiện tượng Starvation.
+- **Bài 15 — Khởi Tạo Kaiming — Giữ Tín Hiệu Qua Mạng Sâu:** Hệ số $g = n \sigma^2 k$. Vì sao Kaiming chọn phương sai $2/n$ cho mạng ReLU để ngăn bùng nổ / tiêu biến qua 20 tầng.
+- **Bài 16 — Dropout — Phá Vỡ Co-Adaptation & Kỹ Thuật Inverted Scaling:** Tắt nơ-ron ép học độc lập; Train vs Eval, bẫy quên chia $1-p$.
+- **Bài 17 — Động Học Các Bộ Tối Ưu (SGD vs Momentum vs Adam):** Chạy đua trên hẻm núi dẹt (ill-conditioned); Momentum vượt rãnh, Adam tự cân bằng bước nhảy và Bias Correction.
+- **Bài 18 — Ổn Định Nội Bộ Với BatchNorm:** Chuẩn hóa batch mean 0/var 1; Training stats vs Inference running stats.
+- **Bài 19 — Conv2D & Thần Chú Im2col:** Mở cuộn vùng trượt thành cột ma trận, biến tích chập thành GEMM tối ưu trên phần cứng.
 
-### Track 3 — `hw3_cuda_architecture/`: Tăng Tốc Phần Cứng GPU
-*Trọng tâm: SIMT và hệ thống phân cấp bộ nhớ GPU.*
-- **Bài 10 — CUDA Grid, Blocks & Threads:** `idx = blockIdx.x*blockDim.x + threadIdx.x`; Boundary Guard `if (idx < N)`.
-- **Bài 11 — Tiled MatMul & Shared Memory:** DRAM xa xôi vs Shared Memory gần; Tiling $2\times2$ + `__syncthreads()`.
-- **Bài 12 — Memory Coalescing & Bank Conflicts:** Đọc liền kề gộp 1 giao dịch bus vs đọc nhảy cóc nghẽn bus.
+### Track 3 — `hw3_cuda_architecture/`: Tăng Tốc Phần Cứng GPU (4 Bài)
+*Trọng tâm: Layout NDArray, SIMT và hệ thống phân cấp bộ nhớ GPU.*
+- **Bài 20 — Strides & View — Một Vùng Nhớ, Nhiều Cách Nhìn:** Dùng shape, strides, offset để transpose, slice, broadcast mà không tốn 1 byte sao chép; khi nào phải `compact()`.
+- **Bài 21 — Phân Cấp Luồng CUDA Grid, Blocks & Threads:** `(blockIdx, threadIdx)` thành tọa độ ma trận toàn cục; Boundary Guard `if (idx < N)`.
+- **Bài 22 — Tiled MatMul & Shared Memory:** DRAM xa xôi vs Shared Memory (SRAM) gần; Tiling $2\times2$ + `__syncthreads()`.
+- **Bài 23 — Memory Coalescing & Bank Conflicts:** Đọc liền kề gộp 1 giao dịch bus vs đọc nhảy cóc nghẽn bus; 32 banks Shared Memory & padding.
 
-### Track 4 — `hw4_transformer_llm/`: Kiến Trúc Transformer & LLM Systems
-*Trọng tâm: Attention, KV-Cache, tối ưu I/O.*
-- **Bài 13 — Scaled Dot-Product Self-Attention:** Query/Key tạo bảng điểm, chia $\sqrt{d}$; Causal Mask tam giác.
-- **Bài 14 — KV-Cache Anatomy:** Giữ $K,V$ cũ, chỉ tính Query mới — $O(N^2) \to O(N)$.
-- **Bài 15 — Trực Quan Hóa FlashAttention Tiling:** Cắt block vào SRAM, Online Softmax, tránh lưu $N\times N$ ra HBM.
+### Track 4 — `hw4_transformer_llm/`: Kiến Trúc Transformer & LLM Systems (4 Bài)
+*Trọng tâm: Chuỗi tuần hoàn RNN, Attention, KV-Cache, tối ưu I/O.*
+- **Bài 24 — RNN & BPTT — Vì Sao Cần Transformer?:** Lan truyền ngược qua thời gian (BPTT), căn bệnh tiêu biến/bùng nổ gradient, cao tốc LSTM và bước nhảy vọt sang Attention $O(1)$.
+- **Bài 25 — Scaled Dot-Product Self-Attention:** Query/Key tạo bảng điểm, chia $\sqrt{d}$; Causal Mask tam giác.
+- **Bài 26 — Giải Phẫu KV-Cache Trong LLM Serving:** Giữ $K,V$ cũ, chỉ tính Query mới — $O(N^2) \to O(N)$.
+- **Bài 27 — FlashAttention SRAM Tiling & Online Softmax:** Cắt block vào SRAM, Online Softmax, tránh lưu $N\times N$ ra HBM.
 
 ---
 

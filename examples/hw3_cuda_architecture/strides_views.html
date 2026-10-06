@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bài 20: Strides &amp; View — Một Vùng Nhớ, Nhiều Cách Nhìn - TensorPlay</title>
+  <meta name="description" content="Hiểu cách NDArray dùng shape, strides và offset để transpose, slice, broadcast mà không sao chép dữ liệu. Khi nào phải gọi compact().">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+
+  <style>
+    .mem-row { display: flex; gap: 6px; width: 100%; }
+    .mem-cell {
+      flex: 1; min-width: 44px; text-align: center; padding: 6px 2px;
+      background: #0b0f19; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);
+      font-family: var(--font-mono); transition: all 0.2s ease;
+    }
+    .mem-cell .idx { display: block; font-size: 0.68rem; color: var(--text-dim); }
+    .mem-cell .val { display: block; font-size: 1.05rem; font-weight: 700; color: var(--text-main); }
+    .mem-cell.used { border-color: rgba(16, 185, 129, 0.5); }
+    .mem-cell.unused { opacity: 0.35; }
+    .mem-cell.sel { background: var(--color-info-bg); border-color: var(--color-info); box-shadow: 0 0 12px var(--color-info-glow); }
+    .ctrl-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.5rem 1rem; width: 100%; }
+    .cpp-box { font-family: var(--font-mono); font-size: 0.75rem; white-space: pre-wrap; background: #090d15; border-radius: var(--radius-sm); padding: 0.6rem 0.75rem; color: #e2e8f0; line-height: 1.6; }
+  </style>
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">← Về Danh Mục</a>
+      </div>
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step">Track 3: NDArray Backend &amp; GPU</span>
+      </div>
+    </header>
+
+    <main class="lab-grid">
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt &amp; Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Bàn Điều Khiển View</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Đặt Lại</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">👁️ Ma trận logic (cách người dùng "nhìn thấy") — bấm vào một ô</div>
+            <div style="display: flex; justify-content: center;">
+              <table class="tp-mini-matrix" id="logic-grid"></table>
+            </div>
+            <div class="tp-matrix-caption" id="logic-caption"></div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">💾 Vùng nhớ thật: <code>float data[6]</code> (không bao giờ thay đổi)</div>
+            <div class="mem-row" id="mem-row"></div>
+            <div class="tp-matrix-caption">Viền xanh lá = ô được view sử dụng • Mờ = ô view không chạm tới</div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">🎛️ Tự chỉnh (shape, strides, offset)</div>
+            <div class="ctrl-grid">
+              <div id="mount-rows"></div>
+              <div id="mount-cols"></div>
+              <div id="mount-s0"></div>
+              <div id="mount-s1"></div>
+              <div id="mount-offset"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math &amp; Telemetry C++</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div class="tp-panel">
+            <div class="tp-panel-title">📐 Công thức địa chỉ</div>
+            <div class="tp-math-box" id="katex-formula"></div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">⚙️ Truy cập trong C++</div>
+            <div class="cpp-box" id="cpp-snippet"></div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">📊 Thống kê view</div>
+            <table class="tp-kv-table" id="stats-table"></table>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">📦 Nếu gọi compact() — vùng nhớ MỚI</div>
+            <div class="mem-row" id="compact-row"></div>
+          </div>
+
+          <div class="tp-verdict" id="verdict"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createLiveSlider } from '../../shared/components/LiveSlider.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath } from '../../shared/katex-render.js';
+    import { markCompleted } from '../../shared/progress.js';
+    import { LessonLogic, PRESETS, MEMORY } from './strides_views.logic.js';
+
+    const LESSON_ID = 'strides_views';
+
+    const STEPS = [
+      {
+        step: 1, badge: 'Bước 1 / 6',
+        heading: 'Một vùng nhớ phẳng, nhiều cách nhìn',
+        problem: 'Ma trận $2 \\times 3$ trong RAM thực chất chỉ là 6 ô liên tục `a b c d e f`. Vậy làm sao thư viện biết ô nào là "hàng 1, cột 2"?',
+        mechanism: 'Mỗi tensor mang 3 thông tin nhỏ: shape, strides (bước nhảy mỗi chiều) và offset (điểm bắt đầu). Địa chỉ của phần tử $(i, j)$:\n$$\\text{addr} = \\text{offset} + i \\cdot s_0 + j \\cdot s_1$$\nVới shape $(2, 3)$ và strides $(3, 1)$: ô $(1, 2)$ nằm ở $0 + 1 \\cdot 3 + 2 \\cdot 1 = 5$.',
+        action: '👉 Thao tác (Cột 2): Bấm lần lượt vào các ô của ma trận logic.\n👁️ Quan sát (Cột 3): Công thức địa chỉ và ô sáng trong vùng nhớ thật thay đổi theo. Thử tự tính trước rồi mới nhìn.',
+        takeaway: 'Tensor = con trỏ tới vùng nhớ + (shape, strides, offset). Phần "ma trận" chỉ là cách diễn giải.'
+      },
+      {
+        step: 2, badge: 'Bước 2 / 6',
+        heading: 'Transpose miễn phí: chỉ đổi chỗ strides',
+        problem: 'Chuyển vị $X^T$ có cần sao chép 6 phần tử sang chỗ mới không?',
+        mechanism: 'Không. Chỉ cần đổi chỗ shape và strides: $(2,3), (3,1) \\to (3,2), (1,3)$. Vùng nhớ giữ nguyên `a b c d e f`, nhưng giờ đi xuống một hàng logic chỉ nhảy 1 ô, sang một cột nhảy 3 ô.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Transpose $X^T$", rồi bấm ô $(2, 1)$.\n👁️ Quan sát (Cột 3): $\\text{addr} = 0 + 2 \\cdot 1 + 1 \\cdot 3 = 5$ → vẫn là `f`. Dòng "Byte đã sao chép" bằng 0.',
+        takeaway: 'Transpose trong NumPy/PyTorch/Needle tốn $O(1)$: chỉ tạo một "view" mới.'
+      },
+      {
+        step: 3, badge: 'Bước 3 / 6',
+        heading: 'Cắt lát (slice) = dời offset',
+        problem: 'Lấy `X[:, 1:]` (bỏ cột đầu) có sao chép dữ liệu không?',
+        mechanism: 'Không. Giữ strides $(3, 1)$, đổi shape thành $(2, 2)$ và dời offset lên 1. Nhưng chú ý: giữa hàng 0 (`b c`) và hàng 1 (`e f`) có một "lỗ hổng" (`d`) — view này KHÔNG còn liền mạch.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Cắt X[:, 1:]".\n👁️ Quan sát (Cột 3 & Cột 2): Ô `a` và `d` mờ đi (không dùng). Kết luận báo view không liền mạch.',
+        takeaway: 'Slice rẻ, nhưng có thể làm dữ liệu bị "thủng lỗ" — ảnh hưởng tới các kernel cần đọc tuần tự.'
+      },
+      {
+        step: 4, badge: 'Bước 4 / 6',
+        heading: 'Broadcast: phép màu của stride 0',
+        problem: 'Cộng bias $b$ (1 hàng) vào cả batch 3 hàng. Có phải nhân bản $b$ thành 3 hàng trong RAM không?',
+        mechanism: 'Đặt stride của chiều được broadcast bằng 0: đi xuống hàng nào thì vẫn đọc lại cùng một hàng. Shape $(3,3)$, strides $(0, 1)$ → 9 phần tử logic chỉ dùng 3 ô nhớ thật.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Broadcast hàng 0".\n👁️ Quan sát (Cột 3): "Ô nhớ thật được dùng" = 3, trong khi "Số phần tử logic" = 9.',
+        takeaway: 'Broadcast không tốn bộ nhớ. Đây cũng là lý do gradient của broadcast phải CỘNG DỒN lại (xem Bài 11).'
+      },
+      {
+        step: 5, badge: 'Bước 5 / 6',
+        heading: 'Khi nào bắt buộc phải sao chép: compact()',
+        problem: 'Muốn reshape $X^T$ thành vector 6 phần tử theo thứ tự `a d b e c f`. Có làm được chỉ bằng strides không?',
+        mechanism: 'Không được: không có cặp strides nào cho thứ tự `a d b e c f` trên vùng nhớ `a b c d e f` dưới dạng 1 chiều. Khi đó phải gọi compact(): cấp phát vùng nhớ mới và sao chép theo thứ tự logic. Kernel CUDA/BLAS cũng thường đòi dữ liệu liền mạch.',
+        action: '👉 Thao tác (Cột 2): Bấm lại "Transpose $X^T$".\n👁️ Quan sát (Cột 3): Thẻ "Nếu gọi compact()" hiện vùng nhớ mới `a d b e c f`, chi phí $6 \\times 4 = 24$ bytes.',
+        takeaway: 'View rẻ, compact đắt. Thư viện tốt chỉ gọi compact khi thực sự cần.'
+      },
+      {
+        step: 6, badge: 'Bước 6 / 6',
+        heading: 'Tự chỉnh strides: bẫy vượt biên',
+        problem: 'Nếu tự đặt shape $(3, 3)$ với strides $(3, 1)$ trên vùng nhớ chỉ có 6 ô thì sao?',
+        mechanism: 'Phần tử $(2, 2)$ có $\\text{addr} = 2 \\cdot 3 + 2 = 8 > 5$ → đọc ra ngoài vùng nhớ. Python sẽ báo lỗi, nhưng C++ thì im lặng đọc rác hoặc crash.',
+        action: '👉 Thao tác (Cột 2): Kéo thanh Số hàng lên 3 và Số cột lên 3, giữ $s_0 = 3, s_1 = 1$.\n👁️ Quan sát (Cột 3): Kết luận chuyển đỏ, các ô logic vượt biên hiện ⚠.',
+        takeaway: 'Mọi hàm tạo view trong backend phải kiểm tra: $\\text{offset} + \\sum (n_k - 1) \\cdot s_k$ nhỏ hơn kích thước vùng nhớ.'
+      }
+    ];
+
+    const STEP_COMMENTS = {
+      2: [{
+        id: 'sv2', author: 'Kỹ Sư Backend Tensor', role: 'Systems', avatar: '⚙️', tag: 'Needle HW3', tagType: 'systems',
+        content: 'Trong backend NDArray, các hàm `permute`, `broadcast_to`, `reshape` (khi liền mạch) và `__getitem__` chỉ trả về một đối tượng mới chia sẻ cùng `_handle` bộ nhớ với strides khác. Chỉ `compact()` mới gọi kernel sao chép.'
+      }],
+      4: [{
+        id: 'sv4', author: 'Nhà Toán Học AI', role: 'Math', avatar: '📐', tag: 'Liên kết Autograd', tagType: 'math',
+        content: 'Một ô nhớ được "nhìn thấy" ở nhiều vị trí logic thì khi lan truyền ngược, gradient từ mọi vị trí đó phải được cộng lại. Đó chính là quy tắc backward của BroadcastTo = Summation theo trục bị broadcast.'
+      }],
+      5: [{
+        id: 'sv5', author: 'Chuyên Gia CUDA', role: 'GPU', avatar: '⚡', tag: 'Hiệu năng', tagType: 'gotcha',
+        content: 'Đọc một view không liền mạch trên GPU dễ phá vỡ memory coalescing (Bài 23). Vì vậy nhiều kernel gọi compact() trước, chấp nhận trả chi phí sao chép một lần để các lần đọc sau nhanh hơn.'
+      }]
+    };
+
+    const logic = new LessonLogic();
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
+    });
+
+    createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 1,
+      onStepChange: (n) => {
+        comments.setStep(n, STEP_COMMENTS[n] || []);
+        if (n === STEPS.length) markCompleted(LESSON_ID, true);
+      }
+    });
+
+    function makeSlider(id, label, min, max, key, idx) {
+      return createLiveSlider(document.getElementById(id), {
+        label, min, max, step: 1,
+        initial: idx === undefined ? logic.state[key] : logic.state[key][idx],
+        onChange: (v) => {
+          if (idx === undefined) {
+            logic.onUserUpdate({ [key]: v, viewId: 'custom' });
+          } else {
+            const arr = [...logic.state[key]];
+            arr[idx] = v;
+            logic.onUserUpdate({ [key]: arr, viewId: 'custom' });
+          }
+          presets.setActive && presets.setActive(null);
+          render();
+        }
+      });
+    }
+
+    const sRows = makeSlider('mount-rows', 'Số hàng $n_0$', 1, 3, 'shape', 0);
+    const sCols = makeSlider('mount-cols', 'Số cột $n_1$', 1, 3, 'shape', 1);
+    const sS0 = makeSlider('mount-s0', 'Stride hàng $s_0$', 0, 3, 'strides', 0);
+    const sS1 = makeSlider('mount-s1', 'Stride cột $s_1$', 0, 3, 'strides', 1);
+    const sOff = makeSlider('mount-offset', 'Offset', 0, 5, 'offset');
+
+    function syncSliders() {
+      sRows.setValue(logic.state.shape[0]);
+      sCols.setValue(logic.state.shape[1]);
+      sS0.setValue(logic.state.strides[0]);
+      sS1.setValue(logic.state.strides[1]);
+      sOff.setValue(logic.state.offset);
+    }
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      initialActiveId: 'base',
+      onPick: (p) => {
+        logic.applyPreset(p.state);
+        syncSliders();
+        render();
+      }
+    });
+
+    function render() {
+      const r = logic.calculate();
+
+      // Ma trận logic (bấm được)
+      const grid = document.getElementById('logic-grid');
+      grid.innerHTML = r.values.map((row, i) => `<tr>${row.map((v, j) => {
+        const isSel = i === r.selected[0] && j === r.selected[1];
+        const oob = v === '⚠';
+        return `<td class="clickable ${isSel ? 'hl' : ''} ${oob ? 'neg' : ''}" data-i="${i}" data-j="${j}">${v}<div style="font-size:0.6rem;color:var(--text-dim)">(${i},${j})</div></td>`;
+      }).join('')}</tr>`).join('');
+      grid.querySelectorAll('td').forEach(td => td.addEventListener('click', () => {
+        logic.onUserUpdate({ selected: [Number(td.dataset.i), Number(td.dataset.j)] });
+        render();
+      }));
+      document.getElementById('logic-caption').textContent =
+        `shape = (${r.shape.join(', ')})   strides = (${r.strides.join(', ')})   offset = ${r.offset}`;
+
+      // Vùng nhớ thật
+      document.getElementById('mem-row').innerHTML = MEMORY.map((v, k) => {
+        const used = r.usedAddrs.includes(k);
+        const sel = !r.selectedOob && k === r.selectedAddr;
+        return `<div class="mem-cell ${used ? 'used' : 'unused'} ${sel ? 'sel' : ''}"><span class="idx">[${k}]</span><span class="val">${v}</span></div>`;
+      }).join('');
+
+      // Công thức & C++
+      renderMath(document.getElementById('katex-formula'), r.formulaKaTeX, { displayMode: true });
+      document.getElementById('cpp-snippet').textContent = r.cppSnippet;
+
+      // Thống kê
+      document.getElementById('stats-table').innerHTML = `
+        <tr><td>Số phần tử logic</td><td>${r.numElements}</td></tr>
+        <tr><td>Ô nhớ thật được dùng</td><td>${r.uniqueCells} / ${MEMORY.length}</td></tr>
+        <tr><td>Byte đã sao chép để tạo view</td><td>0 bytes</td></tr>
+        <tr><td>Liền mạch (contiguous)?</td><td>${r.outOfBounds ? '—' : (r.contiguous ? '✅ Có' : '❌ Không')}</td></tr>
+        <tr><td>Chi phí nếu compact()</td><td>${r.outOfBounds ? '—' : `${r.numElements} × 4 = ${r.copyBytesIfCompact} bytes`}</td></tr>`;
+
+      // compact
+      document.getElementById('compact-row').innerHTML = r.compacted
+        ? r.compacted.map((v, k) => `<div class="mem-cell used"><span class="idx">[${k}]</span><span class="val">${v}</span></div>`).join('')
+        : '<div style="font-size:0.75rem;color:var(--color-negative)">Không thể compact: view đang trỏ ra ngoài vùng nhớ.</div>';
+
+      const verdict = document.getElementById('verdict');
+      verdict.className = `tp-verdict ${r.verdict.type}`;
+      verdict.textContent = r.verdict.text;
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      syncSliders();
+      presets.setActive && presets.setActive('base');
+      render();
+    });
+
+    render();
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

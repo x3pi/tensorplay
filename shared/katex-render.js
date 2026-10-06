@@ -208,16 +208,37 @@ export function renderMath(targetEl, formulaString, options = { displayMode: tru
 }
 
 /**
- * Replaces $$...$$ (display) and $...$ (inline) inside arbitrary strings with rendered KaTeX spans/divs.
- * Protected against crossing newlines or HTML tag boundaries.
+ * Safely escapes HTML special characters inside code spans to prevent DOM parsing bugs.
  */
-export function renderInlineMath(text) {
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/**
+ * Universal Inline Renderer for TensorPlay.
+ * Seamlessly and safely parses:
+ * 1. KaTeX display math: $$...$$
+ * 2. KaTeX inline math: $...$
+ * 3. Markdown inline code spans: `...` -> <code class="tp-inline-code">...</code>
+ * 4. Markdown bold: **...** -> <strong>...</strong>
+ * 5. Interactive UI button / target cues: "Target" -> <span class="socratic-target-btn">"Target"</span> (when options.renderCues = true)
+ *
+ * Protected against crossing HTML tag boundaries and unescaped entities.
+ */
+export function renderRichText(text, options = {}) {
   if (!text || typeof text !== 'string') return text || '';
+  const { renderCues = false } = options;
+
   // Normalize double-escaped LaTeX commands such as \\to, \\nabla, \\cdot, \\le, \\{
   let normalized = text.replace(/\\\\([a-zA-Z]+|[^a-zA-Z\s])/g, '\\$1');
 
+  // 1. Math rendering with KaTeX
   if (typeof window !== 'undefined' && window.katex) {
-    // 1. First, replace display math $$...$$
+    // 1.1 Display math $$...$$
     normalized = normalized.replace(/\$\$([\s\S]+?)\$\$/g, (match, formula) => {
       try {
         return window.katex.renderToString(formula.trim(), { throwOnError: false, displayMode: true });
@@ -226,8 +247,7 @@ export function renderInlineMath(text) {
       }
     });
 
-    // 2. Next, replace inline math $...$
-    // Ensure inline math does not cross newlines, unescaped dollars, or HTML tag boundaries
+    // 1.2 Inline math $...$
     normalized = normalized.replace(/\$([^\$\n]+?)\$/g, (match, formula) => {
       // Safety check: if formula contains HTML tags (e.g. </p>, <span>), it crossed HTML tags - do not treat as math
       if (/<\/?[a-zA-Z][^>]*>/.test(formula)) {
@@ -241,7 +261,28 @@ export function renderInlineMath(text) {
     });
   }
 
+  // 2. Inline code spans `...` (convert to styled <code class="tp-inline-code"> with HTML escape)
+  normalized = normalized.replace(/`([^`\n]+)`/g, (match, code) => {
+    return `<code class="tp-inline-code">${escapeHtml(code)}</code>`;
+  });
+
+  // 3. Bold **text** -> <strong>text</strong>
+  normalized = normalized.replace(/\*\*([^\*\n]+)\*\*/g, '<strong>$1</strong>');
+
+  // 4. Interactive UI button / target cues "..."
+  if (renderCues) {
+    normalized = normalized.replace(/(^|[\s(])"([^"\n<>=]+)"/g, '$1<span class="socratic-target-btn">"$2"</span>');
+  }
+
   return normalized;
+}
+
+/**
+ * Universal math and inline rich text renderer.
+ * Drop-in backwards-compatible replacement that handles both LaTeX formulas and inline code spans.
+ */
+export function renderInlineMath(text) {
+  return renderRichText(text, { renderCues: false });
 }
 
 // Auto-run on DOMContentLoaded and window load with fallback retries

@@ -64,6 +64,37 @@ describe('shared/katex-render.js & Component Math Integration', () => {
       expect(renderInlineMath(null)).toBe('');
       expect(renderInlineMath(undefined)).toBe('');
     });
+
+    it('renders inline code spans (`...`) into styled code chips with HTML escaping', () => {
+      const text = 'Dò từng bước 3 vòng lặp `for (i, j, k)` trong C++. Hiểu cơ chế tính toán offset 1D: `A[i * K + k]` và `B[k * N + j]`.';
+      const res = renderInlineMath(text);
+      expect(res).toContain('<code class="tp-inline-code">for (i, j, k)</code>');
+      expect(res).toContain('<code class="tp-inline-code">A[i * K + k]</code>');
+      expect(res).toContain('<code class="tp-inline-code">B[k * N + j]</code>');
+      expect(res).not.toContain('`for');
+    });
+
+    it('escapes comparison operators inside code spans (`if (gid < size)`) to avoid broken HTML tags', () => {
+      const text = 'Sử dụng boundary check `if (gid < size)` để tránh crash GPU.';
+      const res = renderInlineMath(text);
+      expect(res).toContain('<code class="tp-inline-code">if (gid &lt; size)</code>');
+      expect(res).not.toContain('< size)');
+    });
+
+    it('seamlessly renders both KaTeX math and inline code in the same sentence', () => {
+      const text = 'Với ma trận $2 \\times 2$, hàm `compact()` sao chép sang vùng nhớ mới để tính $Z = X \\cdot W$.';
+      const res = renderInlineMath(text);
+      expect(res).toContain('<code class="tp-inline-code">compact()</code>');
+      expect(res).toContain('2 \\times 2');
+      expect(res).toContain('Z = X \\cdot W');
+    });
+
+    it('renders markdown bold **...** into strong tags', () => {
+      const text = 'Đây là **nguyên tắc cốt lõi** trong autograd.';
+      const res = renderInlineMath(text);
+      expect(res).toContain('<strong>nguyên tắc cốt lõi</strong>');
+      expect(res).not.toContain('**');
+    });
   });
 
   describe('renderMath target resolution & safeguards', () => {

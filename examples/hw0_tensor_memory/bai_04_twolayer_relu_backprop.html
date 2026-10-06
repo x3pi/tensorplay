@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bài 04: Mạng Nơ-ron 2 Tầng & Lan Truyền Ngược ReLU - TensorPlay</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">← Về Danh Mục</a>
+      </div>
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step">Track 0: Nền Tảng Tensor & Bộ Nhớ C++</span>
+      </div>
+    </header>
+
+    <main class="lab-grid">
+      <!-- CỘT 1: SOCRATIC & COMMENTS -->
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt & Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <!-- CỘT 2: SÂN CHƠI TƯƠNG TÁC -->
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Bảng Điều Khiển Trọng Số 2 Tầng</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Đặt Lại</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+          <div id="mount-preset-picker"></div>
+
+          <!-- Nút Chạy SGD -->
+          <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 1rem; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div style="font-weight: 700; color: #fff; font-size: var(--text-sm);">⚡ Cập Nhật Cả 2 Tầng (SGD Step)</div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted);">$W_1, W_2 \leftarrow W - \alpha \nabla_W$ ($\alpha = 0.5$)</div>
+            </div>
+            <button id="btn-sgd-step" class="tp-btn tp-btn-primary" style="padding: 8px 16px;">Chạy SGD ▶</button>
+          </div>
+
+          <!-- Trạng thái van kích hoạt ReLU -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--color-warning); margin-bottom: 0.75rem;">
+              🚪 Trạng Thái Van Kích Hoạt ReLU (Tầng Ẩn)
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+              <div id="valve-status-0" style="padding: 0.75rem; border-radius: var(--radius-sm); text-align: center; font-weight: 700;"></div>
+              <div id="valve-status-1" style="padding: 0.75rem; border-radius: var(--radius-sm); text-align: center; font-weight: 700;"></div>
+            </div>
+          </div>
+
+          <!-- Sliders: Cảm biến X -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--color-warning); margin-bottom: 0.5rem;">
+              📷 Cảm Biến Đầu Vào (X)
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+              <div id="mount-slider-x1"></div>
+              <div id="mount-slider-x2"></div>
+            </div>
+          </div>
+
+          <!-- Sliders: Trọng số W1 -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--color-info); margin-bottom: 0.5rem;">
+              ⚖️ Trọng Số Tầng 1 ($W_1$: Input $\to$ Hidden)
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+              <div id="mount-slider-w1-00"></div>
+              <div id="mount-slider-w1-01"></div>
+              <div id="mount-slider-w1-10"></div>
+              <div id="mount-slider-w1-11"></div>
+            </div>
+          </div>
+
+          <!-- Sliders: Trọng số W2 -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--color-accent); margin-bottom: 0.5rem;">
+              ⚖️ Trọng Số Tầng 2 ($W_2$: Hidden $\to$ Output)
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+              <div id="mount-slider-w2-00"></div>
+              <div id="mount-slider-w2-01"></div>
+              <div id="mount-slider-w2-10"></div>
+              <div id="mount-slider-w2-11"></div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- CỘT 3: LIVE MATH & TELEMETRY -->
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Sóng Đạo Hàm Dội Ngược (Backprop)</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+          
+          <!-- Thẻ 1: Forward Tầng 1 & Van ReLU -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
+              1. Tầng 1: $Z_1 = X W_1$ & Hoạt Hóa $A_1 = \text{ReLU}(Z_1)$
+            </div>
+            <div id="katex-z1-mount" style="min-height: 48px; background: #090d15; border-radius: var(--radius-sm); padding: 0.5rem; display: flex; align-items: center; justify-content: center; overflow-x: auto;"></div>
+          </div>
+
+          <!-- Thẻ 2: Gradient Tầng 2 -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
+              2. Backward Tầng 2: $\nabla_{W_2} = A_1^T \cdot G_2$
+            </div>
+            <div id="katex-gradw2-mount" style="min-height: 48px; background: #090d15; border-radius: var(--radius-sm); padding: 0.5rem; display: flex; align-items: center; justify-content: center; overflow-x: auto;"></div>
+          </div>
+
+          <!-- Thẻ 3: Van ReLU Chém Sóng Gradient & Gradient W1 -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
+              3. Backward Tầng 1: $G_1 = (G_2 W_2^T) \odot M$ & $\nabla_{W_1} = X^T \cdot G_1$
+            </div>
+            <div id="katex-g1-mount" style="min-height: 44px; background: #090d15; border-radius: var(--radius-sm); padding: 0.5rem; display: flex; align-items: center; justify-content: center; overflow-x: auto;"></div>
+            <div id="katex-gradw1-mount" style="margin-top: 0.5rem; min-height: 52px; background: #090d15; border-radius: var(--radius-sm); padding: 0.5rem; display: flex; align-items: center; justify-content: center; overflow-x: auto;"></div>
+            <div id="verdict-banner" style="margin-top: 0.75rem; padding: 8px 12px; border-radius: var(--radius-sm); font-size: var(--text-xs); font-weight: 600;"></div>
+          </div>
+
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createLiveSlider } from '../../shared/components/LiveSlider.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath } from '../../shared/katex-render.js';
+    import { markCompleted } from '../../shared/progress.js';
+    import { LessonLogic, PRESETS } from './bai_04_twolayer_relu_backprop.logic.js';
+
+    const STEPS = [
+      {
+        step: 1,
+        badge: 'Bước 1 / 5',
+        heading: 'Mạng Sâu: Cần Tầng Ẩn Phi Tuyến',
+        problem: 'Nếu không có hàm phi tuyến như ReLU, việc nhân 2 tầng ma trận $X W_1 W_2$ chỉ tương đương 1 tầng ma trận duy nhất $X W_{tổng}$. Mạng không thể học được các mối quan hệ phức tạp!',
+        mechanism: 'Hàm kích hoạt phi tuyến $A_1 = \\max(0, Z_1)$ đóng vai trò chiếc van một chiều: chỉ cho nơ-ron có tiềm năng dương đi qua, chặn đứng số âm về $0$.\nVí dụ nhẩm: Với $Z_1 = [1.0, 0.5]$, qua van ReLU ta được $A_1 = [\\max(0, 1.0), \\max(0, 0.5)] = [1.0, 0.5]$. Cả 2 nơ-ron đều mở thông suốt.',
+        action: '👉 Thao tác (Cột 2): Bấm nút "Mạng Chuẩn (Cả 2 nơ-ron sống)" ở Cột 2.\n👁️ Quan sát (Cột 3): Xem giá trị kích hoạt $A_1 = [1.0, 0.5]$ hiển thị màu xanh lá: van mở, tín hiệu truyền trơn tru sang tầng 2!',
+        takeaway: 'Phi tuyến tính là chiếc chìa khóa vạn năng cho phép mạng nơ-ron xấp xỉ bất kỳ hàm số toán học nào (Universal Approximation Theorem).'
+      },
+      {
+        step: 2,
+        badge: 'Bước 2 / 5',
+        heading: 'Hiện Tượng Nơ-ron Chết (Dead ReLU)',
+        problem: 'Điều gì xảy ra nếu điểm số trước kích hoạt $Z_{1,1} < 0$ rơi vào miền âm?',
+        mechanism: 'Chiếc van ReLU lập tức đóng sập lại: $A_{1,1} = \\max(0, -1.0) = 0$.\nVí dụ nhẩm: Khi $Z_1 = [1.0, -1.0]$, sau van ReLU ta có $A_1 = [1.0, 0.0]$. Nơ-ron số 2 bị biến thành số 0 tuyệt đối và chặn đứng mọi thông tin truyền sang tầng kế tiếp.',
+        action: '👉 Thao tác (Cột 2): Bấm nút "Tình huống Nơ-ron 2 Chết (Z1_1 < 0)" ở Cột 2.\n👁️ Quan sát (Cột 3): Xem biểu tượng chiếc van đóng sập và nơ-ron 2 bị tắt tối ($A_{1,1} = 0.0$), mất hoàn toàn khả năng đóng góp dữ liệu!',
+        takeaway: 'Nơ-ron rơi vào miền âm bị triệt tiêu đầu ra về 0, làm lãng phí năng lực tính toán của mô hình.'
+      },
+      {
+        step: 3,
+        badge: 'Bước 3 / 5',
+        heading: 'Lan Truyền Ngược Tầng 2: $\\nabla_{W_2} = A_1^T \\cdot G_2$',
+        problem: 'Khi nơ-ron tầng ẩn bị chết ($A_{1,1} = 0$), đạo hàm của tầng 2 $\\nabla_{W_2}$ sẽ bị ảnh hưởng như thế nào?',
+        mechanism: 'Công thức đạo hàm ma trận: $\\nabla_{W_2} = A_1^T \\cdot G_2$.\nVí dụ nhẩm: Với $A_1 = [1.0, 0.0]$ và sai số $G_2 = [-0.2, +0.2]$:\n$$\\nabla_{W_2} = \\begin{bmatrix} 1.0 \\\\ 0.0 \\end{bmatrix} \\begin{bmatrix} -0.2 & 0.2 \\end{bmatrix} = \\begin{bmatrix} -0.2 & 0.2 \\\\ 0.0 & 0.0 \\end{bmatrix}$$\nHàng thứ 2 của $\\nabla_{W_2}$ nhân với $0.0$ nên bị triệt tiêu toàn bộ về $0$!',
+        action: '👉 Thao tác (Cột 2): Xem bảng ma trận đạo hàm $\\nabla_{W_2}$ ở Cột 2.\n👁️ Quan sát (Cột 3): Nhìn vào hàng thứ 2 của ma trận $\\nabla_{W_2}$: giá trị bằng $0.0$ tuyệt đối!',
+        takeaway: 'Vì $A_{1,1} = 0$, toàn bộ các trọng số nối từ nơ-ron 2 sang tầng kế tiếp không nhận được bất kỳ lực học tập nào trong lượt này.'
+      },
+      {
+        step: 4,
+        badge: 'Bước 4 / 5',
+        heading: 'Sóng Đạo Hàm Dội Ngược Bị Chém Đứt',
+        problem: 'Làm sao truyền sai số dội ngược từ đầu ra về tầng 1? Sóng dội ngược: $G_{hidden} = G_2 \\cdot W_2^T$.',
+        mechanism: 'Khi sóng dội ngược đi qua van ReLU, nó bị nhân với đạo hàm cục bộ: $G_1 = G_{hidden} \\odot \\mathbb{I}(Z_1 > 0)$.\nTại nơ-ron âm ($Z_{1,1} < 0$), đạo hàm ReLU bằng 0, chém đứt hoàn toàn dòng gradient dội về:\n$$G_{1,1} = G_{hidden,1} \\times 0 = 0$$\nKéo theo cột thứ 2 của $\\nabla_{W_1} = X^T \\cdot G_1$ cũng bị liệt về 0!',
+        action: '👉 Thao tác (Cột 2): Xem vector sai số $G_1$ và ma trận $\\nabla_{W_1}$ ở Cột 2.\n👁️ Quan sát (Cột 3): Cột thứ 2 của ma trận $\\nabla_{W_1}$ bị đóng băng bằng $0.0$, nơ-ron không thể tự cứu mình!',
+        takeaway: 'Van ReLU triệt tiêu hoàn toàn gradient của nơ-ron âm! Nếu liên tục bị âm qua nhiều lượt, nơ-ron sẽ chết vĩnh viễn (Dying ReLU).'
+      },
+      {
+        step: 5,
+        badge: 'Bước 5 / 5',
+        heading: 'Lời Nguyền Khởi Tạo Trọng Số Bằng 0',
+        problem: 'Nếu ta khởi tạo toàn bộ trọng số $W_1 = 0, W_2 = 0$ như biến số thông thường trong lập trình thì sao?',
+        mechanism: 'Thảm họa đối xứng: Với $W_1 = 0 \\implies Z_1 = 0 \\implies A_1 = 0$. Đồng thời $W_2 = 0 \\implies G_{hidden} = 0$. Cả dòng tiến và dòng lùi đều bằng 0 tuyệt đối:\n$$\\nabla_{W_1} = 0, \\quad \\nabla_{W_2} = 0$$\nToàn bộ mạng nơ-ron bị đóng băng đối xứng, vĩnh viễn không thể học được bất cứ điều gì!',
+        action: '👉 Thao tác (Cột 2): Bấm nút "Lời Nguyền Toàn 0" ở Cột 2.\n👁️ Quan sát (Cột 3): Toàn bộ mạng nơ-ron bị tê liệt, mọi dòng gradient bị đóng băng bằng 0.0, mô hình hoàn toàn mất khả năng học!',
+        takeaway: 'Khởi tạo bằng 0 sẽ giết chết mạng sâu ngay từ vạch xuất phát! Bắt buộc phải khởi tạo ngẫu nhiên có kiểm soát (He / Kaiming / Xavier).'
+      }
+    ];
+
+    const COMMENTS = {
+      1: [
+        {
+          author: 'Nhà Toán Học',
+          avatar: '📐',
+          tag: 'math',
+          content: 'Chứng minh: Nếu không có ReLU: $X W_1 W_2 = X (W_1 W_2) = X W_{gộp}$. Trăm tầng tuyến tính cũng chỉ bằng một tầng duy nhất.'
+        }
+      ],
+      2: [
+        {
+          author: 'Kỹ Sư AI',
+          avatar: '🚀',
+          tag: 'gotcha',
+          content: 'Nơ-ron chết (Dying ReLU) là một trong những căn bệnh phổ biến nhất khi huấn luyện mạng sâu với tốc độ học (lr) quá lớn.'
+        }
+      ],
+      3: [
+        {
+          author: 'Nhà Toán Học',
+          avatar: '📐',
+          tag: 'math',
+          content: 'Chú ý: Gradient của tầng 2 sử dụng $A_1^T$ (đầu ra sau kích hoạt) chứ không phải $Z_1^T$.'
+        }
+      ],
+      4: [
+        {
+          author: 'Kỹ Sư Hệ Thống',
+          avatar: '⚙️',
+          tag: 'system',
+          content: 'Phép nhân $\\odot$ (Hadamard product) là nhân từng phần tử tương ứng, trong C++ tương đương vòng lặp mảng 1D đơn giản: `G1[i] = Gh[i] * (Z1[i] > 0 ? 1 : 0)`.'
+        }
+      ],
+      5: [
+        {
+          author: 'Chuyên Gia Tối Ưu',
+          avatar: '💡',
+          tag: 'gotcha',
+          content: 'Ở Bài 3 mạng 1 tầng, $W=0$ vẫn học được vì gradient phụ thuộc trực tiếp $X \\ne 0$. Nhưng ở Bài 4 mạng 2 tầng, $W_2=0$ làm triệt tiêu sóng dội ngược về $W_1$!'
+        }
+      ]
+    };
+
+    const logic = new LessonLogic();
+    let state = logic.reset();
+
+    // 1. StepWizard
+    const wizardMount = document.getElementById('mount-step-wizard');
+    const wizard = createStepWizard(wizardMount, {
+      steps: STEPS,
+      initialStep: 1,
+      onStepChange: (step) => {
+        commentSection.setStep(step, COMMENTS[step] || []);
+        if (step === STEPS.length) markCompleted('bai_04_twolayer_relu_backprop');
+      }
+    });
+
+    // 2. CommentSection
+    const commentMount = document.getElementById('mount-comment-section');
+    const commentSection = createCommentSection(commentMount, {
+      lessonId: 'bai_04_twolayer_relu_backprop',
+      initialStep: 1,
+      curatedComments: COMMENTS[1]
+    });
+
+    // 3. PresetPicker
+    const presetMount = document.getElementById('mount-preset-picker');
+    const presetPicker = createPresetPicker(presetMount, {
+      title: 'Tình Huống:',
+      presets: PRESETS,
+      onPick: (preset) => {
+        state = logic.applyPreset(preset.state);
+        syncSliders();
+        renderAll();
+      }
+    });
+
+    // 4. Sliders
+    const sliderX1 = createLiveSlider(document.getElementById('mount-slider-x1'), {
+      label: '$X_0$', min: -2, max: 2, step: 0.5, initial: state.x1,
+      onChange: (v) => { state = logic.onUserUpdate({ x1: v }); renderAll(); }
+    });
+    const sliderX2 = createLiveSlider(document.getElementById('mount-slider-x2'), {
+      label: '$X_1$', min: -2, max: 2, step: 0.5, initial: state.x2,
+      onChange: (v) => { state = logic.onUserUpdate({ x2: v }); renderAll(); }
+    });
+
+    const sW1_00 = createLiveSlider(document.getElementById('mount-slider-w1-00'), {
+      label: '$W1_{00}$', min: -2, max: 2, step: 0.2, initial: state.w1_00,
+      onChange: (v) => { state = logic.onUserUpdate({ w1_00: v }); renderAll(); }
+    });
+    const sW1_01 = createLiveSlider(document.getElementById('mount-slider-w1-01'), {
+      label: '$W1_{01}$', min: -2, max: 2, step: 0.2, initial: state.w1_01,
+      onChange: (v) => { state = logic.onUserUpdate({ w1_01: v }); renderAll(); }
+    });
+    const sW1_10 = createLiveSlider(document.getElementById('mount-slider-w1-10'), {
+      label: '$W1_{10}$', min: -2, max: 2, step: 0.2, initial: state.w1_10,
+      onChange: (v) => { state = logic.onUserUpdate({ w1_10: v }); renderAll(); }
+    });
+    const sW1_11 = createLiveSlider(document.getElementById('mount-slider-w1-11'), {
+      label: '$W1_{11}$', min: -2, max: 2, step: 0.2, initial: state.w1_11,
+      onChange: (v) => { state = logic.onUserUpdate({ w1_11: v }); renderAll(); }
+    });
+
+    const sW2_00 = createLiveSlider(document.getElementById('mount-slider-w2-00'), {
+      label: '$W2_{00}$', min: -2, max: 2, step: 0.2, initial: state.w2_00,
+      onChange: (v) => { state = logic.onUserUpdate({ w2_00: v }); renderAll(); }
+    });
+    const sW2_01 = createLiveSlider(document.getElementById('mount-slider-w2-01'), {
+      label: '$W2_{01}$', min: -2, max: 2, step: 0.2, initial: state.w2_01,
+      onChange: (v) => { state = logic.onUserUpdate({ w2_01: v }); renderAll(); }
+    });
+    const sW2_10 = createLiveSlider(document.getElementById('mount-slider-w2-10'), {
+      label: '$W2_{10}$', min: -2, max: 2, step: 0.2, initial: state.w2_10,
+      onChange: (v) => { state = logic.onUserUpdate({ w2_10: v }); renderAll(); }
+    });
+    const sW2_11 = createLiveSlider(document.getElementById('mount-slider-w2-11'), {
+      label: '$W2_{11}$', min: -2, max: 2, step: 0.2, initial: state.w2_11,
+      onChange: (v) => { state = logic.onUserUpdate({ w2_11: v }); renderAll(); }
+    });
+
+    function syncSliders() {
+      sliderX1.setValue(state.x1);
+      sliderX2.setValue(state.x2);
+      sW1_00.setValue(state.w1_00);
+      sW1_01.setValue(state.w1_01);
+      sW1_10.setValue(state.w1_10);
+      sW1_11.setValue(state.w1_11);
+      sW2_00.setValue(state.w2_00);
+      sW2_01.setValue(state.w2_01);
+      sW2_10.setValue(state.w2_10);
+      sW2_11.setValue(state.w2_11);
+    }
+
+    // Action buttons
+    document.getElementById('btn-sgd-step').addEventListener('click', () => {
+      state = logic.stepSGD();
+      syncSliders();
+      renderAll();
+    });
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      state = logic.reset();
+      syncSliders();
+      renderAll();
+    });
+
+    function renderAll() {
+      // Valve Status Indicators
+      const valve0 = document.getElementById('valve-status-0');
+      const valve1 = document.getElementById('valve-status-1');
+
+      if (state.m0 === 1) {
+        valve0.innerHTML = `🟢 Nơ-ron 1: MỞ<br><span style="font-size: 0.75rem; font-weight: normal;">Z1_0 = ${state.z1_0.toFixed(2)} > 0</span>`;
+        valve0.style.background = 'rgba(16, 185, 129, 0.2)';
+        valve0.style.color = 'var(--color-positive)';
+        valve0.style.border = '1px solid var(--color-positive)';
+      } else {
+        valve0.innerHTML = `🔴 Nơ-ron 1: ĐÓNG<br><span style="font-size: 0.75rem; font-weight: normal;">Z1_0 = ${state.z1_0.toFixed(2)} ≤ 0</span>`;
+        valve0.style.background = 'rgba(239, 68, 68, 0.2)';
+        valve0.style.color = 'var(--color-negative)';
+        valve0.style.border = '1px solid var(--color-negative)';
+      }
+
+      if (state.m1 === 1) {
+        valve1.innerHTML = `🟢 Nơ-ron 2: MỞ<br><span style="font-size: 0.75rem; font-weight: normal;">Z1_1 = ${state.z1_1.toFixed(2)} > 0</span>`;
+        valve1.style.background = 'rgba(16, 185, 129, 0.2)';
+        valve1.style.color = 'var(--color-positive)';
+        valve1.style.border = '1px solid var(--color-positive)';
+      } else {
+        valve1.innerHTML = `🔴 Nơ-ron 2: ĐÓNG (CHẾT)<br><span style="font-size: 0.75rem; font-weight: normal;">Z1_1 = ${state.z1_1.toFixed(2)} ≤ 0</span>`;
+        valve1.style.background = 'rgba(239, 68, 68, 0.2)';
+        valve1.style.color = 'var(--color-negative)';
+        valve1.style.border = '1px solid var(--color-negative)';
+      }
+
+      // KaTeX formulas
+      renderMath(document.getElementById('katex-z1-mount'), state.formulaZ1KaTeX);
+      renderMath(document.getElementById('katex-gradw2-mount'), state.formulaGradW2KaTeX);
+      renderMath(document.getElementById('katex-g1-mount'), state.formulaG1KaTeX);
+      renderMath(document.getElementById('katex-gradw1-mount'), state.formulaGradW1KaTeX);
+
+      // Verdict Banner
+      const verdict = document.getElementById('verdict-banner');
+      if (state.m0 === 0 && state.m1 === 0) {
+        verdict.textContent = `💀 CẢ 2 NƠ-RON TẦNG ẨN ĐỀU CHẾT! Mạng bị tê liệt hoàn toàn, toàn bộ gradient bằng 0.`;
+        verdict.style.background = 'rgba(239, 68, 68, 0.25)';
+        verdict.style.color = 'var(--color-negative)';
+        verdict.style.border = '1px solid var(--color-negative)';
+      } else if (state.m1 === 0) {
+        verdict.textContent = `⚠️ Nơ-ron 2 bị chết: Hàng 2 của ∇W₂ và Cột 2 của ∇W₁ bị triệt tiêu về 0 tuyệt đối!`;
+        verdict.style.background = 'rgba(245, 158, 11, 0.2)';
+        verdict.style.color = 'var(--color-warning)';
+        verdict.style.border = '1px solid var(--color-warning)';
+      } else {
+        verdict.textContent = `⚡ Cả 2 nơ-ron hoạt động! Sóng gradient lan truyền thông suốt qua cả 2 tầng mạng.`;
+        verdict.style.background = 'rgba(16, 185, 129, 0.2)';
+        verdict.style.color = 'var(--color-positive)';
+        verdict.style.border = '1px solid var(--color-positive)';
+      }
+    }
+
+    renderAll();
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

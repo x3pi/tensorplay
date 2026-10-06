@@ -14,6 +14,7 @@
   <!-- KaTeX CDN -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
 
   <!-- Shared CSS -->
   <link rel="stylesheet" href="../../shared/styles/tokens.css">
@@ -94,7 +95,7 @@
 
       <div class="lab-header-right">
         <span class="tp-badge tp-badge-step" style="border-color: rgba(139, 92, 246, 0.4);">
-          Track 1: HW1 Autograd Engine
+          Track 1: Động Cơ Tính Đạo Hàm (Autograd)
         </span>
       </div>
     </header>
@@ -257,9 +258,9 @@
       {
         id: "c2",
         stepIndex: 2,
-        author: "Lập Trình Viên Needle",
-        badge: "HW1 Traps",
-        content: "Khi viết unit test cho backward của ReLU ở Needle HW1, chú ý `relu_grad(z) = 1` nếu `z > 0`, và `0` nếu `z <= 0`. Nhớ rằng đạo hàm phụ thuộc vào INPUT `z` của phép ReLU chứ không phải output!"
+        author: "Kỹ Sư Động Cơ AI",
+        badge: "ReLU Traps",
+        content: "Khi viết unit test cho backward của ReLU trong Autograd, chú ý `relu_grad(z) = 1` nếu `z > 0`, và `0` nếu `z <= 0`. Nhớ rằng đạo hàm phụ thuộc vào INPUT `z` của phép ReLU chứ không phải output!"
       }
     ];
 
@@ -376,5 +377,7 @@
 
     updateUI();
   </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
 </body>
 </html>

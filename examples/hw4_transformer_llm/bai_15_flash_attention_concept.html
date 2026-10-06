@@ -14,6 +14,7 @@
   <!-- KaTeX CDN -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
 
   <!-- Shared CSS -->
   <link rel="stylesheet" href="../../shared/styles/tokens.css">
@@ -90,7 +91,7 @@
 
       <div class="lab-header-right">
         <span class="tp-badge tp-badge-step" style="border-color: rgba(236, 72, 153, 0.4);">
-          Track 4: HW4 Transformer & LLM Systems
+          Track 4: Transformer & Hệ Thống LLM
         </span>
       </div>
     </header>
@@ -130,10 +131,10 @@
                 N × N<br>trong HBM
               </div>
               <div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-negative);" id="txt-hbm-standard">
-                512 Bytes (O(N²))
+                512 Bytes ($O(N^2)$)
               </div>
               <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 4px;">
-                Ghi & đọc ma trận N×N ra DRAM/HBM chậm chạp
+                Ghi & đọc ma trận $N \times N$ ra DRAM/HBM chậm chạp
               </div>
             </div>
 
@@ -143,12 +144,12 @@
                 2. FlashAttention
               </div>
               <div class="sram-tile-stream">
-                <div class="sram-chunk">B₁</div>
-                <div class="sram-chunk">B₂</div>
+                <div class="sram-chunk">$B_1$</div>
+                <div class="sram-chunk">$B_2$</div>
                 <div class="sram-chunk">SRAM</div>
               </div>
               <div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-positive);" id="txt-hbm-flash">
-                4,096 Bytes (O(N))
+                4,096 Bytes ($O(N)$)
               </div>
               <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 4px;">
                 Chỉ tính trong SRAM on-chip, không ghi N×N ra HBM!
@@ -168,9 +169,9 @@
             </div>
 
             <div style="font-family: var(--font-mono); font-size: var(--text-xs); line-height: 1.8; color: var(--text-bright);">
-              <div>Khối 1: m⁽¹⁾ = 4.0, ℓ⁽¹⁾ = 1.135</div>
-              <div>Khối 2: m⁽²⁾ = 5.0 &rarr; Hệ số co dãn: &alpha; = e⁽⁴⁻⁵⁾ = <strong>0.368</strong></div>
-              <div style="color: var(--color-positive);">Hợp nhất: m_new = 5.0, ℓ_new = <strong>1.553</strong></div>
+              <div>Khối 1: $m^{(1)} = 4.0$, $\ell^{(1)} = 1.135$</div>
+              <div>Khối 2: $m^{(2)} = 5.0 \to$ Hệ số co dãn: $\alpha = e^{4-5} = <strong>0.368</strong></div>
+              <div style="color: var(--color-positive);">Hợp nhất: $m_{\text{new}} = 5.0$, $\ell_{\text{new}} = <strong>1.553</strong></div>
             </div>
           </div>
 
@@ -329,5 +330,7 @@
 
     updateUI();
   </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
 </body>
 </html>

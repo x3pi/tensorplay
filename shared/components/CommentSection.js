@@ -150,3 +150,29 @@ export function createCommentSection(container, options = {}) {
     getComments: () => [...currentCurated, ...loadUserNotes()]
   };
 }
+
+export class CommentSection {
+  constructor(arg1, arg2) {
+    let options = arg2 || {};
+    let parent = null;
+    if (arg1 instanceof HTMLElement || (typeof arg1 === 'object' && arg1 && arg1.nodeType === 1)) {
+      parent = arg1;
+    } else if (typeof arg1 === 'object' && arg1) {
+      options = arg1;
+      if (options.container) parent = options.container;
+      else if (options.containerId) parent = document.getElementById(options.containerId);
+    }
+    if (!parent) return;
+
+    this._instance = createCommentSection(parent, options);
+  }
+
+  setStep(...args) {
+    return this._instance?.setStep(...args);
+  }
+
+  getComments() {
+    return this._instance?.getComments();
+  }
+}
+

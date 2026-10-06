@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bài 06a: Dò Tay Vòng Lặp Nhân Ma Trận C++ - TensorPlay</title>
+  <meta name="description" content="Mô phỏng 3 vòng lặp for(i) for(j) for(l) và sự tịnh tiến con trỏ mảng phẳng 1D trong C++. Hiểu bản chất cách máy tính tính toán tích ma trận.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- KaTeX CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <!-- Shared CSS -->
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    
+    <!-- Top Header -->
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">
+          ← Về Danh Mục
+        </a>
+      </div>
+
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step">
+          Track 0: Nền Tảng Tensor & Bộ Nhớ C++
+        </span>
+      </div>
+    </header>
+
+    <!-- Main 3-Zone Grid -->
+    <main class="lab-grid">
+      
+      <!-- CỘT 1: DẪN DẮT SOCRATIC & HỆ THỐNG BÌNH LUẬN KIẾN THỨC -->
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt & Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <!-- CỘT 2: KHÔNG GIAN THỰC NGHIỆM SANDBOX -->
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Trình Điều Khiển Vòng Lặp C++</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Đặt Lại</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+          
+          <div id="mount-preset-picker"></div>
+
+          <!-- Thanh Điều Khiển Bước Chạy -->
+          <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-weight: 700; color: #fff; font-size: var(--text-sm);">Dò Từng Bước Lặp (Step Tracer)</div>
+                <div style="font-size: var(--text-xs); color: var(--text-muted);" id="step-indicator">Bước 1 / 12</div>
+              </div>
+              <div style="display: flex; gap: 6px;">
+                <button id="btn-prev" class="tp-btn tp-btn-ghost" style="padding: 6px 12px;">◀ Lùi</button>
+                <button id="btn-next" class="tp-btn tp-btn-primary" style="padding: 6px 16px;">Bước Kế Tiếp ▶</button>
+              </div>
+            </div>
+
+            <!-- Thanh trượt bước -->
+            <div id="mount-slider-step"></div>
+          </div>
+
+          <!-- Đoạn Mã C++ Đang Chạy Thực Tế -->
+          <div style="background: #090e17; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem; font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.7;">
+            <div style="color: #64748b; margin-bottom: 4px;">// simple_ml_ext.cpp: 3 nested loops</div>
+            <div id="code-line-i" style="color: #f1f5f9; padding: 2px 6px; border-radius: 4px;">for (size_t i = 0; i &lt; M; ++i) {</div>
+            <div id="code-line-j" style="color: #f1f5f9; padding-left: 14px; padding-top: 2px; padding-bottom: 2px; border-radius: 4px;">for (size_t j = 0; j &lt; N; ++j) {</div>
+            <div id="code-line-l" style="color: #f1f5f9; padding-left: 28px; padding-top: 2px; padding-bottom: 2px; border-radius: 4px;">for (size_t l = 0; l &lt; K; ++l) {</div>
+            <div id="code-line-calc" style="color: var(--color-warning); background: rgba(234, 179, 8, 0.15); border-left: 2px solid var(--color-warning); padding-left: 40px; padding-top: 2px; padding-bottom: 2px; border-radius: 4px;">
+              C[i*N + j] += A[i*K + l] * B[l*N + j];
+            </div>
+            <div style="color: #f1f5f9; padding-left: 28px;">}</div>
+            <div style="color: #f1f5f9; padding-left: 14px;">}</div>
+            <div style="color: #f1f5f9;">}</div>
+          </div>
+
+          <!-- Trực quan hóa Mảng Phẳng 1D Trong Bộ Nhớ -->
+          <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.75rem;">
+              Bản Đồ Ô Nhớ 1D Đang Được CPU Truy Cập
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <!-- Mảng A -->
+              <div>
+                <div style="font-size: 0.72rem; color: #94a3b8; margin-bottom: 4px;">Mảng <code>float* A</code> (2 &times; 3 = 6 phần tử):</div>
+                <div id="cells-a" style="display: flex; gap: 6px; overflow-x: auto;"></div>
+              </div>
+
+              <!-- Mảng B -->
+              <div>
+                <div style="font-size: 0.72rem; color: #94a3b8; margin-bottom: 4px;">Mảng <code>float* B</code> (3 &times; 2 = 6 phần tử):</div>
+                <div id="cells-b" style="display: flex; gap: 6px; overflow-x: auto;"></div>
+              </div>
+
+              <!-- Mảng C -->
+              <div>
+                <div style="font-size: 0.72rem; color: #94a3b8; margin-bottom: 4px;">Mảng Kết Quả <code>float* C</code> (2 &times; 2 = 4 phần tử):</div>
+                <div id="cells-c" style="display: flex; gap: 6px; overflow-x: auto;"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- CỘT 3: LIVE MATH INSPECTOR & TELEMETRY -->
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math & Con Trỏ RAM</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+          
+          <!-- Chỉ số lặp hiện thời -->
+          <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; color: var(--color-info); margin-bottom: 6px;">
+              1. Trạng Thái Biến Chạy
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 1.1rem; color: #fff; font-weight: 700;">
+              i = <span id="stat-i" style="color: var(--color-info);">0</span>, 
+              j = <span id="stat-j" style="color: var(--color-positive);">0</span>, 
+              l = <span id="stat-l" style="color: var(--color-warning);">0</span>
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">
+              Hàng $i$, Cột $j$, Chiều co rút $l$.
+            </div>
+          </div>
+
+          <!-- Công thức ánh xạ chỉ số C++ -->
+          <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; color: var(--color-info); margin-bottom: 6px;">
+              2. Ánh Xạ Chỉ Số Offset 1D
+            </div>
+            <div id="math-offset" style="overflow-x: auto; padding: 4px 0;"></div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;" id="stat-offsets">
+              Offset A: 0 | Offset B: 0 | Offset C: 0
+            </div>
+          </div>
+
+          <!-- Phép tính tích lũy -->
+          <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 1rem; border-left: 3px solid var(--color-warning);">
+            <div style="font-size: var(--text-xs); font-weight: 700; color: var(--color-warning); margin-bottom: 6px;">
+              3. Phép Tính Tích Lũy Giá Trị (+=)
+            </div>
+            <div id="math-val" style="overflow-x: auto; padding: 4px 0;"></div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">
+              Nhân hai số từ RAM và cộng gộp vào ô nhớ đích của ma trận C.
+            </div>
+          </div>
+
+          <!-- Mảng C hiện thời -->
+          <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.5rem;">
+              4. Mảng C[2 &times; 2] Hiện Thời
+            </div>
+            <div id="stat-c-matrix" style="font-family: var(--font-mono); font-size: 0.85rem; color: #fff;">
+              [[0.0, 0.0], [0.0, 0.0]]
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script type="module">
+    import { LessonLogic, PRESETS } from './bai_06a_cpp_matmul_loops.logic.js';
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createLiveSlider } from '../../shared/components/LiveSlider.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { renderMath } from '../../shared/katex-render.js';
+
+    const logic = new LessonLogic();
+    let state = logic.reset();
+
+    // Socratic Steps
+    const STEPS = [
+      {
+        heading: "Bộ Nhớ Máy Tính Là Một Đường Thẳng",
+        problem: "Trong toán học ta viết ma trận 2D $M \\times N$, nhưng trong thanh RAM máy tính chỉ có một hàng dài ô nhớ 1D liên tục.",
+        mechanism: "Quy tắc ánh xạ Row-Major: Chỉ số $(r, c)$ được chuyển đổi thành địa chỉ con trỏ tuyến tính:\n$$\\text{offset} = r \\times N + c$$\nVí dụ nhẩm: Với ma trận 2 hàng 2 cột ($N=2$), phần tử ở hàng 1, cột 0 có vị trí $\\text{offset} = 1 \\times 2 + 0 = 2$. CPU truy cập thẳng qua con trỏ `*(ptr + 2)`!",
+        action: "👉 Thao tác (Cột 2): Di chuyển chuột qua các ô của ma trận $A$ hoặc $B$ ở Cột 2.\n👁️ Quan sát (Cột 3): Xem dòng công thức ánh xạ offset 1D tự động đổi số và vị trí con trỏ tương ứng trên thanh RAM!",
+        takeaway: "Không có ma trận 2D trong phần cứng; mọi tensor đều là một mảng phẳng 1D tuần tự: offset = r * N + c."
+      },
+      {
+        heading: "Ý Nghĩa 3 Vòng Lặp Lồng Nhau",
+        problem: "Tại sao lại cần tới 3 vòng lặp lồng nhau `for (i) for (j) for (l)` để tính tích 2 ma trận?",
+        mechanism: "Vòng lặp $i$ duyệt qua các hàng của $A$, vòng lặp $j$ duyệt qua các cột của $B$, và vòng lặp $l$ là chiều co rút (reduction) chạy từ $0 \\to K-1$ để tính tích vô hướng:\n$$C_{i, j} = \\sum_{l=0}^{K-1} A_{i, l} \\times B_{l, j}$$\nMỗi phần tử $C_{i, j}$ là kết quả của một tích vô hướng trọn vẹn.",
+        action: "👉 Thao tác (Cột 2): Bấm nút \"Bước Kế Tiếp ▶\" ở Cột 2.\n👁️ Quan sát (Cột 3): Xem biến $l$ chạy qua các cột của $A$ và các hàng của $B$ để tính tích từng cặp phần tử!",
+        takeaway: "Phép nhân ma trận $A_{(M \\times K)} \\cdot B_{(K \\times N)}$ bản chất là thực hiện $M \\times N$ phép tính tích vô hướng kích thước $K$."
+      },
+      {
+        heading: "Phép Tích Lũy Giá Trị (+=)",
+        problem: "Mỗi phần tử $C_{i, j}$ là tổng của $K$ phép nhân. Làm sao ô nhớ giữ được giá trị tích lũy an toàn?",
+        mechanism: "Toán tử tích lũy: `C[i*N + j] += A[i*K + l] * B[l*N + j]`.\nVí dụ nhẩm: Khi $l=0$, tích là $1 \\times 2 = 2$ ($C$ lưu $2$). Khi $l=1$, tích là $0 \\times 1 = 0$ ($C$ cộng thêm $0$ thành $2$). Ô nhớ $C$ bắt buộc phải được khởi tạo về $0$ trước khi vòng lặp $l$ bắt đầu!",
+        action: "👉 Thao tác (Cột 2): Bấm tiếp \"Bước Kế Tiếp ▶\".\n👁️ Quan sát (Cột 3): Xem ô nhớ của ma trận $C$ ở Cột 3 chuyển từ 0 lên giá trị tích lũy mới sau mỗi lần biến $l$ tăng!",
+        takeaway: "Quên khởi tạo bằng 0 (`memset 0` hoặc `calloc`) sẽ khiến kết quả bị nhiễm rác bộ nhớ (garbage data) tai hại."
+      },
+      {
+        heading: "Độ Phức Tạp Thuật Toán $O(M \\times N \\times K)$",
+        problem: "Với mô hình AI lớn, số phép tính nhân ma trận có thể lên tới hàng nghìn tỷ phép tính.",
+        mechanism: "Độ phức tạp $O(M \\cdot N \\cdot K)$: Với ma trận kích thước $2 \\times 2 \\times 3$, tổng số phép nhân cộng là $2 \\times 2 \\times 3 = 12$ bước.\nNhưng với mô hình LLM ma trận $4096 \\times 4096$, số phép tính là $4096^3 \\approx 68$ tỷ phép tính!",
+        action: "👉 Thao tác (Cột 2): Bấm \"Chạy Tự Động\" để xem toàn bộ 12 bước hoàn thành.\n👁️ Quan sát (Cột 3): Bảng ma trận $C$ hoàn tất cả 4 ô vuông với kết quả chính xác tuyệt đối!",
+        takeaway: "Đây là lý do kỹ sư hệ thống phải dùng GPU CUDA và kỹ thuật Tiling/Shared Memory để phân tán hàng triệu luồng tính toán song song."
+      }
+    ];
+
+    // Chú giải chuyên gia
+    const COMMENTS = [
+      {
+        id: "c1",
+        stepIndex: 0,
+        author: "Kỹ Sư C++ Hiệu Năng Cao",
+        badge: "Row-Major Layout",
+        avatar: "⚡",
+        content: "Trong C/C++, mảng được sắp xếp theo Row-Major (theo hàng). Nghĩa là các phần tử trên cùng một hàng nằm sát nhau trong RAM. Khi bạn nhảy sai chỉ số, CPU sẽ bị Cache Miss và chạy chậm gấp 10 lần!"
+      },
+      {
+        id: "c2",
+        stepIndex: 2,
+        author: "Chuyên Gia Tối Ưu Hệ Thống",
+        badge: "Loop Unrolling",
+        avatar: "⚙️",
+        content: "Các trình biên dịch tối ưu (GCC/Clang với cờ `-O3`) thường tự động bung vòng lặp (loop unrolling) hoặc vector hóa bằng lệnh SIMD (AVX-512) để tính 8 đến 16 phép nhân cùng một lúc trong đúng 1 chu kỳ xung nhịp."
+      }
+    ];
+
+    // Khởi tạo Socratic & Comments
+    createStepWizard(document.getElementById('mount-step-wizard'), { steps: STEPS });
+    createCommentSection(document.getElementById('mount-comment-section'), { comments: COMMENTS });
+
+    // Presets
+    createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      onSelect: (p) => {
+        state = logic.applyPreset(p.state);
+        stepSlider.setValue(0);
+        updateUI();
+      }
+    });
+
+    // Slider bước lặp
+    const stepMount = document.getElementById('mount-slider-step');
+    const stepSlider = createLiveSlider(stepMount, {
+      label: 'Vị Trí Bước Lặp (Step Tracer)',
+      min: 0,
+      max: state.totalSteps - 1,
+      step: 1,
+      value: state.currentStep,
+      onChange: (v) => {
+        state = logic.onUserUpdate({ currentStep: v });
+        updateUI();
+      }
+    });
+
+    // Nút điều khiển
+    document.getElementById('btn-next').addEventListener('click', () => {
+      if (state.currentStep < state.totalSteps - 1) {
+        state = logic.onUserUpdate({ currentStep: state.currentStep + 1 });
+        stepSlider.setValue(state.currentStep);
+        updateUI();
+      }
+    });
+
+    document.getElementById('btn-prev').addEventListener('click', () => {
+      if (state.currentStep > 0) {
+        state = logic.onUserUpdate({ currentStep: state.currentStep - 1 });
+        stepSlider.setValue(state.currentStep);
+        updateUI();
+      }
+    });
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      state = logic.reset();
+      stepSlider.setValue(0);
+      updateUI();
+    });
+
+    function renderCellGrid(container, arr, activeIdx, color) {
+      container.innerHTML = arr.map((val, idx) => {
+        const isActive = idx === activeIdx;
+        return `
+          <div style="
+            min-width: 42px;
+            padding: 6px;
+            border-radius: var(--radius-sm);
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            background: ${isActive ? color : '#06090e'};
+            color: ${isActive ? '#fff' : '#94a3b8'};
+            border: 1px solid ${isActive ? '#fff' : 'var(--border-subtle)'};
+            box-shadow: ${isActive ? '0 0 8px ' + color : 'none'};
+            transition: all 0.15s ease;
+          ">
+            <div style="font-size: 0.6rem; opacity: 0.7;">[${idx}]</div>
+            <div style="font-weight: 700;">${val}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updateUI() {
+      // Cập nhật trạng thái text
+      document.getElementById('step-indicator').textContent = `Bước ${state.currentStep + 1} / ${state.totalSteps}`;
+      document.getElementById('stat-i').textContent = state.i_curr;
+      document.getElementById('stat-j').textContent = state.j_curr;
+      document.getElementById('stat-l').textContent = state.l_curr;
+
+      document.getElementById('stat-offsets').textContent = 
+        `Offset A [${state.idxA}] = ${state.valA} | Offset B [${state.idxB}] = ${state.valB} | Offset C [${state.idxC}] = ${state.valC}`;
+
+      // Highlight code line
+      document.getElementById('code-line-calc').style.background = 'rgba(234, 179, 8, 0.2)';
+
+      // Cập nhật các ô nhớ RAM 1D
+      renderCellGrid(document.getElementById('cells-a'), state.A, state.idxA, 'var(--color-info)');
+      renderCellGrid(document.getElementById('cells-b'), state.B, state.idxB, 'var(--color-positive)');
+      renderCellGrid(document.getElementById('cells-c'), state.C, state.idxC, 'var(--color-warning)');
+
+      // Cập nhật ma trận C 2x2
+      const cStr = `[[${state.C[0]}, ${state.C[1]}], [${state.C[2]}, ${state.C[3]}]]`;
+      document.getElementById('stat-c-matrix').textContent = cStr;
+
+      // Cập nhật Live Math
+      const mathOffset = document.getElementById('math-offset');
+      mathOffset.setAttribute('data-tex', state.formulaCppKaTeX);
+
+      const mathVal = document.getElementById('math-val');
+      mathVal.setAttribute('data-tex', state.formulaValKaTeX);
+
+      renderMath();
+    }
+
+    updateUI();
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

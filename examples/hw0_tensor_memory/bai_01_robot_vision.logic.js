@@ -14,6 +14,8 @@ export class LessonLogic {
     this.state = {
       pixels: [1, 1, 0, 0],
       weights: [1, 1, -1, -1],
+      verticalWeights: [1, -1, 1, -1],
+      activeTemplate: 'horizontal', // 'horizontal' | 'vertical'
       activeIndex: 0
     };
     return this.calculate();
@@ -36,13 +38,14 @@ export class LessonLogic {
   }
 
   calculate() {
-    const { pixels, weights, activeIndex } = this.state;
+    const { pixels, activeIndex, activeTemplate = 'horizontal' } = this.state;
+    const weights = this.state.weights || [1, 1, -1, -1];
+    const verticalWeights = this.state.verticalWeights || [1, -1, 1, -1];
 
-    // 1. Dot product with horizontal template W
+    // 1. Dot product with horizontal template W_ngang
     const score = dot(pixels, weights);
 
     // 2. Competing vertical detector: W_vertical = [1, -1, 1, -1]
-    const verticalWeights = [1, -1, 1, -1];
     const scoreVertical = dot(pixels, verticalWeights);
 
     // 3. Safe Softmax probabilities
@@ -50,14 +53,25 @@ export class LessonLogic {
     const probHorizontal = probs[0];
     const probVertical = probs[1];
 
-    // 4. Construct KaTeX formula string
-    const terms = pixels.map((p, i) => {
+    // 4. Construct KaTeX formula strings for both templates
+    const termsHoriz = pixels.map((p, i) => {
       const pStr = Number.isInteger(p) ? p.toString() : p.toFixed(1);
       const wStr = weights[i] >= 0 ? `+${weights[i]}` : `${weights[i]}`;
       return `(${pStr} \\times ${wStr})`;
     }).join(' + ');
 
-    const formulaKaTeX = `Z = \\sum_{i=0}^{3} x_i w_i = ${terms} = ${score.toFixed(1)}`;
+    const termsVert = pixels.map((p, i) => {
+      const pStr = Number.isInteger(p) ? p.toString() : p.toFixed(1);
+      const wStr = verticalWeights[i] >= 0 ? `+${verticalWeights[i]}` : `${verticalWeights[i]}`;
+      return `(${pStr} \\times ${wStr})`;
+    }).join(' + ');
+
+    const formulaKaTeXHoriz = `Z_{\\text{ngang}} = \\sum x_i w_i = ${termsHoriz} = ${score.toFixed(1)}`;
+    const formulaKaTeXVert = `Z_{\\text{dọc}} = \\sum x_i w_i = ${termsVert} = ${scoreVertical.toFixed(1)}`;
+    const formulaMatrixKaTeX = `Z = X \\cdot W = [Z_{\\text{ngang}}, \\; Z_{\\text{dọc}}] = [${score.toFixed(1)}, \\; ${scoreVertical.toFixed(1)}]`;
+
+    // Active formula matches currently selected template
+    const formulaKaTeX = activeTemplate === 'vertical' ? formulaKaTeXVert : formulaKaTeXHoriz;
 
     // 5. Verdict
     const allGlare = pixels.every(p => p >= 0.9);
@@ -71,17 +85,17 @@ export class LessonLogic {
     } else if (score >= 1.5 && score > scoreVertical) {
       verdict = {
         type: 'success',
-        text: `🛑 Phát hiện BIỂN DỪNG (Gạch Ngang) với độ tin cậy ${(probHorizontal * 100).toFixed(0)}%`
+        text: `🛑 Nhận diện BIỂN DỪNG (Gạch Ngang) • Điểm Z = +${score.toFixed(1)} (Vượt ngưỡng an toàn > 1.0)`
       };
     } else if (scoreVertical >= 1.5 && scoreVertical > score) {
       verdict = {
         type: 'warning',
-        text: `⬆️ Phát hiện BIỂN ĐI THẲNG (Gạch Dọc) với độ tin cậy ${(probVertical * 100).toFixed(0)}%`
+        text: `⬆️ Nhận diện BIỂN ĐI THẲNG (Gạch Dọc) • Điểm Z = +${scoreVertical.toFixed(1)} (Vượt ngưỡng an toàn > 1.0)`
       };
     } else if (score > 0.5) {
       verdict = {
         type: 'neutral',
-        text: `⚠️ Khớp một phần với Biển Dừng (Z = ${score.toFixed(1)})`
+        text: `⚠️ Khớp một phần với Biển Dừng (Z = ${score.toFixed(1)} <= 1.0)`
       };
     }
 
@@ -90,7 +104,13 @@ export class LessonLogic {
       scoreVertical,
       probHorizontal,
       probVertical,
+      weightsHorizontal: [...weights],
+      weightsVertical: [...verticalWeights],
+      activeTemplate,
       formulaKaTeX,
+      formulaKaTeXHoriz,
+      formulaKaTeXVert,
+      formulaMatrixKaTeX,
       verdict,
       memoryCells: [...pixels],
       activeOffset: activeIndex,

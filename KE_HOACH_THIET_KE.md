@@ -253,9 +253,9 @@ Không có `router.js`. Mỗi bài tự đọc tham số của chính nó khi t�
 
 ---
 
-## 🗺️ IX. Lộ Trình Ánh Xạ Khóa Học DL Systems (CMU 10-414 / 10-714 Mapping)
+## 🗺️ IX. Lộ Trình Hệ Thống Học Sâu (Deep Learning Systems Mapping)
 
-Dự án TensorPlay xoay quanh 5 track kinh điển của Deep Learning Systems (CMU 10-414/10-714), mỗi track bóc tách thành các ví dụ độc lập trong `examples/<track>/`:
+Dự án TensorPlay xoay quanh 5 track kinh điển của Deep Learning Systems, mỗi track bóc tách thành các ví dụ độc lập trong `examples/<track>/`:
 
 ### Track 0 — `hw0_tensor_memory/`: Nền Tảng Tensor & Kỹ Nghệ Bộ Nhớ C++
 *Trọng tâm: Chuyển dịch tư duy từ vòng lặp toán học sang layout bộ nhớ máy tính thực tế.*

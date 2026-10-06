@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
 
   <link rel="stylesheet" href="../../shared/styles/tokens.css">
   <link rel="stylesheet" href="../../shared/styles/layout.css">
@@ -25,7 +26,7 @@
         <a href="../../index.html" class="btn-back-catalog">← Về Danh Mục</a>
       </div>
       <div class="lab-header-right">
-        <span class="tp-badge tp-badge-step">Track 0: HW0 Tensor & C++ Memory</span>
+        <span class="tp-badge tp-badge-step">Track 0: Nền Tảng Tensor & Bộ Nhớ C++</span>
       </div>
     </header>
 
@@ -114,41 +115,46 @@
         step: 1,
         badge: 'Bước 1 / 5',
         heading: 'Kho Hàng RAM Xa Xôi vs Mặt Bàn L1 Cache',
-        problem: 'Bộ nhớ RAM máy tính cách CPU hàng triệu chu kỳ xung nhịp. Nếu mỗi phép cộng ma trận đều phải gọi ra RAM, AI sẽ chạy chậm như rùa bò!',
-        challenge: 'CPU giải quyết bằng cách trang bị bộ đệm L1 Cache siêu tốc ngay trên chip, thời gian truy xuất chỉ 1 chu kỳ xung nhịp.',
+        problem: 'Bộ nhớ RAM máy tính cách CPU hàng trăm chu kỳ xung nhịp. Nếu mỗi phép tính ma trận đều phải chờ đọc từ RAM, AI sẽ chạy chậm như rùa bò!',
+        mechanism: 'CPU giải quyết bằng cách trang bị bộ đệm L1 Cache siêu tốc ngay sát lõi chip: L1 chỉ tốn $1$ cycle, trong khi đọc từ RAM tốn tới $100+$ cycles! Tốc độ chênh lệch hơn 100 lần.',
+        action: '👉 Thao tác (Cột 2): Bấm nút "Đọc 1 Ô" ở Cột 2.\n👁️ Quan sát (Cột 3): Xem đồng hồ đo chu kỳ trễ (Latency Cycles) nhảy vọt khi phải nạp từ RAM!',
         takeaway: 'Tốc độ thực tế của thuật toán Deep Learning phần lớn do hiệu quả tận dụng Cache CPU/GPU quyết định, không chỉ số lượng phép toán FLOPs.'
       },
       {
         step: 2,
         badge: 'Bước 2 / 5',
         heading: 'Cơ Chế Cache Line: Nạp Nguyên Cụm',
-        problem: 'Khi đọc ô `M[0][0]`, CPU có nạp lẻ 1 số float không?',
-        challenge: 'CPU luôn nạp nguyên 1 khối gọi là **Cache Line** (64 bytes = 16 float). Trong mô phỏng mini này, 1 Cache Line chứa 4 ô liền kề.',
-        takeaway: 'Nạp 1 ô sẽ tự động kéo theo các ô láng giềng vào cache. Nếu bạn tận dụng các ô láng giềng đó, bạn được "miễn phí" thời gian nạp!'
+        problem: 'Khi CPU cần đọc một ô số float 4 bytes tại `M[0][0]`, phần cứng có nạp lẻ 1 số đơn độc từ RAM không?',
+        mechanism: 'Không bao giờ! CPU luôn nạp nguyên 1 khối Cache Line (thường là 64 bytes = 16 float). Trong mô phỏng này, 1 Cache Line chứa 4 ô liền kề.\nVí dụ nhẩm: Nạp ô [0] sẽ tự động kéo luôn ô [1, 2, 3] vào bộ đệm cache. Đọc 3 ô sau sẽ tốn đúng 1 chu kỳ!',
+        action: '👉 Thao tác (Cột 2): Bấm vào ô đầu tiên của một hàng ở ma trận Cột 2.\n👁️ Quan sát (Cột 3): Cả 4 ô liền kề cùng được sáng viền và nạp đồng thời vào bộ đệm Cache!',
+        takeaway: 'Nạp 1 ô sẽ tự động kéo theo các ô láng giềng vào cache. Tận dụng các ô láng giềng đó chính là tận dụng thời gian truy cập "miễn phí"!'
       },
       {
         step: 3,
         badge: 'Bước 3 / 5',
         heading: 'Quét Theo Hàng (Row-Major: for r, for c)',
-        problem: 'Bấm nút "Quét Tự Động" ở chế độ Row-Major. Quan sát màu sắc của 16 ô vuông.',
-        challenge: 'Mỗi hàng chỉ bị 1 lần đỏ (Cache Miss) ở đầu hàng, 3 ô sau sáng xanh lá (Cache Hit)! Tỉ lệ Hit đạt 75%.',
-        takeaway: 'Truy cập tuần tự theo chiều xếp của mảng trong bộ nhớ (Row-major) mang lại hiệu quả Cache Locality tối ưu.'
+        problem: 'Thứ tự vòng lặp duyệt ma trận ảnh hưởng như thế nào đến số lần CPU phải chờ RAM?',
+        mechanism: 'Vì mảng 2D trong C++ được lưu theo hàng (Row-Major), duyệt tuần tự `for r, for c` khớp hoàn hảo với các ô trong Cache Line vừa nạp.\nVí dụ nhẩm: Với 4 ô mỗi hàng, ô đầu Miss ($100$ cycles), 3 ô sau Hit ($3 \\times 1$ cycles). Tỉ lệ Hit đạt $3/4 = 75\\%$!',
+        action: '👉 Thao tác (Cột 2): Bấm chọn preset "Quét Hàng (Row-Major)" rồi bấm "Quét Tự Động".\n👁️ Quan sát (Cột 3): Mỗi hàng chỉ bị 1 ô đỏ (Miss), 3 ô sau sáng xanh lá (Hit), tỉ lệ Hit Rate vọt lên $75\\%$!',
+        takeaway: 'Duyệt theo hàng tận dụng tối đa Spatial Locality (tính địa phương không gian), tối ưu hóa băng thông phần cứng.'
       },
       {
         step: 4,
         badge: 'Bước 4 / 5',
         heading: 'Thảm Họa Quét Theo Cột (Col-Major: for c, for r)',
-        problem: 'Bấm chọn preset "Quét Cột" rồi bấm "Quét Tự Động". Xem chuyện gì xảy ra!',
-        challenge: 'Vì mảng C++ xếp theo hàng, việc đọc theo cột khiến CPU nhảy cóc. Hầu hết mọi bước đều đỏ rực (Cache Miss)!',
-        takeaway: 'Tổng chu kỳ trễ tăng vọt từ 92 cycles lên 200+ cycles. Chương trình chậm gấp nhiều lần chỉ vì hoán đổi 2 dòng lệnh `for`!'
+        problem: 'Chuyện gì xảy ra nếu lập trình viên vô tình đảo thứ tự vòng lặp thành `for c, for r`?',
+        mechanism: 'Duyệt theo cột khiến CPU nhảy cóc qua các hàng khác nhau trong RAM. Mỗi lần nhảy là một Cache Line khác, làm vô hiệu hóa toàn bộ Cache đã nạp!\nMỗi ô đều phải load từ RAM $\\implies 16 \\times 100$ cycles!',
+        action: '👉 Thao tác (Cột 2): Bấm chọn preset "Quét Cột (Col-Major)" rồi bấm "Quét Tự Động".\n👁️ Quan sát (Cột 3): Các ô nhớ liên tục đỏ rực (Cache Miss 100%), tổng chu kỳ trễ tăng vọt từ 92 cycles lên 200+ cycles!',
+        takeaway: 'Chỉ hoán đổi 2 dòng lệnh `for` có thể làm chương trình chạy chậm hơn gấp 10 lần vì phá hủy tính cục bộ bộ nhớ!'
       },
       {
         step: 5,
         badge: 'Bước 5 / 5',
         heading: 'Đúc Kết Kỹ Nghệ Hệ Thống C++',
-        problem: 'Làm thế nào để viết code Tensor hiệu năng cao?',
-        challenge: 'Luôn đảm bảo vòng lặp trong cùng (innermost loop) duyệt qua các phần tử có địa chỉ bộ nhớ kế tiếp nhau.',
-        takeaway: 'Hiểu kiến trúc bộ nhớ giúp lập trình viên viết code nhanh hơn 10x mà không cần nâng cấp bất kỳ phần cứng nào.'
+        problem: 'Làm thế nào để viết code Tensor hiệu năng cao chuẩn production?',
+        mechanism: 'Quy tắc vàng: Luôn đảm bảo vòng lặp trong cùng (innermost loop) duyệt qua các phần tử có địa chỉ bộ nhớ kế tiếp nhau (`stride = 1`).',
+        action: '👉 Thao tác (Cột 2): So sánh 2 preset Quét Hàng vs Quét Cột ở Cột 2.\n👁️ Quan sát (Cột 3): Bảng thống kê chu kỳ trễ (Latency Cycles) cho thấy sự vượt trội tuyệt đối của thiết kế thân thiện phần cứng!',
+        takeaway: 'Hiểu kiến trúc bộ nhớ giúp kỹ sư AI viết code nhanh hơn 10x mà không tốn thêm bất kỳ chi phí phần cứng nào.'
       }
     ];
 
@@ -304,5 +310,7 @@
 
     updateTelemetry(logic.calculate());
   </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
 </body>
 </html>

@@ -3,6 +3,8 @@
  * Reusable N x N interactive matrix/tensor grid (pixels, weights, kernel, attention map).
  */
 
+import { renderInlineMath } from '../katex-render.js';
+
 export function createValueGrid(container, options = {}) {
   const {
     title = 'Matrix Grid',
@@ -19,13 +21,15 @@ export function createValueGrid(container, options = {}) {
 
   container.innerHTML = `
     <div class="tp-val-grid-wrap">
-      <div class="tp-val-grid-title" style="color: ${variant === 'pixel' ? 'var(--color-warning)' : 'var(--color-info)'};">${title}</div>
+      <div class="tp-val-grid-title" style="color: ${variant === 'pixel' ? 'var(--color-warning)' : 'var(--color-info)'};">${renderInlineMath(title)}</div>
       <div class="tp-val-grid" style="grid-template-columns: repeat(${cols}, 60px);">
         ${values.map((_, i) => `<button class="tp-grid-cell" data-idx="${i}"></button>`).join('')}
       </div>
       <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 8px;">Kích thước: ${rows}×${cols}</div>
     </div>
   `;
+
+  const titleEl = container.querySelector('.tp-val-grid-title');
 
   const cells = container.querySelectorAll('.tp-grid-cell');
 
@@ -86,6 +90,30 @@ export function createValueGrid(container, options = {}) {
     setActiveIndex: (idx) => {
       activeIndex = idx;
       renderCells();
+    },
+    setTitle: (newTitle) => {
+      if (titleEl) titleEl.innerHTML = renderInlineMath(newTitle);
     }
   };
 }
+
+export class ValueGrid {
+  constructor(arg1, arg2) {
+    let options = arg2 || {};
+    let parent = null;
+    if (arg1 instanceof HTMLElement || (typeof arg1 === 'object' && arg1 && arg1.nodeType === 1)) {
+      parent = arg1;
+    } else if (typeof arg1 === 'object' && arg1) {
+      options = arg1;
+      if (options.container) parent = options.container;
+      else if (options.containerId) parent = document.getElementById(options.containerId);
+    }
+    if (!parent) return;
+    this._instance = createValueGrid(parent, options);
+  }
+  getValues() { return this._instance?.getValues(); }
+  setValues(...args) { return this._instance?.setValues(...args); }
+  setActiveIndex(...args) { return this._instance?.setActiveIndex(...args); }
+  setTitle(...args) { return this._instance?.setTitle(...args); }
+}
+

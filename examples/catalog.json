@@ -4,10 +4,15 @@
     "track": "hw0",
     "trackTitle": "Track 0: Nền Tảng Tensor & Bộ Nhớ C++",
     "order": 1,
-    "title": "Bài 01: Robot Vision & Vector Dot Product",
+    "title": "Bài 01: Robot Vision & Tích Vô Hướng Vector",
     "path": "./examples/hw0_tensor_memory/bai_01_robot_vision.html",
-    "summary": "Nhận diện biển báo 2×2. Trọng số âm làm 'bằng chứng bác bỏ' triệt tiêu đèn pha chói lóa. Trải phẳng 2D→1D, công thức offset = r*N + c.",
-    "tags": ["computer-vision", "linear-algebra", "dot-product", "c-plus-plus-memory"],
+    "summary": "Nhận diện biển báo $2 \\times 2$. Trọng số âm làm 'bằng chứng bác bỏ' triệt tiêu đèn pha chói lóa. Trải phẳng 2D $\\to$ 1D, công thức $\\text{offset} = r \\times N + c$.",
+    "tags": [
+      "computer-vision",
+      "linear-algebra",
+      "dot-product",
+      "c-plus-plus-memory"
+    ],
     "difficulty": "beginner",
     "estimatedMinutes": 8,
     "status": "ready"
@@ -19,21 +24,115 @@
     "order": 2,
     "title": "Bài 02: Softmax & Cơn Ác Mộng Lóa Sáng",
     "path": "./examples/hw0_tensor_memory/bai_02_softmax_loss.html",
-    "summary": "Đèn pha cực đại đẩy logits lên +1000 gây tràn số FP32 (NaN/Infinity). Kỹ thuật Safe Softmax trừ max(z) bảo toàn độ ổn định số học.",
-    "tags": ["numerical-stability", "loss-function", "softmax"],
+    "summary": "Đèn pha cực đại đẩy logits lên $+1000$ gây tràn số FP32 (NaN/Infinity). Kỹ thuật Safe Softmax trừ $\\max(z)$ bảo toàn độ ổn định số học.",
+    "tags": [
+      "numerical-stability",
+      "loss-function",
+      "softmax"
+    ],
     "difficulty": "beginner",
     "estimatedMinutes": 10,
+    "status": "ready"
+  },
+  {
+    "id": "bai_03_softmax_regression",
+    "track": "hw0",
+    "trackTitle": "Track 0: Nền Tảng Tensor & Bộ Nhớ C++",
+    "order": 3,
+    "title": "Bài 03: Chu Trình Softmax Regression (Ma trận)",
+    "path": "./examples/hw0_tensor_memory/bai_03_softmax_regression.html",
+    "summary": "Làm chủ đạo hàm ma trận: Từ Forward $Z = X \\theta \\to$ Softmax $P \\to$ Loss $\\to$ Gradient $\\nabla_\\theta = X^T G \\to$ Cập nhật SGD.",
+    "tags": [
+      "linear-algebra",
+      "gradient-descent",
+      "softmax",
+      "backprop"
+    ],
+    "difficulty": "intermediate",
+    "estimatedMinutes": 15,
+    "status": "ready"
+  },
+  {
+    "id": "bai_04_twolayer_relu_backprop",
+    "track": "hw0",
+    "trackTitle": "Track 0: Nền Tảng Tensor & Bộ Nhớ C++",
+    "order": 4,
+    "title": "Bài 04: Mạng Nơ-ron 2 Tầng & Lan Truyền Ngược ReLU",
+    "path": "./examples/hw0_tensor_memory/bai_04_twolayer_relu_backprop.html",
+    "summary": "Mô phỏng mạng 2 tầng $Z_1 = X W_1 \\to A_1 = \\text{ReLU}(Z_1) \\to Z_2 = A_1 W_2$. Dội ngược sai số $G_1 = (G_2 W_2^T) \\odot M$ và xem van ReLU chặn dòng Gradient.",
+    "tags": [
+      "neural-networks",
+      "relu",
+      "backprop",
+      "matrix"
+    ],
+    "difficulty": "advanced",
+    "estimatedMinutes": 15,
+    "status": "ready"
+  },
+  {
+    "id": "bai_05_minibatch_sgd",
+    "track": "hw0",
+    "trackTitle": "Track 0: Nền Tảng Tensor & Bộ Nhớ C++",
+    "order": 5,
+    "title": "Bài 05: Xử Lý Mini-batch $B=2$ & Phép Chuyển Vị $X^T$",
+    "path": "./examples/hw0_tensor_memory/bai_05_minibatch_sgd.html",
+    "summary": "Huấn luyện 2 ảnh cùng lúc. Phép chuyển vị $X^T$ giúp tổng hợp Gradient từ nhiều ảnh: $\\nabla_\\theta L = X^T G$ trong một phép nhân ma trận duy nhất.",
+    "tags": [
+      "minibatch",
+      "gradient-descent",
+      "softmax"
+    ],
+    "difficulty": "intermediate",
+    "estimatedMinutes": 10,
+    "status": "ready"
+  },
+  {
+    "id": "bai_06a_cpp_matmul_loops",
+    "track": "hw0",
+    "trackTitle": "Track 0: Nền Tảng Tensor & Bộ Nhớ C++",
+    "order": 6,
+    "title": "Bài 06a: Dò Tay Vòng Lặp Nhân Ma Trận C++",
+    "path": "./examples/hw0_tensor_memory/bai_06a_cpp_matmul_loops.html",
+    "summary": "Mô phỏng 3 vòng lặp for(i) for(j) for(l) và công thức ánh xạ con trỏ 1D $C[i \\times N + j] \\mathrel{+}= A[i \\times K + l] \\times B[l \\times N + j]$.",
+    "tags": [
+      "c-plus-plus",
+      "matmul",
+      "memory"
+    ],
+    "difficulty": "beginner",
+    "estimatedMinutes": 10,
+    "status": "ready"
+  },
+  {
+    "id": "bai_03b_memory_leak",
+    "track": "hw0",
+    "trackTitle": "Track 0: Nền Tảng Tensor & Bộ Nhớ C++",
+    "order": 7,
+    "title": "Bài 06b: Robot Chết Đuối Vì Memory Leak",
+    "path": "./examples/hw0_tensor_memory/bai_03b_memory_leak.html",
+    "summary": "Bài toán tính lượng RAM bị rò rỉ khi cấp phát float* Z = new float[B*k] trong 2 vòng lặp C++ mà quên delete[]. Tránh đòn hủy diệt của Linux OOM Killer.",
+    "tags": [
+      "c-plus-plus-memory",
+      "memory-leak"
+    ],
+    "difficulty": "beginner",
+    "estimatedMinutes": 5,
     "status": "ready"
   },
   {
     "id": "bai_03_cache_locality",
     "track": "hw0",
     "trackTitle": "Track 0: Nền Tảng Tensor & Bộ Nhớ C++",
-    "order": 3,
-    "title": "Bài 03: Row-Major vs Col-Major Cache Locality",
+    "order": 8,
+    "title": "Bài 06c: Row-Major vs Col-Major Cache Locality",
     "path": "./examples/hw0_tensor_memory/bai_03_cache_locality.html",
-    "summary": "Mô phỏng đầu đọc CPU Cache Hit vs Cache Miss khi duyệt mảng C++ theo hàng vs theo cột, giải thích lý do chênh lệch tốc độ 10 lần.",
-    "tags": ["hardware-systems", "cpu-cache", "c-plus-plus-memory"],
+    "summary": "Mô phỏng đầu đọc CPU L1 Cache: Quét hàng (Cache Hit) vs quét cột (Cache Miss), giải thích lý do chênh lệch tốc độ truy xuất tới $10 \\times$.",
+    "tags": [
+      "hardware-systems",
+      "cpu-cache",
+      "c-plus-plus-memory"
+    ],
     "difficulty": "intermediate",
     "estimatedMinutes": 10,
     "status": "ready"
@@ -41,12 +140,16 @@
   {
     "id": "bai_04_autograd_graph",
     "track": "hw1",
-    "trackTitle": "Track 1: Động Cơ Autograd (Needle)",
-    "order": 4,
-    "title": "Bài 04: The Computational Graph Flow",
+    "trackTitle": "Track 1: Động Cơ Tính Đạo Hàm (Autograd)",
+    "order": 9,
+    "title": "Bài 04: Đồ Thị Tính Toán DAG & Sóng Dội Ngược",
     "path": "./examples/hw1_autograd_engine/bai_04_autograd_graph.html",
-    "summary": "Trực quan hóa đồ thị tính toán DAG: Dòng chảy xuôi Forward Pass và sóng dội ngược Backward Pass tích lũy gradient về tham số.",
-    "tags": ["autograd", "computational-graph", "needle"],
+    "summary": "Trực quan hóa đồ thị tính toán DAG: Dòng chảy xuôi Forward Pass và sóng dội ngược Backward Pass tích lũy gradient $v.\\text{grad} \\mathrel{+}= g$ về tham số.",
+    "tags": [
+      "autograd",
+      "computational-graph",
+      "autograd-engine"
+    ],
     "difficulty": "intermediate",
     "estimatedMinutes": 12,
     "status": "ready"
@@ -54,12 +157,16 @@
   {
     "id": "bai_05_reverse_vs_forward_ad",
     "track": "hw1",
-    "trackTitle": "Track 1: Động Cơ Autograd (Needle)",
-    "order": 5,
+    "trackTitle": "Track 1: Động Cơ Tính Đạo Hàm (Autograd)",
+    "order": 10,
     "title": "Bài 05: Reverse-mode vs Forward-mode AD",
     "path": "./examples/hw1_autograd_engine/bai_05_reverse_vs_forward_ad.html",
-    "summary": "Tại sao Deep Learning luôn chọn Reverse-mode? So sánh chi phí 1 triệu lần chạy Forward-mode vs đúng 1 lượt dội ngược duy nhất.",
-    "tags": ["automatic-differentiation", "autograd", "algorithms"],
+    "summary": "Tại sao Deep Learning luôn chọn Reverse-mode? So sánh chi phí $10^6$ lần chạy Forward-mode vs đúng 1 lượt dội ngược duy nhất cho hàm nhiều biến $f: \\mathbb{R}^n \\to \\mathbb{R}$.",
+    "tags": [
+      "automatic-differentiation",
+      "autograd",
+      "algorithms"
+    ],
     "difficulty": "intermediate",
     "estimatedMinutes": 10,
     "status": "ready"
@@ -67,12 +174,16 @@
   {
     "id": "bai_06_activation_valves",
     "track": "hw1",
-    "trackTitle": "Track 1: Động Cơ Autograd (Needle)",
-    "order": 6,
+    "trackTitle": "Track 1: Động Cơ Tính Đạo Hàm (Autograd)",
+    "order": 11,
     "title": "Bài 06: Van Kích Hoạt & Lời Nguyền Trọng Số 0",
     "path": "./examples/hw1_autograd_engine/bai_06_activation_valves.html",
-    "summary": "Mô phỏng van cơ học ReLU chặn dòng gradient. Hiện tượng tê liệt đối xứng khi khởi tạo toàn bộ trọng số bằng 0.",
-    "tags": ["activation-functions", "relu", "initialization"],
+    "summary": "Mô phỏng van cơ học ReLU chặn dòng gradient khi $z \\le 0$. Hiện tượng tê liệt đối xứng khi khởi tạo toàn bộ trọng số bằng 0.",
+    "tags": [
+      "activation-functions",
+      "relu",
+      "initialization"
+    ],
     "difficulty": "intermediate",
     "estimatedMinutes": 10,
     "status": "ready"
@@ -80,38 +191,52 @@
   {
     "id": "bai_07_minibatch_assembly",
     "track": "hw2",
-    "trackTitle": "Track 2: Modules & Convolutions",
-    "order": 7,
-    "title": "Bài 07: Mini-Batching Assembly Line",
+    "trackTitle": "Track 2: Modules & Mạng Tích Chập",
+    "order": 12,
+    "title": "Bài 07: Băng Chuyền Mini-Batching Assembly Line",
     "path": "./examples/hw2_modules_conv/bai_07_minibatch_assembly.html",
-    "summary": "Băng chuyền xử lý lô mini-batch B=1,2,4,8; Vector hóa GEMM; Đánh giá dung lượng Activation Buffer trong VRAM cho Backward Pass.",
-    "tags": ["batching", "gemm", "memory-buffer", "neural-modules"],
+    "summary": "Băng chuyền xử lý lô mini-batch $B=1, 2, 4, 8$; Vector hóa GEMM; Đánh giá dung lượng Activation Buffer trong VRAM cho Backward Pass.",
+    "tags": [
+      "batching",
+      "vram",
+      "gemm",
+      "memory-bandwidth"
+    ],
     "difficulty": "intermediate",
-    "estimatedMinutes": 10,
+    "estimatedMinutes": 12,
     "status": "ready"
   },
   {
     "id": "bai_08_conv2d_im2col",
     "track": "hw2",
-    "trackTitle": "Track 2: Modules & Convolutions",
-    "order": 8,
+    "trackTitle": "Track 2: Modules & Mạng Tích Chập",
+    "order": 13,
     "title": "Bài 08: Conv2D & Thần Chú Im2col",
     "path": "./examples/hw2_modules_conv/bai_08_conv2d_im2col.html",
-    "summary": "Mở cuộn vùng trượt không gian thành các hàng ma trận Im2col, chuyển phép tích chập Conv2D thành một lần gọi hàm GEMM siêu tốc.",
-    "tags": ["convolution", "im2col", "gemm", "computer-vision"],
+    "summary": "Giải phẫu biến đổi im2col: Trải phẳng sliding window thành ma trận GEMM; So sánh 6 vòng lặp thô sơ vs 1 phép GEMM BLAS siêu tốc.",
+    "tags": [
+      "convolution",
+      "im2col",
+      "gemm",
+      "performance"
+    ],
     "difficulty": "advanced",
-    "estimatedMinutes": 12,
+    "estimatedMinutes": 15,
     "status": "ready"
   },
   {
     "id": "bai_09_batch_norm_dynamics",
     "track": "hw2",
-    "trackTitle": "Track 2: Modules & Convolutions",
-    "order": 9,
+    "trackTitle": "Track 2: Modules & Mạng Tích Chập",
+    "order": 14,
     "title": "Bài 09: Ổn Định Nội Bộ Với BatchNorm",
     "path": "./examples/hw2_modules_conv/bai_09_batch_norm_dynamics.html",
-    "summary": "Chuẩn hóa mean=0, var=1; Cơ chế Scale (gamma) và Shift (beta); Phân định Training Mode (Batch Stats) vs Inference Mode (Running Stats).",
-    "tags": ["batch-normalization", "regularization", "mlops"],
+    "summary": "Triệt tiêu Internal Covariate Shift: Chuẩn hóa $\\mu = 0, \\sigma = 1$; Trực quan hóa phép biến đổi tỉ lệ $\\gamma$ và dịch chuyển $\\beta$.",
+    "tags": [
+      "normalization",
+      "batchnorm",
+      "internal-covariate-shift"
+    ],
     "difficulty": "intermediate",
     "estimatedMinutes": 10,
     "status": "ready"
@@ -119,12 +244,17 @@
   {
     "id": "bai_10_cuda_threads",
     "track": "hw3",
-    "trackTitle": "Track 3: Kiến Trúc GPU & CUDA",
-    "order": 10,
-    "title": "Bài 10: CUDA Grid, Blocks & Threads",
+    "trackTitle": "Track 3: Kiến Trúc GPU & Lập Trình CUDA",
+    "order": 15,
+    "title": "Bài 10: Phân Cấp Luồng CUDA Grid, Blocks & Threads",
     "path": "./examples/hw3_cuda_architecture/bai_10_cuda_threads.html",
-    "summary": "Phân cấp thực thi GPU; Công thức chỉ số toàn cục idx = blockIdx.x * blockDim.x + threadIdx.x; Tấm khiên sinh tử Boundary Guard if (idx < N).",
-    "tags": ["cuda", "gpu-programming", "parallel-computing"],
+    "summary": "Mô hình phân cấp luồng CUDA: Grid 2D $\\to$ Blocks $\\to$ Warps (32 luồng SIMT); Công thức tính thread index toàn cục: $\\text{blockIdx} \\times \\text{blockDim} + \\text{threadIdx}$.",
+    "tags": [
+      "cuda",
+      "gpu-threads",
+      "warps",
+      "simt"
+    ],
     "difficulty": "intermediate",
     "estimatedMinutes": 10,
     "status": "ready"
@@ -132,12 +262,17 @@
   {
     "id": "bai_11_shared_memory_tiling",
     "track": "hw3",
-    "trackTitle": "Track 3: Kiến Trúc GPU & CUDA",
-    "order": 11,
+    "trackTitle": "Track 3: Kiến Trúc GPU & Lập Trình CUDA",
+    "order": 16,
     "title": "Bài 11: Tiled MatMul & Shared Memory",
     "path": "./examples/hw3_cuda_architecture/bai_11_shared_memory_tiling.html",
-    "summary": "Bức tường bộ nhớ DRAM vs Shared Memory SRAM on-chip; Kỹ thuật Tiling cắt nhỏ khối dữ liệu; Đồng bộ hóa an toàn với __syncthreads().",
-    "tags": ["cuda", "shared-memory", "tiling", "gpu-memory"],
+    "summary": "Bức tường bộ nhớ DRAM vs Shared Memory SRAM on-chip; Kỹ thuật Tiling cắt nhỏ khối dữ liệu; Đồng bộ hóa an toàn với `__syncthreads()`.",
+    "tags": [
+      "cuda",
+      "shared-memory",
+      "tiling",
+      "gpu-memory"
+    ],
     "difficulty": "advanced",
     "estimatedMinutes": 14,
     "status": "ready"
@@ -145,12 +280,17 @@
   {
     "id": "bai_12_coalescing_and_banks",
     "track": "hw3",
-    "trackTitle": "Track 3: Kiến Trúc GPU & CUDA",
-    "order": 12,
+    "trackTitle": "Track 3: Kiến Trúc GPU & Lập Trình CUDA",
+    "order": 17,
     "title": "Bài 12: Memory Coalescing & Bank Conflicts",
     "path": "./examples/hw3_cuda_architecture/bai_12_coalescing_and_banks.html",
-    "summary": "Gom giao dịch DRAM trong Warp 32 luồng (Coalesced 100% vs Strided 3.1%); Hiện tượng nghẽn ngân hàng Bank Conflicts trong Shared Memory.",
-    "tags": ["cuda", "memory-coalescing", "bank-conflicts", "performance"],
+    "summary": "Gom giao dịch DRAM trong Warp 32 luồng ($100\\%$ Coalesced vs $3.1\\%$ Strided); Hiện tượng nghẽn ngân hàng Bank Conflicts trong Shared Memory.",
+    "tags": [
+      "cuda",
+      "memory-coalescing",
+      "bank-conflicts",
+      "performance"
+    ],
     "difficulty": "advanced",
     "estimatedMinutes": 12,
     "status": "ready"
@@ -158,12 +298,17 @@
   {
     "id": "bai_13_self_attention",
     "track": "hw4",
-    "trackTitle": "Track 4: Transformer & LLM Systems",
-    "order": 13,
+    "trackTitle": "Track 4: Transformer & Hệ Thống LLM",
+    "order": 18,
     "title": "Bài 13: Scaled Dot-Product Self-Attention",
     "path": "./examples/hw4_transformer_llm/bai_13_self_attention.html",
-    "summary": "Cơ chế Query, Key, Value; Ý nghĩa của hệ số chia sqrt(d_k) chống bão hòa Softmax; Mặt nạ nhân quả Causal Mask chặn nhìn tương lai.",
-    "tags": ["transformer", "attention", "llm", "deep-learning"],
+    "summary": "Cơ chế Query, Key, Value; Ý nghĩa của hệ số chia $\\frac{1}{\\sqrt{d_k}}$ chống bão hòa Softmax; Mặt nạ nhân quả Causal Mask chặn nhìn tương lai.",
+    "tags": [
+      "transformer",
+      "attention",
+      "llm",
+      "deep-learning"
+    ],
     "difficulty": "intermediate",
     "estimatedMinutes": 12,
     "status": "ready"
@@ -171,12 +316,17 @@
   {
     "id": "bai_14_kv_cache_anatomy",
     "track": "hw4",
-    "trackTitle": "Track 4: Transformer & LLM Systems",
-    "order": 14,
-    "title": "Bài 14: KV-Cache Anatomy",
+    "trackTitle": "Track 4: Transformer & Hệ Thống LLM",
+    "order": 19,
+    "title": "Bài 14: Giải Phẫu KV-Cache Trong LLM Serving",
     "path": "./examples/hw4_transformer_llm/bai_14_kv_cache_anatomy.html",
-    "summary": "Giải phẫu cơ chế lưu đệm Key-Value trong LLM Serving; Biến độ phức tạp O(N^2) thành O(N); Phân tích dung lượng VRAM tiêu tốn.",
-    "tags": ["transformer", "kv-cache", "llm-serving", "vram"],
+    "summary": "Giải phẫu cơ chế lưu đệm Key-Value trong LLM Serving; Biến độ phức tạp $O(N^2)$ thành $O(N)$; Phân tích dung lượng VRAM tiêu tốn khi sinh token.",
+    "tags": [
+      "transformer",
+      "kv-cache",
+      "llm-serving",
+      "vram"
+    ],
     "difficulty": "advanced",
     "estimatedMinutes": 12,
     "status": "ready"
@@ -184,12 +334,17 @@
   {
     "id": "bai_15_flash_attention_concept",
     "track": "hw4",
-    "trackTitle": "Track 4: Transformer & LLM Systems",
-    "order": 15,
-    "title": "Bài 15: FlashAttention SRAM Tiling",
+    "trackTitle": "Track 4: Transformer & Hệ Thống LLM",
+    "order": 20,
+    "title": "Bài 15: FlashAttention SRAM Tiling & Online Softmax",
     "path": "./examples/hw4_transformer_llm/bai_15_flash_attention_concept.html",
-    "summary": "Đột phá triệu token: Tiling khối vào SRAM và thuật toán Online Softmax; Triệt tiêu việc ghi ma trận N×N ra HBM, tăng tốc 2-4 lần.",
-    "tags": ["flash-attention", "online-softmax", "sram", "hardware-aware"],
+    "summary": "Đột phá triệu token: Tiling khối vào SRAM và thuật toán Online Softmax; Triệt tiêu việc ghi ma trận $N \\times N$ ra HBM, tăng tốc $2-4\\times$.",
+    "tags": [
+      "flash-attention",
+      "online-softmax",
+      "sram",
+      "hardware-aware"
+    ],
     "difficulty": "advanced",
     "estimatedMinutes": 15,
     "status": "ready"

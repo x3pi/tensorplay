@@ -23,7 +23,7 @@ tensorplay/
 └── examples/              # Mỗi ví dụ = 3 file (.html / .logic.js / .logic.test.js), nhóm theo track
     ├── catalog.json       # Metadata để index.html render thẻ ví dụ
     ├── hw0_tensor_memory/     # Bài 01–03: Tensor & bộ nhớ C++
-    ├── hw1_autograd_engine/   # Bài 04–06: Autograd (Needle)
+    ├── hw1_autograd_engine/   # Bài 04–06: Động cơ Autograd
     ├── hw2_modules_conv/      # Bài 07–09: Module & Conv2D
     ├── hw3_cuda_architecture/ # Bài 10–12: CUDA
     └── hw4_transformer_llm/   # Bài 13–15: Transformer & LLM Systems

@@ -34,4 +34,21 @@ describe('examples/hw0_tensor_memory/bai_01_robot_vision.logic.js', () => {
     expect(result.scoreVertical).toBe(2);
     expect(result.probVertical).toBeGreaterThan(0.85);
   });
+
+  it('Hỗ trợ chuyển đổi activeTemplate và trả về công thức ma trận Z = X · W', () => {
+    const logic = new LessonLogic();
+    let res = logic.calculate();
+    expect(res.formulaMatrixKaTeX).toContain('Z = X \\cdot W');
+    expect(res.formulaMatrixKaTeX).toContain('[2.0, \\; 0.0]');
+    expect(res.formulaKaTeX).toContain('Z_{\\text{ngang}}');
+
+    // Chuyển sang khuôn dọc
+    res = logic.onUserUpdate({ activeTemplate: 'vertical' });
+    expect(res.activeTemplate).toBe('vertical');
+    expect(res.formulaKaTeX).toContain('Z_{\\text{dọc}}');
+
+    // Chỉnh sửa trọng số khuôn dọc
+    res = logic.onUserUpdate({ verticalWeights: [1, 0, 1, 0] });
+    expect(res.weightsVertical).toEqual([1, 0, 1, 0]);
+  });
 });

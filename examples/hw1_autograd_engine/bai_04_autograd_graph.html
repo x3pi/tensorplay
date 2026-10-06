@@ -14,6 +14,7 @@
   <!-- KaTeX CDN -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
 
   <!-- Shared CSS -->
   <link rel="stylesheet" href="../../shared/styles/tokens.css">
@@ -109,7 +110,7 @@
 
       <div class="lab-header-right">
         <span class="tp-badge tp-badge-step" style="border-color: rgba(139, 92, 246, 0.4);">
-          Track 1: HW1 Autograd Engine
+          Track 1: Động Cơ Tính Đạo Hàm (Autograd)
         </span>
       </div>
     </header>
@@ -215,7 +216,7 @@
       <!-- CỘT 3: LIVE MATH & TELEMETRY C++ -->
       <section class="lab-col col-telemetry">
         <div class="lab-col-header">
-          <span class="lab-col-title">Cột 3 • Live Math & Needle Engine</span>
+          <span class="lab-col-title">Cột 3 • Live Math & Autograd Engine</span>
           <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
         </div>
         <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
@@ -248,9 +249,9 @@
             </div>
           </div>
 
-          <!-- Needle Implementation Code Snapshot -->
+          <!-- Autograd Implementation Code Snapshot -->
           <div style="background: #06090e; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.85rem; font-family: var(--font-mono); font-size: 0.7rem; color: #94a3b8; line-height: 1.6;">
-            <div style="color: var(--color-info); font-weight: 700; margin-bottom: 4px;">// needle/autograd.py: accumulate grad</div>
+            <div style="color: var(--color-info); font-weight: 700; margin-bottom: 4px;">// autograd/engine.py: accumulate grad</div>
             <div>for node in reversed(topo_order):</div>
             <div style="padding-left: 12px;">adjoint = node.grad</div>
             <div style="padding-left: 12px;">for p, grad in zip(node.inputs, node.op.gradient(adjoint, node)):</div>
@@ -276,7 +277,7 @@
         heading: "Đồ Thị Tính Toán DAG Là Gì?",
         problem: "Mạng nơ-ron thực chất là một đồ thị có hướng không chu trình (DAG). Mỗi phép tính là một trạm trung chuyển nhận đầu vào và đẩy kết quả cho tầng kế tiếp.",
         challenge: "Nhấn nút 'Forward Pass' để quan sát dòng giá trị chạy xuôi từ các biến vào đến Loss.",
-        takeaway: "Trong Needle/PyTorch, mỗi tensor lưu giữ con trỏ đến toán tử (op) đã tạo ra nó."
+        takeaway: "Trong PyTorch & các Autograd Engine, mỗi tensor lưu giữ con trỏ đến toán tử (op) đã tạo ra nó."
       },
       {
         heading: "Sóng Dội Ngược (Backward Adjoint Pass)",
@@ -303,8 +304,8 @@
         id: "c1",
         stepIndex: 1,
         author: "Chuyên Gia Autograd",
-        badge: "Needle Engine",
-        content: "Trong thư viện Needle (HW1), mỗi Tensor có thuộc tính `inputs` và `op`. Hàm `compute_gradient()` duyệt topological sort theo thứ tự ngược lại (reverse topo sort) để đảm bảo mọi nút con đã nhận đủ gradient trước khi dội tiếp."
+        badge: "Autograd Engine",
+        content: "Trong kiến trúc Autograd Engine, mỗi Tensor có thuộc tính `inputs` và `op`. Hàm `compute_gradient()` duyệt topological sort theo thứ tự ngược lại (reverse topo sort) để đảm bảo mọi nút con đã nhận đủ gradient trước khi dội tiếp."
       },
       {
         id: "c2",
@@ -490,5 +491,7 @@
     // Initial render
     updateUI(false);
   </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
 </body>
 </html>

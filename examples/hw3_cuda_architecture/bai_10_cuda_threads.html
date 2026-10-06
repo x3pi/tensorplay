@@ -14,6 +14,7 @@
   <!-- KaTeX CDN -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
 
   <!-- Shared CSS -->
   <link rel="stylesheet" href="../../shared/styles/tokens.css">
@@ -89,7 +90,7 @@
 
       <div class="lab-header-right">
         <span class="tp-badge tp-badge-step" style="border-color: rgba(245, 158, 11, 0.4);">
-          Track 3: HW3 GPU & CUDA Architecture
+          Track 3: Kiến Trúc GPU & Lập Trình CUDA
         </span>
       </div>
     </header>
@@ -227,9 +228,9 @@
       {
         id: "c2",
         stepIndex: 2,
-        author: "Trợ Giảng CMU 10-414",
-        badge: "HW3 CUDA Traps",
-        content: "Trong bài tập Needle HW3, 80% sinh viên gặp lỗi CUDA runtime crash chỉ vì quên dòng `if (gid < size)` trong các kernel Reduction hoặc MatMul."
+        author: "Chuyên Gia Tối Ưu CUDA",
+        badge: "CUDA Traps",
+        content: "Khi lập trình GPU, 80% kỹ sư mới gặp lỗi CUDA runtime crash out-of-bounds chỉ vì quên dòng kiểm tra biên `if (gid < size)` trong các kernel Reduction hoặc MatMul."
       }
     ];
 
@@ -358,5 +359,7 @@
 
     updateUI();
   </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
 </body>
 </html>

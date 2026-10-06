@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
 
   <link rel="stylesheet" href="../../shared/styles/tokens.css">
   <link rel="stylesheet" href="../../shared/styles/layout.css">
@@ -25,7 +26,7 @@
         <a href="../../index.html" class="btn-back-catalog">← Về Danh Mục</a>
       </div>
       <div class="lab-header-right">
-        <span class="tp-badge tp-badge-step">Track 0: HW0 Tensor & C++ Memory</span>
+        <span class="tp-badge tp-badge-step">Track 0: Nền Tảng Tensor & Bộ Nhớ C++</span>
       </div>
     </header>
 
@@ -78,11 +79,11 @@
         </div>
         <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
           <!-- KaTeX Formula Card -->
-          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
-            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.85rem 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.4rem;">
               📐 Công Thức Softmax Đang Tính
             </div>
-            <div id="katex-formula-mount" style="min-height: 52px; background: #090d15; border-radius: var(--radius-sm); padding: 0.5rem; display: flex; align-items: center; justify-content: center; overflow-x: auto;"></div>
+            <div id="katex-formula-mount" style="min-height: 44px; background: #090d15; border-radius: var(--radius-sm); padding: 0.4rem 0.6rem; display: flex; align-items: center; justify-content: center; overflow-x: auto;"></div>
           </div>
 
           <!-- Probability Bars -->
@@ -115,41 +116,46 @@
         step: 1,
         badge: 'Bước 1 / 5',
         heading: 'Từ Điểm Số (Logits) Đến Xác Suất',
-        problem: 'Đầu ra mạng nơ-ron là các con số thực bất kỳ ($z \\in [-\\infty, +\\infty]$). Ta không thể dùng trực tiếp để đưa ra quyết định xác suất vì tổng của chúng không bằng 1.',
-        challenge: 'Hàm mũ $e^z$ biến mọi con số thành dương tính ($>0$) và phóng đại các điểm số cao. Softmax chuẩn hóa chúng: $P_i = \\frac{e^{z_i}}{\\sum e^{z_j}}$.',
-        takeaway: 'Softmax vừa là bộ chuẩn hóa xác suất vừa là bộ khuếch đại: người dẫn đầu sẽ nhận gần như toàn bộ xác suất.'
+        problem: 'Đầu ra thô của nơ-ron là các con số thực bất kỳ $z \\in (-\\infty, +\\infty)$ (có thể âm, tổng không bằng 1). Làm sao chuyển chúng thành phân phối xác suất hợp lệ?',
+        mechanism: 'Hàm mũ $e^z$ biến mọi số âm/dương thành số dương ($>0$) và khuếch đại điểm số dẫn đầu. Softmax chuẩn hóa chúng thành tỉ lệ phần trăm:\n$$P_i = \\frac{e^{z_i}}{\\sum e^{z_j}}$$\nTổng xác suất luôn luôn bằng $100\\%$ ($P_0 + P_1 = 1.0$).',
+        action: '👉 Thao tác (Cột 2): Kéo thử 2 thanh trượt $z_0, z_1$ ở Cột 2.\n👁️ Quan sát (Cột 3): Xem thanh phân phối xác suất $P_0, P_1$ bên phải luôn tự động chia sẻ tỉ lệ phần trăm với tổng cố định bằng 1.0!',
+        takeaway: 'Softmax vừa là bộ chuẩn hóa xác suất vừa là bộ khuếch đại: lớp có điểm số cao nhất sẽ giành lấy phần lớn xác suất.'
       },
       {
         step: 2,
         badge: 'Bước 2 / 5',
         heading: 'Giới Hạn Phần Cứng: Cơn Ác Mộng Tràn Số FP32',
-        problem: 'Trong kiến trúc máy tính, số thực float32 chỉ lưu được giá trị tối đa $\\approx 3.4 \\times 10^{38}$. Khi $z > 88$, $\\text{exp}(z)$ chạm trần!',
-        challenge: 'Bấm nút "Đèn Pha Tràn Số (1000, 1000)". Quan sát công thức toán và thanh xác suất bên phải.',
-        takeaway: '$\\text{exp}(1000) = \\text{Infinity}$. Khi tính $\\frac{\\infty}{\\infty}$, phép toán trả về NaN (Not a Number)! Mô hình AI bị đóng băng hoàn toàn.'
+        problem: 'Trong phần cứng máy tính, kiểu số thực float32 chỉ lưu được giá trị tối đa $\\approx 3.4 \\times 10^{38}$. Khi $z > 88$, hàm $\\text{exp}(z)$ lập tức chạm trần tràn số!',
+        mechanism: 'Khi $z = 1000$, $\\text{exp}(1000) = +\\infty$. Phép chia vô cùng $\\frac{\\infty}{\\infty}$ sinh ra mã lỗi phần cứng NaN (Not a Number), làm tê liệt và sụp đổ toàn bộ mạng nơ-ron.',
+        action: '👉 Thao tác (Cột 2): Bấm nút "Đèn Pha Tràn Số (1000, 1000)" ở Cột 2.\n👁️ Quan sát (Cột 3): Công thức toán chuyển sang màu đỏ và thanh xác suất bị đóng băng báo lỗi NaN!',
+        takeaway: 'Tràn số số học (Arithmetic Overflow) là cạm bẫy phần cứng số 1 khi tự viết code Deep Learning trên C++ hoặc GPU kernel.'
       },
       {
         step: 3,
         badge: 'Bước 3 / 5',
         heading: 'Kỹ Thuật Cứu Nguy: Safe Softmax',
-        problem: 'Làm thế nào để tính Softmax mà không bao giờ bị tràn số, ngay cả khi điểm $z$ lên tới $10,000$?',
-        challenge: 'Bật công tắc "Chế Độ Safe Softmax" ở Cột 2. Quan sát điều kỳ diệu xảy ra với công thức toán!',
-        takeaway: 'Bằng cách trừ đi giá trị cực đại $M = \\max(z)$, số mũ luôn $\\le 0$, giá trị $e^{z - M} \\in (0, 1]$, triệt tiêu 100% nguy cơ tràn số!'
+        problem: 'Làm thế nào để tính Softmax an toàn mà không bao giờ bị tràn số, ngay cả khi điểm $z$ lên tới hàng nghìn hay hàng triệu?',
+        mechanism: 'Kỹ thuật Safe Softmax: Trừ đi giá trị cực đại $M = \\max(z)$. Khi đó số mũ lớn nhất luôn bằng $0$ ($e^0 = 1$), mọi số mũ khác đều âm ($e^{\\le 0} \\in (0, 1]$) — triệt tiêu $100\\%$ nguy cơ tràn số!',
+        action: '👉 Thao tác (Cột 2): Bật công tắc "Chế Độ Safe Softmax" ở Cột 2.\n👁️ Quan sát (Cột 3): Xem các số mũ tự động lùi về vùng an toàn $\\le 0$, thanh xác suất hồi sinh lập tức từ lỗi NaN về $50\\% - 50\\%$!',
+        takeaway: 'Safe Softmax là tiêu chuẩn công nghiệp bắt buộc trong mọi framework AI chuyên nghiệp (PyTorch, TensorFlow, Candle).'
       },
       {
         step: 4,
         badge: 'Bước 4 / 5',
-        heading: 'Chứng Minh Toán Học: Xác Suất Tuyệt Đối Không Đổi',
-        problem: 'Liệu việc trừ đi $\\max(z)$ có làm lệch xác suất đầu ra của mô hình không?',
-        challenge: 'Bấm nút "Khoảng Cách Lớn (1000, 990)". So sánh tỉ lệ giữa $P_0$ và $P_1$.',
-        takeaway: 'Toán học chứng minh: $\\frac{e^{z_i - M}}{\\sum e^{z_j - M}} = \\frac{e^{z_i} / e^M}{\\sum e^{z_j} / e^M} = \\frac{e^{z_i}}{\\sum e^{z_j}}$. Xác suất là bất biến đối với phép tịnh tiến!'
+        heading: 'Chứng Minh Toán Học: Bất Biến Với Phép Tịnh Tiến',
+        problem: 'Liệu việc tự ý trừ đi $M = \\max(z)$ có làm méo mó tỉ lệ xác suất đầu ra của mô hình không?',
+        mechanism: 'Toán học chứng minh tính chất bất biến tịnh tiến: Thừa số $e^{-M}$ ở tử và mẫu tự triệt tiêu lẫn nhau:\n$$\\frac{e^{z_i - M}}{\\sum e^{z_j - M}} = \\frac{e^{z_i} \\cdot e^{-M}}{\\sum (e^{z_j} \\cdot e^{-M})} = \\frac{e^{-M} \\cdot e^{z_i}}{e^{-M} \\cdot \\sum e^{z_j}} = \\frac{e^{z_i}}{\\sum e^{z_j}}$$',
+        action: '👉 Thao tác (Cột 2): Bấm nút "Khoảng Cách Lớn (1000, 990)".\n👁️ Quan sát (Cột 3): Dù trừ đi $M = 1000$, tỉ lệ xác suất giữa $P_0$ và $P_1$ vẫn chính xác tuyệt đối như khi tính số nhỏ ($10, 0$)!',
+        takeaway: 'Softmax là hàm bất biến đối với phép tịnh tiến (Shift Invariant): cộng hoặc trừ cùng một hằng số vào mọi $z_i$ không làm thay đổi phân phối xác suất!'
       },
       {
         step: 5,
         badge: 'Bước 5 / 5',
         heading: 'Hàm Mất Mát Cross-Entropy Loss',
-        problem: 'Làm sao đo lường độ sai lầm của mô hình? Loss $= -\\log(P_{target})$.',
-        challenge: 'Kéo slider $z_0$ giảm dần để giảm $P_0$. Quan sát thanh Cross-Entropy Loss tăng vọt lên mức đỏ!',
-        takeaway: 'Nếu đoán đúng tự tin ($P \\to 1$), Loss $\\to 0$. Nếu đoán sai tự tin ($P \\to 0$), Loss phạt cực nặng $\\to \\infty$.'
+        problem: 'Sau khi có xác suất $P$, làm sao đo lường mức độ sai lệch so với nhãn thực tế $y$ để phạt mô hình? Ta dùng Cross-Entropy Loss: $\\text{Loss} = -\\ln(P_{target})$.',
+        mechanism: 'Hàm $-\\ln(P)$ là chiếc thước đo trừng phạt phi tuyến:\n• Khi đoán đúng tự tin ($P = 1.0$), $-\\ln(1) = 0$ (phạt bằng 0).\n• Khi đoán sai tự tin ($P \\to 0$), $-\\ln(0.001) \\to +\\infty$ (phạt cực nặng).',
+        action: '👉 Thao tác (Cột 2): Kéo thanh trượt $z_0$ giảm dần về âm để giảm xác suất $P_0$.\n👁️ Quan sát (Cột 3): Xem thanh đo Cross-Entropy Loss bên phải tăng vọt lên mức cảnh báo đỏ!',
+        takeaway: 'Hàm mất mát Cross-Entropy tạo ra lực gradient cực mạnh khi đoán sai, ép các tham số trọng số phải học cách sửa sai thần tốc.'
       }
     ];
 
@@ -299,5 +305,7 @@
 
     updateTelemetry(logic.calculate());
   </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
 </body>
 </html>

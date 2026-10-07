@@ -169,25 +169,25 @@
         badge: 'Bước 1 / 5',
         heading: 'Chấm Điểm Tuyến Tính (Logits $Z = X \\cdot W$)',
         problem: 'Camera robot đọc 2 pixel: $X_0$ (ngang) và $X_1$ (dọc). Làm sao phân loại thành DỪNG (lớp 0) hay ĐI THẲNG (lớp 1)?',
-        mechanism: 'Mỗi cột của ma trận $W$ là một bộ tiêu chí chấm điểm riêng. Phép nhân ma trận $Z = X \\cdot W$ tính song song điểm thô cho cả 2 hành động:\n$$Z = [x_0 w_{0,0} + x_1 w_{1,0}, \\; x_0 w_{0,1} + x_1 w_{1,1}]$$\nVí dụ nhẩm: Với $X = [2.0, 1.0]$ và $W = [[0, 0], [0, 0]]$, điểm số là $Z = [0.0, 0.0]$. Điểm bên nào cao hơn chứng tỏ robot nghiêng về hành động đó.',
-        action: '👉 Thao tác (Cột 2): Thử kéo các thanh trượt $X_0, X_1$ hoặc chỉnh ma trận $W$.\n👁️ Quan sát (Cột 3): Xem vector điểm thô $Z = [Z_0, Z_1]$ ở Thẻ 1 tự động tính theo phép nhân ma trận!',
-        takeaway: 'Vector $Z_{(1 \\times 2)}$ chứa điểm thô (Logits) chưa chuẩn hóa: điểm càng cao thì hành động tương ứng càng được ưu tiên.'
+        mechanism: 'Mỗi cột của ma trận $W$ là một bộ tiêu chí chấm điểm riêng. Phép nhân ma trận $Z = X \\cdot W$ tính song song điểm thô cho cả 2 hành động:\n$$Z = [x_0 w_{0,0} + x_1 w_{1,0}, \\; x_0 w_{0,1} + x_1 w_{1,1}]$$\n• **Quy tắc quyết định:** Lớp nào có điểm số $Z$ cao hơn thì robot sẽ ưu tiên hành động đó.\n• **Trạng thái ban đầu ($W = 0$):** Với $X = [2.0, 1.0]$ và $W = \\begin{bmatrix} 0 & 0 \\\\ 0 & 0 \\end{bmatrix}$, điểm số là $Z = [0.0, 0.0]$. Hai bên bằng điểm nhau nên robot hoàn toàn phân vân ($50\\% - 50\\%$) vì chưa học được gì!\n• **Mục tiêu học máy:** Tìm các trọng số $W$ sao cho điểm lớp đúng (Biển Dừng $Z_0$) cao vượt trội so với lớp sai ($Z_1$).',
+        action: '👉 Thao tác (Cột 2): Thử kéo các thanh trượt $X_0, X_1$ hoặc chỉnh ma trận $W$.\n👁️ Quan sát (Cột 3): Xem vector điểm thô $Z = [Z_0, Z_1]$ ở Thẻ 1 tự động nhảy số theo phép nhân ma trận!',
+        takeaway: 'Vector $Z_{(1 \\times 2)}$ chứa điểm thô (Logits): hành động nào có điểm cao hơn sẽ được robot ưu tiên lựa chọn.'
       },
       {
         step: 2,
         badge: 'Bước 2 / 5',
         heading: 'Chuẩn Hóa Xác Suất & Hàm Mất Mát Loss',
         problem: 'Điểm thô $Z$ có thể âm hoặc rất lớn. Làm sao biến thành xác suất tin cậy và đo lường chính xác mức độ sai lệch của robot so với thực tế?',
-        mechanism: 'Hàm Softmax đưa điểm số về xác suất $P_i = e^{Z_i} / \\sum e^{Z_j}$ với tổng đúng bằng $1.0$ (100%). Hàm mất mát Cross-Entropy Loss đo lường mức độ sai lầm:\n$$\\text{Loss} = -\\ln(P_{target})$$\nNếu đoán chuẩn $P_{target} = 1.0 \\implies \\text{Loss} = 0$. Nếu đoán sai lệch $P_{target} \\to 0 \\implies \\text{Loss} \\to +\\infty$.',
+        mechanism: 'Hàm Softmax đưa điểm số về xác suất $P_i = e^{Z_i} / \\sum e^{Z_j}$ với tổng đúng bằng $1.0$ ($100\\%$). Hàm mất mát Cross-Entropy Loss đo lường mức độ sai lầm:\n$$\\text{Loss} = -\\ln(P_{target})$$\n• Khi chưa học ($W = 0$): $Z = [0, 0] \\implies P = [0.50, 0.50]$. Với nhãn đúng là Lớp 0 (Biển Dừng):\n$$\\text{Loss} = -\\ln(0.50) \\approx 0.693$$\n• Nếu đoán chuẩn tự tin ($P_{target} \\to 1.0 \\implies \\text{Loss} \\to 0$). Nếu đoán sai lệch ($P_{target} \\to 0 \\implies \\text{Loss} \\to +\\infty$).',
         action: '👉 Thao tác (Cột 2): Bấm chuyển đổi giữa 2 nút nhãn: "🛑 Lớp 0: Biển Dừng (y=0)" và "⬆️ Lớp 1: Đi Thẳng (y=1)".\n👁️ Quan sát (Cột 3): Xem công thức Loss $= -\\ln(P_{target})$ ở Thẻ 2 tự động đổi mục tiêu. Xác suất nhãn đúng càng cao thì thanh Loss màu đỏ càng tụt về 0!',
-        takeaway: 'Mục tiêu tối thượng của quá trình huấn luyện: điều chỉnh $W$ sao cho $P_{target} \\to 1.0$ để triệt tiêu toàn bộ Loss.'
+        takeaway: 'Mục tiêu tối thượng của quá trình huấn luyện: điều chỉnh $W$ sao cho $P_{target} \\to 1.0$ để triệt tiêu toàn bộ Loss về 0.'
       },
       {
         step: 3,
         badge: 'Bước 3 / 5',
         heading: 'Vector Sai Số Dội Ngược $G = P - I_y$',
         problem: 'Làm sao các nơ-ron biết mình đang thừa hay thiếu bao nhiêu điểm so với thực tế khách quan?',
-        mechanism: 'Đạo hàm của Cross-Entropy theo điểm số $Z$ cho kết quả đẹp kỳ diệu: $G = P - I_y$ (với $I_y$ là vector One-hot của nhãn đúng).\nVí dụ nhẩm tức thì: Nhãn đúng là lớp 0 ($I_y = [1, 0]$), mô hình đoán $P = [0.88, 0.12]$:\n$$G = [0.88 - 1, \\; 0.12 - 0] = [-0.12, \\; +0.12]$$\nÝ nghĩa trực giác: Lớp đúng thiếu $0.12$ điểm (dấu âm $\\implies$ cần tăng), lớp sai thừa $0.12$ điểm (dấu dương $\\implies$ cần giảm)! Tổng lực kéo luôn cân bằng: $-0.12 + 0.12 = 0$.',
+        mechanism: 'Đạo hàm của Cross-Entropy theo điểm số $Z$ cho kết quả đẹp kỳ diệu: $G = P - I_y$ (với $I_y$ là vector One-hot của nhãn đúng).\nVí dụ nhẩm trực tiếp từ màn hình: Nhãn đúng là lớp 0 ($I_y = [1, 0]$), robot đang đoán $P = [0.50, 0.50]$:\n$$G = [0.50 - 1, \\; 0.50 - 0] = [-0.50, \\; +0.50]$$\nÝ nghĩa trực giác:\n• Lớp 0 (Đúng): $G_0 = -0.50$ mang dấu âm $\\implies$ thiếu điểm, cần **tăng điểm**!\n• Lớp 1 (Sai): $G_1 = +0.50$ mang dấu dương $\\implies$ thừa điểm, cần **giảm điểm**!\n• Tổng lực kéo luôn cân bằng hoàn hảo: $-0.50 + 0.50 = 0$.',
         action: '👉 Thao tác (Cột 2): Thử đổi nhãn $y$ hoặc chỉnh trọng số $W$.\n👁️ Quan sát (Cột 3): Xem vector $G = P - I_y$ ở Thẻ 3. Phần tử của nhãn đúng luôn mang dấu âm, nhãn sai mang dấu dương, tổng 2 lực luôn bằng 0!',
         takeaway: 'Lực sai số dội ngược $G$ chỉ rõ hướng điều chỉnh cho từng nơ-ron: dấu âm đòi tăng điểm, dấu dương đòi giảm điểm.'
       },
@@ -196,7 +196,7 @@
         badge: 'Bước 4 / 5',
         heading: 'Đạo Hàm Ma Trận: $\\nabla_W = X^T \\cdot G$',
         problem: 'Làm sao phân bổ lực sai số $G$ từ đầu ra dội ngược về từng trọng số cụ thể trong $W_{ij}$?',
-        mechanism: 'Quy tắc chuỗi ma trận: $\\nabla_W = X^T \\cdot G$. Mỗi trọng số nối pixel $i$ và đầu ra $j$ nhận gradient đúng bằng tích $X_i \\cdot G_j$:\n$$\\nabla_W = \\begin{bmatrix} x_0 \\\\ x_1 \\end{bmatrix} \\begin{bmatrix} G_0 & G_1 \\end{bmatrix} = \\begin{bmatrix} x_0 G_0 & x_0 G_1 \\\\ x_1 G_0 & x_1 G_1 \\end{bmatrix}$$\nPixel nào sáng ($x_i > 0$) sẽ gánh chịu toàn bộ lực sai số; pixel nào tối ($x_i = 0$) có gradient bằng 0, không bị trừ điểm oan!',
+        mechanism: 'Quy tắc chuỗi ma trận: $\\nabla_W = X^T \\cdot G$. Từng phần tử của ma trận gradient là tích giữa pixel đầu vào $X_i$ và sai số dội ngược $G_j$:\n$$\\nabla_W = \\begin{bmatrix} x_0 \\\\ x_1 \\end{bmatrix} \\begin{bmatrix} G_0 & G_1 \\end{bmatrix} = \\begin{bmatrix} x_0 G_0 & x_0 G_1 \\\\ x_1 G_0 & x_1 G_1 \\end{bmatrix}$$\nVới $X = [2.0, 1.0]$ và $G = [-0.5, +0.5]$, tính nhẩm tức thì:\n$$\\nabla_W = \\begin{bmatrix} 2.0 \\times (-0.5) & 2.0 \\times (+0.5) \\\\ 1.0 \\times (-0.5) & 1.0 \\times (+0.5) \\end{bmatrix} = \\begin{bmatrix} -1.0 & +1.0 \\\\ -0.5 & +0.5 \\end{bmatrix}$$\nPixel nào sáng mạnh ($x_0 = 2.0$) sẽ gánh chịu lực gradient gấp đôi pixel $x_1 = 1.0$; pixel nào tắt ($x_i = 0$) có gradient bằng 0!',
         action: '👉 Thao tác (Cột 2): Thử kéo pixel $X_0$ hoặc $X_1$ về 0.\n👁️ Quan sát (Cột 3): Nhìn ma trận gradient $\\nabla_W = X^T \\cdot G$ ở Thẻ 3. Hàng tương ứng với pixel bằng 0 sẽ có gradient bằng 0 ngay lập tức!',
         takeaway: 'Toàn bộ đạo hàm của mạng nơ-ron được tính toán bằng đúng một phép nhân ma trận chuyển vị $X^T G$, không cần bất kỳ vòng lặp thủ công nào!'
       },
@@ -205,8 +205,8 @@
         badge: 'Bước 5 / 5',
         heading: 'Cập Nhật SGD: Robot Thông Minh Hơn!',
         problem: 'Sau khi đã tính xong gradient $\\nabla_W$, làm sao để cập nhật bộ não trọng số $W$?',
-        mechanism: 'Thuật toán Gradient Descent: $W \\leftarrow W - \\alpha \\cdot \\nabla_W$ (với $\\alpha = 0.1$). Dấu trừ giúp trọng số dịch chuyển ngược hướng dốc để giảm Loss.\nVí dụ nhẩm: Với $W_{0,0} = 0$, gradient $\\nabla_W = -1.0$:\n$$W_{new} = 0 - 0.1 \\times (-1.0) = +0.10$$\nTrọng số của lớp đúng được tăng thêm $+0.10$, giúp lần sau nhận diện biển Dừng mạnh mẽ hơn!',
-        action: '👉 Thao tác (Cột 2): Bấm nút "Chạy 1 Bước ▶" hoặc "Chạy 5 Bước ⏩".\n👁️ Quan sát (Cột 3): Ma trận $W$ được cập nhật, xác suất nhãn đúng tăng vọt, và thanh Loss tụt giảm thần tốc!',
+        mechanism: 'Thuật toán Gradient Descent: $W \\leftarrow W - \\alpha \\cdot \\nabla_W$ (với $\\alpha = 0.1$). Dấu trừ giúp trọng số dịch chuyển ngược hướng dốc để giảm Loss.\nTính nhẩm bước cập nhật đầu tiên:\n$$W_{new} = \\begin{bmatrix} 0 & 0 \\\\ 0 & 0 \\end{bmatrix} - 0.1 \\times \\begin{bmatrix} -1.0 & +1.0 \\\\ -0.5 & +0.5 \\end{bmatrix} = \\begin{bmatrix} +0.10 & -0.10 \\\\ +0.05 & -0.05 \\end{bmatrix}$$\nTrọng số lớp đúng (cột 0) được tăng thêm, lớp sai (cột 1) bị giảm trừ. Điểm số mới $Z = [0.25, -0.25] \\implies$ Lớp đúng vươn lên dẫn đầu!',
+        action: '👉 Thao tác (Cột 2): Bấm nút "Chạy 1 Bước ▶" hoặc "Chạy 5 Bước ⏩".\n👁️ Quan sát (Cột 3): Ma trận $W$ được cập nhật, xác suất $P_0$ tăng từ $50\\% \\to 62\\% \\to 95\\%$, và thanh Loss tụt giảm thần tốc!',
         takeaway: 'Chỉ sau vài bước cập nhật, robot đã tự động thông minh hơn: điểm số của hành động đúng được tăng cường, sai số bị triệt tiêu!'
       }
     ];

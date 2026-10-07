@@ -181,27 +181,35 @@ Mọi chuỗi KaTeX trong `STEPS`/`formulaKaTeX` **phải** dùng `?` cho ô tr�
 
 ---
 
-## 🖥️ V. Thiết Kế Bố Cục Giao Diện "3 Cột Vàng" (The 3-Zone Workspace)
+## 🖥️ V. Thiết Kế Bố Cục Giao Diện "3 Cột Vàng" & Co Dãn Linh Hoạt (The Resizable 3-Zone Workspace)
 
-Layout là **thuần CSS** (`shared/styles/layout.css`, class `.lab-grid`), mỗi trang `.html` chỉ cần gắn đúng class — không cần `layout.js` điều phối:
+Layout mặc định là **thuần CSS Grid** (`shared/styles/layout.css`, class `.lab-grid`), được nâng cấp tự động với khả năng **kéo thả co dãn (drag & resize) linh hoạt** qua `LayoutResizer.js` (tích hợp sẵn trong `LessonNav.js` — không đòi hỏi viết code layout thủ công trong từng trang `.html`):
 
 ```
 +---------------------------------------------------------------------------------------------------------+
-| [LOGO] AI SYSTEMS VISUAL LAB         [← Về Danh Mục]              [Phím tắt: ?] [Dark Mode]             |
-+------------------------------------+------------------------------------+-------------------------------+
-|  CỘT 1: CÂU CHUYỆN & DẪN DẮT       |  CỘT 2: SÂN CHƠI TƯƠNG TÁC         |  CỘT 3: LIVE MATH & TELEMETRY |
-|  (30% Width — do StepWizard render) |  (45% Width — do ValueGrid/Slider render) | (25% Width — ScoreBar/MemoryTape) |
-|                                    |                                    |                               |
-|  📌 BƯỚC 4: VŨ KHÍ TRỌNG SỐ ÂM    |  [ KHU VỰC THAO TÁC TRỰC QUAN ]    |  📐 CÔNG THỨC TOÁN SỐNG:      |
-|  ❓ Vấn Đề: Đèn pha xe đối diện     |   Ảnh đầu vào X (ValueGrid):       |  Z = X · W                    |
-|  làm sáng cả 4 ô pixel...          |   +---+---+                        |  Z = 1 + 1 - 1 - 1 = 0.0      |
-|  🔧 Thử Thách: chỉnh trọng số ở    |   | 1 | 1 | (Sáng)                 |  📊 ScoreBar: [ 0.0 ] ░░       |
-|  2 ô dưới thành số âm              |   +---+---+                        |  💾 MemoryTape (Row-major):   |
-|  🔎 Đúc Kết: trọng số âm là         |   | 1 | 1 | (Sáng)                 |  [ 0.0, 0.0, 0.0, 0.0 ]       |
-|  "bằng chứng bác bỏ"               |   +---+---+                        |  Offset: r*N + c = index [3]  |
-|  [◀ Bước trước]   [Bước sau ▶]     |   [ PresetPicker: Reset | Đèn Pha ] |                               |
-+------------------------------------+------------------------------------+-------------------------------+
+| [LOGO] AI SYSTEMS VISUAL LAB    [← Về Danh Mục]    [⎚ Đặt lại cột]     [Phím tắt: ?] [Dark Mode]         |
++---------------------------------+---+---------------------------------+---+-----------------------------+
+|  CỘT 1: CÂU CHUYỆN & DẪN DẮT    | ⁞ |  CỘT 2: SÂN CHƠI TƯƠNG TÁC      | ⁞ | CỘT 3: LIVE MATH & TELEMETRY|
+|  (Tùy biến: 32% ~ 15%..55%)     | S |  (Tự động lấp đầy phần còn lại) | S | (Tùy biến: 24% ~ 15%..55%)  |
+|                                 | P |                                 | P |                             |
+|  📌 BƯỚC 4: VŨ KHÍ TRỌNG SỐ ÂM  | L |  [ KHU VỰC THAO TÁC TRỰC QUAN ] | L | 📐 CÔNG THỨC TOÁN SỐNG:     |
+|  ❓ Vấn Đề: Đèn pha xe đối diện  | I |   Ảnh đầu vào X (ValueGrid):    | I | Z = X · W                   |
+|  làm sáng cả 4 ô pixel...       | T |   +---+---+                     | T | Z = 1 + 1 - 1 - 1 = 0.0     |
+|  🔧 Thử Thách: chỉnh trọng số ở | T |   | 1 | 1 | (Sáng)              | T | 📊 ScoreBar: [ 0.0 ] ░░      |
+|  2 ô dưới thành số âm           | E |   +---+---+                     | E | 💾 MemoryTape (Row-major):  |
+|  🔎 Đúc Kết: trọng số âm là      | R |   | 1 | 1 | (Sáng)              | R | [ 0.0, 0.0, 0.0, 0.0 ]      |
+|  "bằng chứng bác bỏ"            | 0 |   +---+---+                     | 1 | Offset: r*N + c = index [3] |
+|  [◀ Bước trước]   [Bước sau ▶]  |   |   [ PresetPicker: Reset | Đèn ] |   |                             |
++---------------------------------+---+---------------------------------+---+-----------------------------+
 ```
+
+### Tính Năng Kéo Co Dãn Cột:
+- **Thanh chia thông minh (Splitters):** Nằm giữa Cột 1-2 và Cột 2-3, thiết kế dải laser Dark OLED với grip handle 3 chấm và vùng chạm rộng (16px) bắt chuột/cảm ứng cực nhạy.
+- **Badge phần trăm thời gian thực:** Khi đang kéo, tooltip nổi hiển thị trực tiếp tỉ lệ cột (ví dụ: `40% | 36% | 24%`).
+- **Nhấp đúp hoặc bấm nút Reset:** Nhấp đúp vào thanh chia hoặc bấm `[⎚ Đặt lại cột]` trên Header để khôi phục tỉ lệ chuẩn (`32% - 44% - 24%`).
+- **Phím tắt điều hướng:** Focus thanh chia và dùng phím mũi tên `←`/`→` để tinh chỉnh từng bước 1% (giữ `Shift` để nhảy 4%), phím `Home`/`Enter`/`r` để reset.
+- **Ghi nhớ LocalStorage:** Tỉ lệ ưa thích của người dùng được tự động lưu vào khóa `tensorplay:layout:column-widths` và áp dụng xuyên suốt tất cả các bài học.
+- **Tương thích Docked AI Tutor:** Khi AI Tutor mở dạng split-screen, layout tự động tính toán lại mượt mà không gây vỡ giao diện.
 
 ---
 

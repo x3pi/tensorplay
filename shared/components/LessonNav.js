@@ -1,6 +1,7 @@
 // shared/components/LessonNav.js
 import './AiTutor.js';
 import { renderInlineMath } from '../katex-render.js';
+import { initLayoutResizer } from './LayoutResizer.js';
 
 /**
  * Tự động chèn nút "Bài tiếp theo" vào Header (lab-header-left) và kích hoạt AI Tutor.
@@ -154,7 +155,11 @@ async function initLessonNav() {
 
 // Auto init when imported
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initLessonNav);
+  document.addEventListener('DOMContentLoaded', () => {
+    initLessonNav();
+    initLayoutResizer();
+  });
 } else {
   initLessonNav();
+  initLayoutResizer();
 }

@@ -102,7 +102,7 @@ body.ai-tutor-docked.ai-resizing .lab-shell {
 }
 
 /* ==========================================================================
-   The 3-Zone Workspace Grid (.lab-grid)
+   The 3-Zone Workspace Grid (.lab-grid) & Resizable Multi-Column System
    ========================================================================== */
 .lab-grid {
   display: grid;
@@ -114,6 +114,31 @@ body.ai-tutor-docked.ai-resizing .lab-shell {
   gap: 1px; /* Subtle 1px divider between columns */
 }
 
+/* Dynamic Resizable Mode with Interactive Splitters */
+.lab-grid.tp-resizable {
+  gap: 0;
+  grid-template-columns: minmax(240px, var(--col-0-w, 32%)) 6px minmax(300px, 1fr) 6px minmax(240px, var(--col-2-w, 24%));
+}
+
+/* Collapsed Column Grid Templates */
+.lab-grid.col-0-collapsed {
+  grid-template-columns: 46px 6px minmax(320px, 1fr) 6px minmax(240px, var(--col-2-w, 24%)) !important;
+}
+
+.lab-grid.col-2-collapsed {
+  grid-template-columns: minmax(240px, var(--col-0-w, 32%)) 6px minmax(320px, 1fr) 6px 46px !important;
+}
+
+.lab-grid.col-0-collapsed.col-2-collapsed {
+  grid-template-columns: 46px 6px 1fr 6px 46px !important;
+}
+
+.lab-grid.tp-animating,
+.lab-grid.tp-animating .lab-col {
+  transition: grid-template-columns 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              width 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
 .lab-col {
   display: flex;
   flex-direction: column;
@@ -121,6 +146,415 @@ body.ai-tutor-docked.ai-resizing .lab-shell {
   overflow: hidden;
   background-color: var(--bg-surface);
   position: relative;
+  min-width: 0; /* Cho phép co dãn linh hoạt, không bị nội dung rộng cản trở */
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* KaTeX & Diagram Overflow Safeguard - Chống méo mó tràn khung */
+.lab-col .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  scrollbar-width: thin;
+  padding: 4px 2px;
+}
+
+.lab-col pre,
+.lab-col code {
+  max-width: 100%;
+}
+
+/* Compact Mode (.is-compact): Tự động kích hoạt khi cột thu hẹp (240px - 330px) để không bị chật */
+.lab-col.is-compact .lab-col-body {
+  padding: 0.85rem 0.75rem;
+}
+
+.lab-col.is-compact .lab-col-header {
+  padding: 0 0.75rem;
+}
+
+.lab-col.is-compact .lab-col-title {
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+}
+
+.lab-col.is-compact .tp-badge {
+  font-size: 0.68rem;
+  padding: 2px 6px;
+}
+
+/* Collapsed Rail Mode (.is-collapsed): Thu gọn thành thanh ray 46px thanh lịch */
+.lab-col.is-collapsed {
+  width: 46px !important;
+  min-width: 46px !important;
+  max-width: 46px !important;
+  cursor: pointer;
+  background-color: rgba(13, 18, 28, 0.98);
+  border-right: 1px solid var(--border-subtle);
+  overflow: hidden;
+}
+
+.lab-col.is-collapsed:hover {
+  background-color: rgba(19, 27, 44, 0.98);
+  border-color: var(--color-info, #06b6d4);
+  box-shadow: 0 0 16px rgba(6, 182, 212, 0.15);
+}
+
+.lab-col.is-collapsed .lab-col-header,
+.lab-col.is-collapsed .lab-col-body,
+.lab-col.is-collapsed .lab-col-footer {
+  display: none !important;
+}
+
+/* Cấu trúc bên trong thanh ray khi cột bị thu gọn */
+.lab-col-rail {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  height: 100%;
+  padding: 10px 0;
+  gap: 16px;
+  user-select: none;
+}
+
+.lab-col.is-collapsed .lab-col-rail {
+  display: flex !important;
+}
+
+.btn-rail-expand {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm, 4px);
+  background: var(--bg-surface-elevated, #1e293b);
+  border: 1px solid var(--border-subtle, #334155);
+  color: var(--color-info, #06b6d4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.15s ease;
+}
+
+.btn-rail-expand:hover {
+  background: var(--color-info, #06b6d4);
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.6);
+  transform: scale(1.05);
+}
+
+.rail-title-vertical {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-muted, #94a3b8);
+  text-transform: uppercase;
+  white-space: nowrap;
+  margin-top: 10px;
+}
+
+.lab-col.is-collapsed:hover .rail-title-vertical {
+  color: var(--text-main, #ffffff);
+}
+
+/* Nút Thu Gọn bên trong Header của Cột */
+.btn-col-collapse {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm, 4px);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted, #94a3b8);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.15s ease;
+  margin-left: auto;
+}
+
+.btn-col-collapse:hover {
+  background: var(--bg-surface-hover, rgba(255, 255, 255, 0.08));
+  border-color: var(--border-subtle, #334155);
+  color: var(--color-info, #06b6d4);
+}
+
+/* Draggable Column Splitters (.lab-splitter) */
+.lab-splitter {
+  position: relative;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  background-color: var(--border-subtle, #1e293b);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 25;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+  outline: none;
+}
+
+/* Invisible extended hit area (16px) for effortless dragging */
+.lab-splitter::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -5px;
+  right: -5px;
+  z-index: 1;
+  cursor: col-resize;
+}
+
+/* Splitter Grip Handle Pill */
+.lab-splitter-handle {
+  width: 4px;
+  height: 38px;
+  border-radius: var(--radius-full, 9999px);
+  background-color: rgba(255, 255, 255, 0.18);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  pointer-events: none;
+  z-index: 2;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lab-splitter-dot {
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.5);
+  transition: background-color 0.15s ease;
+}
+
+/* Hover & Focus Visible State */
+.lab-splitter:hover,
+.lab-splitter:focus-visible {
+  background-color: var(--color-info, #06b6d4);
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.45);
+}
+
+.lab-splitter:hover .lab-splitter-handle,
+.lab-splitter:focus-visible .lab-splitter-handle {
+  width: 6px;
+  height: 48px;
+  background-color: var(--color-info, #06b6d4);
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.85);
+}
+
+.lab-splitter:hover .lab-splitter-dot,
+.lab-splitter:focus-visible .lab-splitter-dot {
+  background-color: #ffffff;
+}
+
+/* Active Dragging State */
+.lab-splitter.dragging {
+  background-color: var(--color-info, #06b6d4);
+  box-shadow: 0 0 16px rgba(6, 182, 212, 0.95);
+}
+
+.lab-splitter.dragging .lab-splitter-handle {
+  width: 6px;
+  height: 56px;
+  background-color: #ffffff;
+  box-shadow: 0 0 18px rgba(6, 182, 212, 1);
+}
+
+.lab-splitter.dragging .lab-splitter-dot {
+  background-color: var(--color-info, #06b6d4);
+}
+
+/* Floating Real-Time Percentage Tooltip Badge */
+.lab-splitter-badge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -64px);
+  background: rgba(11, 16, 27, 0.94);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--color-info, #06b6d4);
+  color: #f8fafc;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm, 4px);
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 0 12px rgba(6, 182, 212, 0.35);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+  z-index: 100;
+}
+
+.lab-splitter.dragging .lab-splitter-badge {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -74px);
+}
+
+/* Global Dragging State on Body */
+body.tp-resizing-columns {
+  cursor: col-resize !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+body.tp-resizing-columns iframe,
+body.tp-resizing-columns canvas,
+body.tp-resizing-columns svg,
+body.tp-resizing-columns button,
+body.tp-resizing-columns a {
+  pointer-events: none !important;
+}
+
+body.tp-resizing-columns .lab-col,
+body.tp-resizing-columns .lab-grid {
+  transition: none !important;
+}
+
+/* Header Smart Layout Presets Menu */
+.tp-layout-menu-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.btn-layout-menu {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--bg-surface-elevated, #182234);
+  border: 1px solid var(--border-subtle, #334155);
+  color: var(--text-main, #e2e8f0);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm, 4px);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-layout-menu:hover,
+.btn-layout-menu.active {
+  color: var(--color-info, #06b6d4);
+  border-color: var(--color-info, #06b6d4);
+  background-color: var(--bg-surface-hover, rgba(6, 182, 212, 0.1));
+}
+
+.tp-layout-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 260px;
+  background: rgba(14, 20, 32, 0.98);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border-strong, #334155);
+  border-radius: var(--radius-md, 8px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 16px rgba(6, 182, 212, 0.15);
+  padding: 6px;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 1000;
+  animation: tpLayoutFadeIn 0.15s ease;
+}
+
+.tp-layout-dropdown.show {
+  display: flex !important;
+}
+
+@keyframes tpLayoutFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.layout-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm, 4px);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  border: 1px solid transparent;
+}
+
+.layout-option:hover {
+  background: rgba(6, 182, 212, 0.12);
+  border-color: rgba(6, 182, 212, 0.3);
+}
+
+.layout-option.selected {
+  background: rgba(6, 182, 212, 0.18);
+  border-color: var(--color-info, #06b6d4);
+}
+
+.layout-option .opt-icon {
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.layout-option .opt-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.layout-option .opt-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-main, #ffffff);
+}
+
+.layout-option .opt-desc {
+  font-size: 0.68rem;
+  color: var(--text-muted, #94a3b8);
+  line-height: 1.3;
+}
+
+.layout-divider {
+  height: 1px;
+  background: var(--border-subtle, #1e293b);
+  margin: 4px 0;
+}
+
+/* Header Reset Columns Button */
+.btn-reset-columns {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background-color: var(--bg-surface-elevated, #182234);
+  border: 1px solid var(--border-subtle, #334155);
+  color: var(--text-muted, #94a3b8);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm, 4px);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-reset-columns:hover {
+  color: var(--color-info, #06b6d4);
+  border-color: var(--color-info, #06b6d4);
+  background-color: var(--bg-surface-hover, rgba(6, 182, 212, 0.1));
 }
 
 .col-narrative {
@@ -290,6 +724,14 @@ body.ai-tutor-docked.ai-resizing .lab-shell {
     gap: 1.25rem;
     padding: 0.75rem 0.75rem 6rem 0.75rem; /* Room for AI launcher */
     background: transparent;
+  }
+
+  .lab-splitter {
+    display: none !important;
+  }
+
+  .btn-reset-columns {
+    display: none !important;
   }
 
   .lab-col {

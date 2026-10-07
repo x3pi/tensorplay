@@ -199,15 +199,18 @@ describe('shared/katex-render.js & Component Math Integration', () => {
       expect(typeof slider.setLabel).toBe('function');
     });
 
-    it('ScoreBar renders math in label', () => {
+    it('ScoreBar renders math in label and supports dynamic setLabel', () => {
       const container = createMockNode('div');
-      createScoreBar(container, {
+      const bar = createScoreBar(container, {
         label: 'Xác suất $P_{target}$',
         value: 0.88
       });
 
       expect(container.innerHTML).toContain('katex-mock');
       expect(container.innerHTML).toContain('P_{target}');
+      expect(typeof bar.setLabel).toBe('function');
+      bar.setLabel('Nhãn mới $P_0$');
+      expect(container.innerHTML).toContain('P_0');
     });
 
     it('PresetPicker renders math in preset button labels', () => {

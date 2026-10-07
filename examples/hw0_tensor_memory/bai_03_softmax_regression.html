@@ -410,13 +410,24 @@
       state = logic.onUserUpdate({ w00: 0, w01: 0, w10: 0, w11: 0, stepCount: 0 });
       syncSliders();
       renderAll();
+
+      const btn = document.getElementById('btn-reset-weights');
+      btn.style.transform = 'scale(0.92)';
+      setTimeout(() => { btn.style.transform = ''; }, 150);
     });
 
     document.getElementById('btn-reset').addEventListener('click', () => {
       state = logic.reset();
+      if (presetPicker && typeof presetPicker.setActive === 'function') {
+        presetPicker.setActive('init_zero');
+      }
       updateTargetLabelUI();
       syncSliders();
       renderAll();
+
+      const btn = document.getElementById('btn-reset');
+      btn.style.transform = 'scale(0.92)';
+      setTimeout(() => { btn.style.transform = ''; }, 150);
     });
 
     // 7. Render All

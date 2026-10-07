@@ -42,6 +42,10 @@ export function createScoreBar(container, options = {}) {
       if (newLabel) label = newLabel;
       render();
     },
+    setLabel: (newLabel) => {
+      label = newLabel;
+      render();
+    },
     setVariant: (newVariant) => {
       variant = newVariant;
       render();
@@ -64,6 +68,7 @@ export class ScoreBar {
     this._instance = createScoreBar(parent, options);
   }
   setValue(...args) { return this._instance?.setValue(...args); }
+  setLabel(...args) { return this._instance?.setLabel(...args); }
   setVariant(...args) { return this._instance?.setVariant(...args); }
 }
 

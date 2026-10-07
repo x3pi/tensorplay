@@ -24,10 +24,10 @@
     "order": 2,
     "title": "Bài 02: Softmax & Cơn Ác Mộng Lóa Sáng",
     "path": "./examples/hw0_tensor_memory/bai_02_softmax_loss.html",
-    "summary": "Đèn pha cực đại đẩy logits lên $+1000$ gây tràn số FP32 (NaN/Infinity). Kỹ thuật Safe Softmax trừ $\\max(z)$ bảo toàn độ ổn định số học.",
+    "summary": "Đèn pha cực đại đẩy logits lên $+1000$ gây tràn số FP32 (NaN/Infinity). Kỹ thuật Safe Softmax trừ $\\max(z)$ và núm vặn Nhiệt độ Softmax $T$ (Temperature Scaling).",
     "tags": [
       "numerical-stability",
-      "loss-function",
+      "temperature-scaling",
       "softmax"
     ],
     "difficulty": "beginner",

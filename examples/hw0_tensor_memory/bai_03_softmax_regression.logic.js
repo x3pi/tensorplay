@@ -1,7 +1,7 @@
 /**
  * Logic Module for Bài 03: Chu Trình Softmax Regression (Ma trận)
  * Path: examples/hw0_tensor_memory/bai_03_softmax_regression.logic.js
- * Chu trình hoàn chỉnh: Forward (Z = X * W) -> Softmax (P) -> Loss (Cross-Entropy) -> Backward (G = P - I_y) -> Gradient (nabla_W = X^T * G) -> Cập nhật SGD
+ * Chu trình hoàn chỉnh: Forward (Z = X * W) -> Softmax (P) -> Loss (Cross-Entropy) -> Backward (G = P - I_y) -> Gradient (nabla_W = X^T * G) -> Cập nhật SGD (W_new = W - alpha * nabla_W)
  */
 
 export class LessonLogic {
@@ -77,6 +77,18 @@ export class LessonLogic {
     const gradW10 = x2 * g0;
     const gradW11 = x2 * g1;
 
+    // Bước 6: Cập Nhật Trọng Số SGD: W_new = W - lr * \nabla_W
+    // Delta W = -lr * \nabla_W
+    const deltaW00 = -lr * gradW00;
+    const deltaW01 = -lr * gradW01;
+    const deltaW10 = -lr * gradW10;
+    const deltaW11 = -lr * gradW11;
+
+    const nextW00 = w00 + deltaW00;
+    const nextW01 = w01 + deltaW01;
+    const nextW10 = w10 + deltaW10;
+    const nextW11 = w11 + deltaW11;
+
     // Nhãn mục tiêu dưới dạng văn bản
     const targetName = y === 0 ? 'Lớp 0 (Biển Dừng 🛑)' : 'Lớp 1 (Đi Thẳng ⬆️)';
 
@@ -85,11 +97,14 @@ export class LessonLogic {
       z0, z1, p0, p1, py, loss, g0, g1, i0, i1,
       targetName,
       gradW00, gradW01, gradW10, gradW11,
+      deltaW00, deltaW01, deltaW10, deltaW11,
+      nextW00, nextW01, nextW10, nextW11,
       formulaZKaTeX: `Z = \\begin{bmatrix} ${x1.toFixed(1)} & ${x2.toFixed(1)} \\end{bmatrix} \\begin{bmatrix} ${w00.toFixed(2)} & ${w01.toFixed(2)} \\\\ ${w10.toFixed(2)} & ${w11.toFixed(2)} \\end{bmatrix} = \\begin{bmatrix} ${z0.toFixed(2)} & ${z1.toFixed(2)} \\end{bmatrix}`,
       formulaPKaTeX: `P = \\text{softmax}(Z) = \\begin{bmatrix} ${(p0 * 100).toFixed(1)}\\% & ${(p1 * 100).toFixed(1)}\\% \\end{bmatrix}`,
       formulaLossKaTeX: `\\text{Loss} = -\\ln(P_{target}) = -\\ln(${py.toFixed(3)}) = ${loss.toFixed(3)}`,
       formulaGKaTeX: `G = P - I_y = \\begin{bmatrix} ${p0.toFixed(3)} - ${i0} & ${p1.toFixed(3)} - ${i1} \\end{bmatrix} = \\begin{bmatrix} ${g0.toFixed(3)} & ${g1.toFixed(3)} \\end{bmatrix}`,
-      formulaGradKaTeX: `\\nabla_W = X^T \\cdot G = \\begin{bmatrix} ${x1.toFixed(1)} \\\\ ${x2.toFixed(1)} \\end{bmatrix} \\begin{bmatrix} ${g0.toFixed(3)} & ${g1.toFixed(3)} \\end{bmatrix} = \\begin{bmatrix} ${gradW00.toFixed(3)} & ${gradW01.toFixed(3)} \\\\ ${gradW10.toFixed(3)} & ${gradW11.toFixed(3)} \\end{bmatrix}`
+      formulaGradKaTeX: `\\nabla_W = X^T \\cdot G = \\begin{bmatrix} ${x1.toFixed(1)} \\\\ ${x2.toFixed(1)} \\end{bmatrix} \\begin{bmatrix} ${g0.toFixed(3)} & ${g1.toFixed(3)} \\end{bmatrix} = \\begin{bmatrix} ${gradW00.toFixed(3)} & ${gradW01.toFixed(3)} \\\\ ${gradW10.toFixed(3)} & ${gradW11.toFixed(3)} \\end{bmatrix}`,
+      formulaUpdateKaTeX: `W_{new} = \\begin{bmatrix} ${w00.toFixed(2)} & ${w01.toFixed(2)} \\\\ ${w10.toFixed(2)} & ${w11.toFixed(2)} \\end{bmatrix} - ${lr.toFixed(1)} \\begin{bmatrix} ${gradW00.toFixed(2)} & ${gradW01.toFixed(2)} \\\\ ${gradW10.toFixed(2)} & ${gradW11.toFixed(2)} \\end{bmatrix} = \\begin{bmatrix} ${nextW00.toFixed(2)} & ${nextW01.toFixed(2)} \\\\ ${nextW10.toFixed(2)} & ${nextW11.toFixed(2)} \\end{bmatrix}`
     };
   }
 }

@@ -145,6 +145,28 @@
             </div>
             <div id="katex-g-mount" style="min-height: 44px; background: #090d15; border-radius: var(--radius-sm); padding: 0.5rem; display: flex; align-items: center; justify-content: center; overflow-x: auto;"></div>
             <div id="katex-grad-mount" style="margin-top: 0.5rem; min-height: 58px; background: #090d15; border-radius: var(--radius-sm); padding: 0.5rem; display: flex; align-items: center; justify-content: center; overflow-x: auto;"></div>
+          </div>
+
+          <!-- Thẻ 4: Cập Nhật Trọng Số (SGD Step: W_new = W - \alpha * \nabla_W) -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--color-positive); margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+              <span>4. Cập Nhật Trọng Số ($W \leftarrow W - \alpha \cdot \nabla_W$)</span>
+              <span style="font-size: 0.7rem; color: var(--text-muted); font-family: var(--font-code);">Tốc độ học $\alpha = 0.1$</span>
+            </div>
+            <div id="katex-update-mount" style="min-height: 52px; background: #090d15; border-radius: var(--radius-sm); padding: 0.5rem; display: flex; align-items: center; justify-content: center; overflow-x: auto;"></div>
+            
+            <!-- Trực giác cơ chế tự điều chỉnh -->
+            <div style="margin-top: 0.75rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: var(--text-xs);">
+              <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-sm); padding: 0.5rem;">
+                <div style="font-weight: 700; color: var(--color-positive); margin-bottom: 2px;">🛑 Cột 0 (Lớp Đúng): TĂNG ĐIỂM</div>
+                <div style="color: var(--text-muted); font-size: 0.72rem;">Vì thiếu điểm (sai số âm: $G_0 &lt; 0$), lượng $-\alpha \nabla_W &gt; 0$ giúp cộng thêm điểm cho hành động đúng!</div>
+              </div>
+              <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: var(--radius-sm); padding: 0.5rem;">
+                <div style="font-weight: 700; color: var(--color-negative); margin-bottom: 2px;">⬆️ Cột 1 (Lớp Sai): GIẢM ĐIỂM</div>
+                <div style="color: var(--text-muted); font-size: 0.72rem;">Vì thừa điểm (sai số dương: $G_1 &gt; 0$), lượng $-\alpha \nabla_W &lt; 0$ giúp trừ bớt điểm của hành động sai!</div>
+              </div>
+            </div>
+
             <div id="verdict-banner" style="margin-top: 0.75rem; padding: 8px 12px; border-radius: var(--radius-sm); font-size: var(--text-xs); font-weight: 600;"></div>
           </div>
 
@@ -204,10 +226,10 @@
         step: 5,
         badge: 'Bước 5 / 5',
         heading: 'Cập Nhật SGD: Robot Thông Minh Hơn!',
-        problem: 'Sau khi đã tính xong gradient $\\nabla_W$, làm sao để cập nhật bộ não trọng số $W$?',
-        mechanism: 'Thuật toán Gradient Descent: $W \\leftarrow W - \\alpha \\cdot \\nabla_W$ (với $\\alpha = 0.1$). Dấu trừ giúp trọng số dịch chuyển ngược hướng dốc để giảm Loss.\nTính nhẩm bước cập nhật đầu tiên:\n$$W_{new} = \\begin{bmatrix} 0 & 0 \\\\ 0 & 0 \\end{bmatrix} - 0.1 \\times \\begin{bmatrix} -1.0 & +1.0 \\\\ -0.5 & +0.5 \\end{bmatrix} = \\begin{bmatrix} +0.10 & -0.10 \\\\ +0.05 & -0.05 \\end{bmatrix}$$\nTrọng số lớp đúng (cột 0) được tăng thêm, lớp sai (cột 1) bị giảm trừ. Điểm số mới $Z = [0.25, -0.25] \\implies$ Lớp đúng vươn lên dẫn đầu!',
-        action: '👉 Thao tác (Cột 2): Bấm nút "Chạy 1 Bước ▶" hoặc "Chạy 5 Bước ⏩".\n👁️ Quan sát (Cột 3): Ma trận $W$ được cập nhật, xác suất $P_0$ tăng từ $50\\% \\to 62\\% \\to 95\\%$, và thanh Loss tụt giảm thần tốc!',
-        takeaway: 'Chỉ sau vài bước cập nhật, robot đã tự động thông minh hơn: điểm số của hành động đúng được tăng cường, sai số bị triệt tiêu!'
+        problem: 'Sau khi tính xong gradient $\\nabla_W$, làm sao để cập nhật trọng số $W$? Tại sao công thức lại dùng dấu trừ: $W \\leftarrow W - \\alpha \\cdot \\nabla_W$?',
+        mechanism: 'Thuật toán Gradient Descent (SGD): $W_{new} = W - \\alpha \\cdot \\nabla_W$ (với tốc độ học $\\alpha = 0.1$).\n• **Vì sao dùng dấu trừ?** Gradient $\\nabla_W$ chỉ hướng làm Loss tăng mạnh nhất (leo dốc). Muốn giảm Loss về 0, ta bắt buộc phải đi **ngược chiều gradient** (dấu trừ).\n• **Cơ chế thưởng/phạt tự động kỳ diệu:**\n  - Lớp đúng (cột 0) có sai số âm ($G_0 = -0.5$): Hai dấu trừ triệt tiêu lẫn nhau $(- \\alpha \\times - = +)$ $\\implies$ Trọng số được **TĂNG THÊM** ($+0.10, +0.05$)!\n  - Lớp sai (cột 1) có sai số dương ($G_1 = +0.5$): Dấu trừ giữ nguyên $(- \\alpha \\times + = -)$ $\\implies$ Trọng số bị **GIẢM TRỪ** ($-0.10, -0.05$)!\n• **Kết quả:** Điểm số mới $Z = [0.25, -0.25] \\implies$ Lớp đúng ngay lập tức vươn lên dẫn đầu với xác suất $62.2\\%$!',
+        action: '👉 Thao tác (Cột 2): Nhìn huy hiệu (ΔW) màu xanh/đỏ trên các thanh trượt $W$, rồi bấm nút "Chạy 1 Bước ▶".\n👁️ Quan sát (Cột 3): Xem Thẻ 4 hiển thị phép tính ma trận $W_{new} = W - \\alpha \\nabla_W$. Thanh trượt nhảy đúng bằng lượng ΔW và Loss tụt giảm thần tốc!',
+        takeaway: 'Gradient Descent tự động thưởng điểm cho nơ-ron đoán đúng và trừ điểm nơ-ron đoán sai mà không cần bất kỳ câu lệnh rẽ nhánh if/else nào!'
       }
     ];
 
@@ -367,6 +389,20 @@
       onChange: (v) => { state = logic.onUserUpdate({ w11: v }); renderAll(); }
     });
 
+    function updateWeightDeltaLabels() {
+      const fmtDelta = (d) => {
+        const sign = d >= 0 ? '+' : '';
+        const color = d >= 0 ? '#10b981' : '#ef4444';
+        const arrow = d >= 0 ? '▲' : '▼';
+        return ` <span style="font-size: 0.72rem; font-weight: 700; color: ${color}; font-family: var(--font-code); background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 3px;">(${sign}${d.toFixed(2)} ${arrow})</span>`;
+      };
+
+      sliderW00.setLabel(`$W_{00}$ (ngang $\\to$ 0)${fmtDelta(state.deltaW00)}`);
+      sliderW01.setLabel(`$W_{01}$ (ngang $\\to$ 1)${fmtDelta(state.deltaW01)}`);
+      sliderW10.setLabel(`$W_{10}$ (dọc $\\to$ 0)${fmtDelta(state.deltaW10)}`);
+      sliderW11.setLabel(`$W_{11}$ (dọc $\\to$ 1)${fmtDelta(state.deltaW11)}`);
+    }
+
     function syncSliders() {
       sliderX1.setValue(state.x1);
       sliderX2.setValue(state.x2);
@@ -375,6 +411,7 @@
       sliderW10.setValue(state.w10);
       sliderW11.setValue(state.w11);
       document.getElementById('step-counter-badge').textContent = `Bước #${state.stepCount || 0}`;
+      updateWeightDeltaLabels();
     }
 
     // 5. Mount Telemetry Bars
@@ -453,6 +490,8 @@
       renderMath(document.getElementById('katex-loss-mount'), state.formulaLossKaTeX);
       renderMath(document.getElementById('katex-g-mount'), state.formulaGKaTeX);
       renderMath(document.getElementById('katex-grad-mount'), state.formulaGradKaTeX);
+      renderMath(document.getElementById('katex-update-mount'), state.formulaUpdateKaTeX);
+      updateWeightDeltaLabels();
 
       // Verdict Banner
       const verdict = document.getElementById('verdict-banner');

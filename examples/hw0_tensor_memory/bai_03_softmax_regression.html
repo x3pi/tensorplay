@@ -45,25 +45,49 @@
       <!-- CỘT 2: SÂN CHƠI TƯƠNG TÁC -->
       <section class="lab-col col-sandbox">
         <div class="lab-col-header">
-          <span class="lab-col-title">Cột 2 • Bảng Điều Khiển Cảm Biến & Trọng Số</span>
+          <span class="lab-col-title">Cột 2 • Bảng Điều Khiển Cảm Biến & Huấn Luyện</span>
           <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Đặt Lại</button>
         </div>
         <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
           <div id="mount-preset-picker"></div>
 
-          <!-- Nút Chạy SGD -->
-          <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 1rem; display: flex; align-items: center; justify-content: space-between;">
-            <div>
-              <div style="font-weight: 700; color: #fff; font-size: var(--text-sm);">⚡ Cập Nhật Trọng Số (SGD Step)</div>
-              <div style="font-size: var(--text-xs); color: var(--text-muted);">$W \leftarrow W - \alpha \cdot \nabla_W$ (Tốc độ học $\alpha = 0.1$)</div>
+          <!-- Bộ Chọn Nhãn Thực Tế (Ground Truth Target y) -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: #38bdf8; margin-bottom: 0.6rem; display: flex; justify-content: space-between; align-items: center;">
+              <span>🎯 Nhãn Mục Tiêu Thực Tế (Ground Truth y)</span>
+              <span id="onehot-badge" style="font-family: var(--font-code); background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;">I_y = [1, 0]</span>
             </div>
-            <button id="btn-sgd-step" class="tp-btn tp-btn-primary" style="padding: 8px 16px;">Chạy 1 Bước ▶</button>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem;">
+              <button id="btn-label-0" class="tp-btn" style="padding: 8px 10px; font-weight: 700; font-size: var(--text-xs); border: 2px solid var(--color-warning); background: rgba(245, 158, 11, 0.2); color: #fff; cursor: pointer;">
+                🛑 Lớp 0: Biển Dừng (y=0)
+              </button>
+              <button id="btn-label-1" class="tp-btn tp-btn-ghost" style="padding: 8px 10px; font-weight: 700; font-size: var(--text-xs); border: 1px solid rgba(255,255,255,0.15); cursor: pointer;">
+                ⬆️ Lớp 1: Đi Thẳng (y=1)
+              </button>
+            </div>
+          </div>
+
+          <!-- Bảng Điều Khiển Huấn Luyện SGD -->
+          <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-weight: 700; color: #fff; font-size: var(--text-sm);">⚡ Cập Nhật Gradient Descent (SGD)</div>
+                <div style="font-size: var(--text-xs); color: var(--text-muted);">$W \leftarrow W - \alpha \cdot \nabla_W$ (Tốc độ học $\alpha = 0.1$)</div>
+              </div>
+              <span id="step-counter-badge" class="tp-badge" style="font-family: var(--font-code); font-weight: 700; background: rgba(16, 185, 129, 0.15); color: var(--color-positive); font-size: 0.75rem;">Bước #0</span>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <button id="btn-sgd-step" class="tp-btn tp-btn-primary" style="flex: 1; padding: 8px 12px; font-weight: 700;">Chạy 1 Bước ▶</button>
+              <button id="btn-sgd-step5" class="tp-btn tp-btn-secondary" style="flex: 1; padding: 8px 12px; font-weight: 700;">Chạy 5 Bước ⏩</button>
+              <button id="btn-reset-weights" class="tp-btn tp-btn-ghost" style="padding: 8px 12px; font-size: var(--text-xs);">↺ Về W=0</button>
+            </div>
           </div>
 
           <!-- Sliders: Cảm biến X -->
           <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
-            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--color-warning); margin-bottom: 0.75rem;">
-              📷 Cảm Biến Đầu Vào (Vector X)
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--color-warning); margin-bottom: 0.75rem; display: flex; justify-content: space-between;">
+              <span>📷 Cảm Biến Đầu Vào (Vector X)</span>
+              <span style="font-size: 0.7rem; color: var(--text-muted);">Kích thước (1 × 2)</span>
             </div>
             <div id="mount-slider-x1"></div>
             <div id="mount-slider-x2"></div>
@@ -71,8 +95,9 @@
 
           <!-- Sliders: Ma trận W -->
           <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
-            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--color-info); margin-bottom: 0.75rem;">
-              ⚖️ Ma Trận Trọng Số (W)
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--color-info); margin-bottom: 0.75rem; display: flex; justify-content: space-between;">
+              <span>⚖️ Ma Trận Trọng Số (W)</span>
+              <span style="font-size: 0.7rem; color: var(--text-muted);">Kích thước (2 × 2)</span>
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
               <div id="mount-slider-w00"></div>
@@ -103,12 +128,14 @@
 
           <!-- Thẻ 2: Thanh Xác Suất & Loss -->
           <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
-            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.75rem;">
-              2. Xác Suất & Cross-Entropy Loss (Nhãn thật: Lớp 0 - DỪNG)
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.6rem; display: flex; justify-content: space-between; align-items: center;">
+              <span>2. Xác Suất & Cross-Entropy Loss</span>
+              <span id="target-label-indicator" style="font-size: 0.72rem; color: var(--color-warning); font-weight: 700;">Nhãn đúng: Lớp 0 (Biển Dừng)</span>
             </div>
             <div id="mount-bar-p0"></div>
             <div id="mount-bar-p1" style="margin-top: 0.5rem;"></div>
-            <div id="mount-bar-loss" style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border-subtle);"></div>
+            <div id="katex-loss-mount" style="margin-top: 0.6rem; min-height: 40px; background: #090d15; border-radius: var(--radius-sm); padding: 0.4rem 0.6rem; display: flex; align-items: center; justify-content: center; overflow-x: auto;"></div>
+            <div id="mount-bar-loss" style="margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px solid var(--border-subtle);"></div>
           </div>
 
           <!-- Thẻ 3: Vector Sai Số G & Gradient X^T * G -->
@@ -134,7 +161,7 @@
     import { createCommentSection } from '../../shared/components/CommentSection.js';
     import { renderMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
-    import { LessonLogic, PRESETS } from './bai_02b_softmax_regression.logic.js';
+    import { LessonLogic, PRESETS } from './bai_03_softmax_regression.logic.js';
 
     const STEPS = [
       {
@@ -142,18 +169,18 @@
         badge: 'Bước 1 / 5',
         heading: 'Chấm Điểm Tuyến Tính (Logits $Z = X \\cdot W$)',
         problem: 'Camera robot đọc 2 pixel: $X_0$ (ngang) và $X_1$ (dọc). Làm sao phân loại thành DỪNG (lớp 0) hay ĐI THẲNG (lớp 1)?',
-        mechanism: 'Mỗi cột của ma trận $W$ là một bộ tiêu chí chấm điểm riêng. Phép nhân ma trận $Z = X \\cdot W$ tính song song điểm thô cho cả 2 hành động:\n$$Z = [x_0 w_{0,0} + x_1 w_{1,0}, \\; x_0 w_{0,1} + x_1 w_{1,1}]$$\nVí dụ nhẩm: Với $X = [1, 1]$ và $W = [[1, 0], [1, 0]]$, điểm số là $Z = [2.0, 0.0]$. Điểm bên nào cao hơn chứng tỏ robot nghiêng về hành động đó.',
-        action: '👉 Thao tác (Cột 2): Nhấp vào các ô trong ma trận $W$ để thay đổi trọng số.\n👁️ Quan sát (Cột 3): Điểm thô $Z_0, Z_1$ tự động nhảy số theo công thức tích vô hướng!',
+        mechanism: 'Mỗi cột của ma trận $W$ là một bộ tiêu chí chấm điểm riêng. Phép nhân ma trận $Z = X \\cdot W$ tính song song điểm thô cho cả 2 hành động:\n$$Z = [x_0 w_{0,0} + x_1 w_{1,0}, \\; x_0 w_{0,1} + x_1 w_{1,1}]$$\nVí dụ nhẩm: Với $X = [2.0, 1.0]$ và $W = [[0, 0], [0, 0]]$, điểm số là $Z = [0.0, 0.0]$. Điểm bên nào cao hơn chứng tỏ robot nghiêng về hành động đó.',
+        action: '👉 Thao tác (Cột 2): Thử kéo các thanh trượt $X_0, X_1$ hoặc chỉnh ma trận $W$.\n👁️ Quan sát (Cột 3): Xem vector điểm thô $Z = [Z_0, Z_1]$ ở Thẻ 1 tự động tính theo phép nhân ma trận!',
         takeaway: 'Vector $Z_{(1 \\times 2)}$ chứa điểm thô (Logits) chưa chuẩn hóa: điểm càng cao thì hành động tương ứng càng được ưu tiên.'
       },
       {
         step: 2,
         badge: 'Bước 2 / 5',
         heading: 'Chuẩn Hóa Xác Suất & Hàm Mất Mát Loss',
-        problem: 'Điểm thô $Z$ có thể âm hoặc rất lớn. Làm sao biến thành xác suất tin cậy và đo lường chính xác mức độ sai lệch của robot?',
+        problem: 'Điểm thô $Z$ có thể âm hoặc rất lớn. Làm sao biến thành xác suất tin cậy và đo lường chính xác mức độ sai lệch của robot so với thực tế?',
         mechanism: 'Hàm Softmax đưa điểm số về xác suất $P_i = e^{Z_i} / \\sum e^{Z_j}$ với tổng đúng bằng $1.0$ (100%). Hàm mất mát Cross-Entropy Loss đo lường mức độ sai lầm:\n$$\\text{Loss} = -\\ln(P_{target})$$\nNếu đoán chuẩn $P_{target} = 1.0 \\implies \\text{Loss} = 0$. Nếu đoán sai lệch $P_{target} \\to 0 \\implies \\text{Loss} \\to +\\infty$.',
-        action: '👉 Thao tác (Cột 2): Thử chuyển đổi giữa 2 nhãn Dừng ($y=0$) và Đi Thẳng ($y=1$).\n👁️ Quan sát (Cột 3): Xem thanh đo xác suất $P$ và giá trị Loss. Xác suất nhãn đúng càng cao thì thanh Loss màu đỏ càng tụt về 0!',
-        takeaway: 'Mục tiêu tối thượng của quá trình học máy: điều chỉnh $W$ sao cho $P_{target} \\to 1.0$ để triệt tiêu toàn bộ Loss.'
+        action: '👉 Thao tác (Cột 2): Bấm chuyển đổi giữa 2 nút nhãn: "🛑 Lớp 0: Biển Dừng (y=0)" và "⬆️ Lớp 1: Đi Thẳng (y=1)".\n👁️ Quan sát (Cột 3): Xem công thức Loss $= -\\ln(P_{target})$ ở Thẻ 2 tự động đổi mục tiêu. Xác suất nhãn đúng càng cao thì thanh Loss màu đỏ càng tụt về 0!',
+        takeaway: 'Mục tiêu tối thượng của quá trình huấn luyện: điều chỉnh $W$ sao cho $P_{target} \\to 1.0$ để triệt tiêu toàn bộ Loss.'
       },
       {
         step: 3,
@@ -161,7 +188,7 @@
         heading: 'Vector Sai Số Dội Ngược $G = P - I_y$',
         problem: 'Làm sao các nơ-ron biết mình đang thừa hay thiếu bao nhiêu điểm so với thực tế khách quan?',
         mechanism: 'Đạo hàm của Cross-Entropy theo điểm số $Z$ cho kết quả đẹp kỳ diệu: $G = P - I_y$ (với $I_y$ là vector One-hot của nhãn đúng).\nVí dụ nhẩm tức thì: Nhãn đúng là lớp 0 ($I_y = [1, 0]$), mô hình đoán $P = [0.88, 0.12]$:\n$$G = [0.88 - 1, \\; 0.12 - 0] = [-0.12, \\; +0.12]$$\nÝ nghĩa trực giác: Lớp đúng thiếu $0.12$ điểm (dấu âm $\\implies$ cần tăng), lớp sai thừa $0.12$ điểm (dấu dương $\\implies$ cần giảm)! Tổng lực kéo luôn cân bằng: $-0.12 + 0.12 = 0$.',
-        action: '👉 Thao tác (Cột 2): Xem bảng vector sai số dội ngược $G = P - I_y$.\n👁️ Quan sát (Cột 3): Phần tử của lớp đúng luôn mang dấu âm, lớp sai mang dấu dương, độ lệch tỷ lệ thuận với mức độ sai sót!',
+        action: '👉 Thao tác (Cột 2): Thử đổi nhãn $y$ hoặc chỉnh trọng số $W$.\n👁️ Quan sát (Cột 3): Xem vector $G = P - I_y$ ở Thẻ 3. Phần tử của nhãn đúng luôn mang dấu âm, nhãn sai mang dấu dương, tổng 2 lực luôn bằng 0!',
         takeaway: 'Lực sai số dội ngược $G$ chỉ rõ hướng điều chỉnh cho từng nơ-ron: dấu âm đòi tăng điểm, dấu dương đòi giảm điểm.'
       },
       {
@@ -169,8 +196,8 @@
         badge: 'Bước 4 / 5',
         heading: 'Đạo Hàm Ma Trận: $\\nabla_W = X^T \\cdot G$',
         problem: 'Làm sao phân bổ lực sai số $G$ từ đầu ra dội ngược về từng trọng số cụ thể trong $W_{ij}$?',
-        mechanism: 'Quy tắc chuỗi ma trận: $\\nabla_W = X^T \\cdot G$. Mỗi trọng số nối pixel $i$ và đầu ra $j$ nhận gradient đúng bằng tích $X_i \\cdot G_j$:\n$$\\nabla_W = \\begin{bmatrix} x_0 \\\\ x_1 \\end{bmatrix} \\begin{bmatrix} G_0 & G_1 \\end{bmatrix} = \\begin{bmatrix} x_0 G_0 & x_0 G_1 \\\\ x_1 G_0 & x_1 G_1 \\end{bmatrix}$$\nPixel nào sáng ($x_i = 1$) sẽ gánh chịu toàn bộ lực sai số; pixel nào tối ($x_i = 0$) có gradient bằng 0, không bị trừ điểm oan!',
-        action: '👉 Thao tác (Cột 2): Xem bảng ma trận gradient $\\nabla_W$ ở Cột 2.\n👁️ Quan sát (Cột 3): Từng ô của $\\nabla_W$ khớp chính xác với phép nhân tay giữa từng pixel đầu vào $X_i$ và sai số dội ngược $G_j$!',
+        mechanism: 'Quy tắc chuỗi ma trận: $\\nabla_W = X^T \\cdot G$. Mỗi trọng số nối pixel $i$ và đầu ra $j$ nhận gradient đúng bằng tích $X_i \\cdot G_j$:\n$$\\nabla_W = \\begin{bmatrix} x_0 \\\\ x_1 \\end{bmatrix} \\begin{bmatrix} G_0 & G_1 \\end{bmatrix} = \\begin{bmatrix} x_0 G_0 & x_0 G_1 \\\\ x_1 G_0 & x_1 G_1 \\end{bmatrix}$$\nPixel nào sáng ($x_i > 0$) sẽ gánh chịu toàn bộ lực sai số; pixel nào tối ($x_i = 0$) có gradient bằng 0, không bị trừ điểm oan!',
+        action: '👉 Thao tác (Cột 2): Thử kéo pixel $X_0$ hoặc $X_1$ về 0.\n👁️ Quan sát (Cột 3): Nhìn ma trận gradient $\\nabla_W = X^T \\cdot G$ ở Thẻ 3. Hàng tương ứng với pixel bằng 0 sẽ có gradient bằng 0 ngay lập tức!',
         takeaway: 'Toàn bộ đạo hàm của mạng nơ-ron được tính toán bằng đúng một phép nhân ma trận chuyển vị $X^T G$, không cần bất kỳ vòng lặp thủ công nào!'
       },
       {
@@ -178,9 +205,9 @@
         badge: 'Bước 5 / 5',
         heading: 'Cập Nhật SGD: Robot Thông Minh Hơn!',
         problem: 'Sau khi đã tính xong gradient $\\nabla_W$, làm sao để cập nhật bộ não trọng số $W$?',
-        mechanism: 'Thuật toán Gradient Descent: $W \\leftarrow W - \\alpha \\cdot \\nabla_W$ (với $\\alpha = 0.1$). Dấu trừ giúp trọng số dịch chuyển ngược hướng dốc để giảm Loss.\nVí dụ nhẩm: Với $W_{0,0} = 0$, gradient $\\nabla_W = -0.12$:\n$$W_{new} = 0 - 0.1 \\times (-0.12) = +0.012$$\nTrọng số của lớp đúng được tăng thêm $+0.012$, giúp lần sau nhận diện biển Dừng mạnh hơn!',
-        action: '👉 Thao tác (Cột 2): Bấm nút "Chạy 1 Bước ▶" ở Cột 2.\n👁️ Quan sát (Cột 3): Ma trận $W$ được cập nhật, xác suất đúng $P_0$ tăng lên và thanh Loss tụt giảm ngay lập tức!',
-        takeaway: 'Chỉ sau 1 bước cập nhật, robot đã tự động thông minh hơn: điểm số của hành động đúng được tăng cường, sai số bị đẩy lùi!'
+        mechanism: 'Thuật toán Gradient Descent: $W \\leftarrow W - \\alpha \\cdot \\nabla_W$ (với $\\alpha = 0.1$). Dấu trừ giúp trọng số dịch chuyển ngược hướng dốc để giảm Loss.\nVí dụ nhẩm: Với $W_{0,0} = 0$, gradient $\\nabla_W = -1.0$:\n$$W_{new} = 0 - 0.1 \\times (-1.0) = +0.10$$\nTrọng số của lớp đúng được tăng thêm $+0.10$, giúp lần sau nhận diện biển Dừng mạnh mẽ hơn!',
+        action: '👉 Thao tác (Cột 2): Bấm nút "Chạy 1 Bước ▶" hoặc "Chạy 5 Bước ⏩".\n👁️ Quan sát (Cột 3): Ma trận $W$ được cập nhật, xác suất nhãn đúng tăng vọt, và thanh Loss tụt giảm thần tốc!',
+        takeaway: 'Chỉ sau vài bước cập nhật, robot đã tự động thông minh hơn: điểm số của hành động đúng được tăng cường, sai số bị triệt tiêu!'
       }
     ];
 
@@ -189,7 +216,8 @@
         {
           author: 'Nhà Toán Học',
           avatar: '📐',
-          tag: 'math',
+          tag: 'Kích Thước Ma Trận',
+          tagType: 'math',
           content: 'Kiểm tra kích thước ma trận: $X$ là $(1 \\times 2)$, $W$ là $(2 \\times 2)$, tích $Z = X W$ là $(1 \\times 2)$. Phép toán hoàn toàn hợp lệ.'
         }
       ],
@@ -197,7 +225,8 @@
         {
           author: 'Kỹ Sư Hệ Thống',
           avatar: '⚙️',
-          tag: 'system',
+          tag: 'Safe Math',
+          tagType: 'system',
           content: 'Khi tính hàm $\\ln(P_y)$, trong code C++ luôn cần bọc $\\max(P_y, 10^{-15})$ để tránh lỗi toán học $\\ln(0) = -\\infty$.'
         }
       ],
@@ -205,7 +234,8 @@
         {
           author: 'Chuyên Gia Tối Ưu',
           avatar: '💡',
-          tag: 'gotcha',
+          tag: 'Cân Bằng Lực',
+          tagType: 'gotcha',
           content: 'Vector sai số $G = P - I_y$ có tính chất rất đẹp: Tổng $\\sum G_i = \\sum P_i - 1 = 1 - 1 = 0$. Tổng lực kéo luôn cân bằng.'
         }
       ],
@@ -213,7 +243,8 @@
         {
           author: 'Nhà Toán Học',
           avatar: '📐',
-          tag: 'math',
+          tag: 'Outer Product',
+          tagType: 'math',
           content: 'Chú ý chiều: $X^T G$ cho ma trận $(2 \\times 2)$, còn $G X^T$ chỉ ra một số vô hướng $(1 \\times 1)$. Đó là lý do công thức bắt buộc là $X^T G$!'
         }
       ],
@@ -221,8 +252,9 @@
         {
           author: 'Kỹ Sư AI',
           avatar: '🚀',
-          tag: 'system',
-          content: 'Nếu khởi tạo $W = 0$, $Z = [0, 0] \\implies P = [0.5, 0.5]$. Nhưng vì có dữ liệu $X \\ne 0$, gradient $\\nabla_W \\ne 0$, mạng 1 tầng vẫn học tốt!'
+          tag: 'SGD Convergence',
+          tagType: 'system',
+          content: 'Nếu khởi tạo $W = 0$, $Z = [0, 0] \\implies P = [0.5, 0.5]$. Nhưng vì có dữ liệu $X \\ne 0$, gradient $\\nabla_W \\ne 0$, mạng 1 tầng vẫn học rất nhanh!'
         }
       ]
     };
@@ -237,7 +269,7 @@
       initialStep: 1,
       onStepChange: (step) => {
         commentSection.setStep(step, COMMENTS[step] || []);
-        if (step === STEPS.length) markCompleted('bai_03_softmax_regression');
+        if (step === STEPS.length) markCompleted('bai_03_softmax_regression', true);
       }
     });
 
@@ -252,13 +284,50 @@
     // 3. Mount PresetPicker
     const presetMount = document.getElementById('mount-preset-picker');
     const presetPicker = createPresetPicker(presetMount, {
-      title: 'Tình Huống:',
+      title: 'Tình Huống Huấn Luyện:',
       presets: PRESETS,
       onPick: (preset) => {
         state = logic.applyPreset(preset.state);
+        updateTargetLabelUI();
         syncSliders();
         renderAll();
       }
+    });
+
+    // Target Label Selector Buttons
+    const btnLabel0 = document.getElementById('btn-label-0');
+    const btnLabel1 = document.getElementById('btn-label-1');
+    const onehotBadge = document.getElementById('onehot-badge');
+    const targetIndicator = document.getElementById('target-label-indicator');
+
+    function updateTargetLabelUI() {
+      const is0 = state.y === 0;
+      btnLabel0.style.border = is0 ? '2px solid var(--color-warning)' : '1px solid rgba(255,255,255,0.15)';
+      btnLabel0.style.background = is0 ? 'rgba(245, 158, 11, 0.2)' : 'transparent';
+      btnLabel0.style.color = is0 ? '#fff' : 'var(--text-muted)';
+
+      btnLabel1.style.border = !is0 ? '2px solid var(--color-info)' : '1px solid rgba(255,255,255,0.15)';
+      btnLabel1.style.background = !is0 ? 'rgba(56, 189, 248, 0.2)' : 'transparent';
+      btnLabel1.style.color = !is0 ? '#fff' : 'var(--text-muted)';
+
+      onehotBadge.textContent = is0 ? 'I_y = [1, 0]' : 'I_y = [0, 1]';
+      targetIndicator.textContent = is0 ? 'Nhãn đúng: Lớp 0 (Biển Dừng)' : 'Nhãn đúng: Lớp 1 (Đi Thẳng)';
+      targetIndicator.style.color = is0 ? 'var(--color-warning)' : 'var(--color-info)';
+
+      barP0.setLabel(is0 ? 'Lớp 0: DỪNG LẠI (Nhãn Đúng 🛑)' : 'Lớp 0: DỪNG LẠI (Nhãn Sai)');
+      barP1.setLabel(!is0 ? 'Lớp 1: ĐI THẲNG (Nhãn Đúng ⬆️)' : 'Lớp 1: ĐI THẲNG (Nhãn Sai)');
+    }
+
+    btnLabel0.addEventListener('click', () => {
+      state = logic.onUserUpdate({ y: 0 });
+      updateTargetLabelUI();
+      renderAll();
+    });
+
+    btnLabel1.addEventListener('click', () => {
+      state = logic.onUserUpdate({ y: 1 });
+      updateTargetLabelUI();
+      renderAll();
     });
 
     // 4. Mount Sliders (Inputs & Weights)
@@ -276,25 +345,25 @@
 
     const sliderW00 = createLiveSlider(document.getElementById('mount-slider-w00'), {
       label: '$W_{00}$ (ngang $\\to$ 0)',
-      min: -2, max: 2, step: 0.1, initial: state.w00,
+      min: -3, max: 3, step: 0.1, initial: state.w00,
       onChange: (v) => { state = logic.onUserUpdate({ w00: v }); renderAll(); }
     });
 
     const sliderW01 = createLiveSlider(document.getElementById('mount-slider-w01'), {
       label: '$W_{01}$ (ngang $\\to$ 1)',
-      min: -2, max: 2, step: 0.1, initial: state.w01,
+      min: -3, max: 3, step: 0.1, initial: state.w01,
       onChange: (v) => { state = logic.onUserUpdate({ w01: v }); renderAll(); }
     });
 
     const sliderW10 = createLiveSlider(document.getElementById('mount-slider-w10'), {
       label: '$W_{10}$ (dọc $\\to$ 0)',
-      min: -2, max: 2, step: 0.1, initial: state.w10,
+      min: -3, max: 3, step: 0.1, initial: state.w10,
       onChange: (v) => { state = logic.onUserUpdate({ w10: v }); renderAll(); }
     });
 
     const sliderW11 = createLiveSlider(document.getElementById('mount-slider-w11'), {
       label: '$W_{11}$ (dọc $\\to$ 1)',
-      min: -2, max: 2, step: 0.1, initial: state.w11,
+      min: -3, max: 3, step: 0.1, initial: state.w11,
       onChange: (v) => { state = logic.onUserUpdate({ w11: v }); renderAll(); }
     });
 
@@ -305,11 +374,12 @@
       sliderW01.setValue(state.w01);
       sliderW10.setValue(state.w10);
       sliderW11.setValue(state.w11);
+      document.getElementById('step-counter-badge').textContent = `Bước #${state.stepCount || 0}`;
     }
 
     // 5. Mount Telemetry Bars
     const barP0 = createScoreBar(document.getElementById('mount-bar-p0'), {
-      label: 'Lớp 0: DỪNG LẠI (Nhãn Đúng)',
+      label: 'Lớp 0: DỪNG LẠI (Nhãn Đúng 🛑)',
       value: state.p0, min: 0, max: 1, variant: 'reward', showPercentage: true
     });
 
@@ -325,13 +395,26 @@
 
     // 6. Action buttons
     document.getElementById('btn-sgd-step').addEventListener('click', () => {
-      state = logic.stepSGD();
+      state = logic.stepSGD(1);
+      syncSliders();
+      renderAll();
+    });
+
+    document.getElementById('btn-sgd-step5').addEventListener('click', () => {
+      state = logic.stepSGD(5);
+      syncSliders();
+      renderAll();
+    });
+
+    document.getElementById('btn-reset-weights').addEventListener('click', () => {
+      state = logic.onUserUpdate({ w00: 0, w01: 0, w10: 0, w11: 0, stepCount: 0 });
       syncSliders();
       renderAll();
     });
 
     document.getElementById('btn-reset').addEventListener('click', () => {
       state = logic.reset();
+      updateTargetLabelUI();
       syncSliders();
       renderAll();
     });
@@ -342,43 +425,45 @@
       barP1.setValue(state.p1);
       barLoss.setValue(state.loss);
 
-      if (state.p0 > 0.7) {
-        barP0.setVariant('reward');
-        barP1.setVariant('neutral');
-      } else if (state.p0 < 0.3) {
-        barP0.setVariant('penalty');
+      const targetP = state.y === 0 ? state.p0 : state.p1;
+      const otherP = state.y === 0 ? state.p1 : state.p0;
+
+      if (state.y === 0) {
+        barP0.setVariant(state.p0 > 0.6 ? 'reward' : 'penalty');
         barP1.setVariant('neutral');
       } else {
+        barP1.setVariant(state.p1 > 0.6 ? 'reward' : 'penalty');
         barP0.setVariant('neutral');
-        barP1.setVariant('neutral');
       }
 
       // Render KaTeX mounts
       renderMath(document.getElementById('katex-z-mount'), state.formulaZKaTeX);
       renderMath(document.getElementById('katex-p-mount'), state.formulaPKaTeX);
+      renderMath(document.getElementById('katex-loss-mount'), state.formulaLossKaTeX);
       renderMath(document.getElementById('katex-g-mount'), state.formulaGKaTeX);
       renderMath(document.getElementById('katex-grad-mount'), state.formulaGradKaTeX);
 
       // Verdict Banner
       const verdict = document.getElementById('verdict-banner');
-      if (state.loss < 0.2) {
-        verdict.textContent = `🎯 Dự đoán cực kỳ chính xác! Robot tự tin DỪNG với xác suất ${(state.p0*100).toFixed(1)}%. Loss = ${state.loss.toFixed(3)}.`;
+      if (state.loss < 0.15) {
+        verdict.textContent = `🎯 Tuyệt vời! Robot tự tin nhận diện ${state.targetName} với xác suất ${(targetP*100).toFixed(1)}%. Loss = ${state.loss.toFixed(3)}.`;
         verdict.style.background = 'rgba(16, 185, 129, 0.15)';
         verdict.style.color = 'var(--color-positive)';
         verdict.style.border = '1px solid var(--color-positive)';
-      } else if (state.loss < 0.8) {
-        verdict.textContent = `⚖️ Mô hình đang học. Xác suất lớp đúng là ${(state.p0*100).toFixed(1)}%. Loss = ${state.loss.toFixed(3)}.`;
+      } else if (state.loss < 0.70) {
+        verdict.textContent = `⚖️ Mô hình đang học. Xác suất nhãn đúng là ${(targetP*100).toFixed(1)}%. Bấm Chạy SGD để tối ưu thêm.`;
         verdict.style.background = 'rgba(56, 189, 248, 0.15)';
         verdict.style.color = 'var(--color-info)';
         verdict.style.border = '1px solid var(--color-info)';
       } else {
-        verdict.textContent = `⚠️ Báo động: Robot đang phán đoán sai! Cần chạy thêm các bước SGD để kéo Loss xuống.`;
+        verdict.textContent = `⚠️ Robot đang phán đoán sai (Loss = ${state.loss.toFixed(3)})! Hãy bấm "Chạy 1 Bước ▶" hoặc "Chạy 5 Bước ⏩" để SGD kéo Loss xuống.`;
         verdict.style.background = 'rgba(239, 68, 68, 0.15)';
         verdict.style.color = 'var(--color-negative)';
         verdict.style.border = '1px solid var(--color-negative)';
       }
     }
 
+    updateTargetLabelUI();
     renderAll();
   </script>
 

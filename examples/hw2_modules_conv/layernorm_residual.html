@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bài 19: LayerNorm &amp; Residual — Chuẩn Hóa Theo Mẫu, Cao Tốc Cho Gradient - TensorPlay</title>
+  <title>Bài 21: LayerNorm &amp; Residual — Chuẩn Hóa Theo Mẫu, Cao Tốc Cho Gradient - TensorPlay</title>
   <meta name="description" content="Vì sao Transformer dùng LayerNorm thay vì BatchNorm (batch=1 khi sinh token), và vì sao kết nối residual y = x + f(x) giữ gradient sống qua mạng sâu.">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -133,7 +133,7 @@
       {
         step: 1, badge: 'Bước 1 / 5',
         heading: 'Hai cách chuẩn hóa: cắt theo cột hay cắt theo hàng?',
-        problem: 'Bài 17 (BatchNorm) chuẩn hóa mỗi đặc trưng bằng thống kê của cả batch. Với ma trận $X = \\begin{bmatrix} 1 & 3 \\\\ 2 & 6 \\end{bmatrix}$ (2 mẫu, 2 đặc trưng), có cách nào chuẩn hóa mà không cần nhìn sang mẫu khác?',
+        problem: 'Bài 19 (BatchNorm) chuẩn hóa mỗi đặc trưng bằng thống kê của cả batch. Với ma trận $X = \\begin{bmatrix} 1 & 3 \\\\ 2 & 6 \\end{bmatrix}$ (2 mẫu, 2 đặc trưng), có cách nào chuẩn hóa mà không cần nhìn sang mẫu khác?',
         mechanism: 'LayerNorm tính trung bình và độ lệch chuẩn trên chính hàng của mẫu đó. Hàng $[1, 3]$ có $\\mu = 2, \\sigma = 1$ nên thành $[-1, 1]$. Hàng $[2, 6]$ có $\\mu = 4, \\sigma = 2$ cũng thành $[-1, 1]$.',
         action: '👉 Thao tác (Cột 2): Bấm preset "LayerNorm (batch=2)", rồi chuyển sang "BatchNorm (batch=2)".\n👁️ Quan sát (Cột 3): LayerNorm ra $[[-1,1],[-1,1]]$, BatchNorm ra $[[-1,-1],[1,1]]$ — cùng công thức, khác trục.',
         takeaway: 'BatchNorm cắt theo cột (qua batch), LayerNorm cắt theo hàng (qua đặc trưng).'
@@ -141,7 +141,7 @@
       {
         step: 2, badge: 'Bước 2 / 5',
         heading: 'Sinh token: batch chỉ còn 1 mẫu',
-        problem: 'Khi LLM sinh từng token (như Bài 30), mỗi lượt chỉ có 1 chuỗi trong batch. BatchNorm lúc này tính phương sai trên đúng 1 giá trị mỗi cột. Chuyện gì xảy ra?',
+        problem: 'Khi LLM sinh từng token (như Bài 33), mỗi lượt chỉ có 1 chuỗi trong batch. BatchNorm lúc này tính phương sai trên đúng 1 giá trị mỗi cột. Chuyện gì xảy ra?',
         mechanism: 'Mỗi cột chỉ có một phần tử nên $\\sigma^2 = 0$ và $x - \\mu = 0$: toàn bộ đầu ra sụp về 0. LayerNorm không quan tâm batch có bao nhiêu mẫu nên vẫn ra $[-1, 1]$.',
         action: '👉 Thao tác (Cột 2): Bấm preset "BatchNorm khi sinh từng token (batch=1) ❌", sau đó đổi sang LayerNorm.\n👁️ Quan sát (Cột 3): Đầu ra BatchNorm toàn số 0 và thanh kết luận đỏ.',
         takeaway: 'Mô hình phải cho cùng một kết quả dù được chạy chung với 1 hay 100 mẫu khác — đó là lý do Transformer chọn LayerNorm.'
@@ -158,7 +158,7 @@
         step: 4, badge: 'Bước 4 / 5',
         heading: 'Mạng sâu: gradient chết dần qua từng tầng',
         problem: 'Giả sử mỗi tầng có đạo hàm cục bộ $f\' = 0.1$. Sau 6 tầng, gradient chạm tới đầu vào còn bao nhiêu?',
-        mechanism: 'Quy tắc dây chuyền nhân các đạo hàm: $0.1^6 = 10^{-6}$. Tầng đầu gần như không nhận được tín hiệu học. Đây là cùng bệnh tiêu biến gradient của RNN (Bài 26).',
+        mechanism: 'Quy tắc dây chuyền nhân các đạo hàm: $0.1^6 = 10^{-6}$. Tầng đầu gần như không nhận được tín hiệu học. Đây là cùng bệnh tiêu biến gradient của RNN (Bài 29).',
         action: '👉 Thao tác (Cột 2): Bấm preset "Mạng sâu 6 tầng, không residual ❌".\n👁️ Quan sát (Cột 3): Gradient về đầu vào chỉ còn khoảng $1.0 \\times 10^{-6}$.',
         takeaway: 'Nhân nhiều số nhỏ hơn 1 liên tiếp là công thức làm gradient tiêu biến.'
       },
@@ -175,7 +175,7 @@
     const STEP_COMMENTS = {
       2: [{
         id: 'ln2', author: 'Kỹ Sư Serving', role: 'Systems', avatar: '⚙️', tag: 'Gotcha kinh điển', tagType: 'gotcha',
-        content: 'Ngay cả khi BatchNorm có "running stats" dùng lúc inference (Bài 17), việc huấn luyện với batch nhỏ vẫn cho thống kê nhiễu. Sequence dài khiến batch phải nhỏ, nên LLM gần như không dùng BatchNorm.'
+        content: 'Ngay cả khi BatchNorm có "running stats" dùng lúc inference (Bài 19), việc huấn luyện với batch nhỏ vẫn cho thống kê nhiễu. Sequence dài khiến batch phải nhỏ, nên LLM gần như không dùng BatchNorm.'
       }],
       3: [{
         id: 'ln3', author: 'Nhà Toán Học AI', role: 'Math', avatar: '📐', tag: 'Bất biến theo tỉ lệ', tagType: 'math',

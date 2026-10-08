@@ -53,11 +53,29 @@
     "status": "ready"
   },
   {
-    "id": "bai_04_twolayer_relu_backprop",
+    "id": "cross_entropy_logsumexp",
     "track": "hw0",
     "trackTitle": "Track 0: Nền Tảng Tensor & Bộ Nhớ C++",
     "order": 4,
-    "title": "Bài 04: Mạng Nơ-ron 2 Tầng & Lan Truyền Ngược ReLU",
+    "title": "Bài 04: Cross-Entropy dạng Log-Sum-Exp — Ổn Định Số Học Cho Hàm Mất Mát",
+    "path": "./examples/hw0_tensor_memory/cross_entropy_logsumexp.html",
+    "summary": "Tính Softmax trước rồi lấy log gây sụp đổ số học khi logit chênh lệch lớn. Công thức gộp $\\text{Loss} = \\text{LogSumExp}(z) - z_y$ triệt tiêu phép chia nguy hiểm và bảo toàn gradient.",
+    "tags": [
+      "numerical-stability",
+      "log-sum-exp",
+      "cross-entropy",
+      "loss-function"
+    ],
+    "difficulty": "intermediate",
+    "estimatedMinutes": 12,
+    "status": "ready"
+  },
+  {
+    "id": "bai_04_twolayer_relu_backprop",
+    "track": "hw0",
+    "trackTitle": "Track 0: Nền Tảng Tensor & Bộ Nhớ C++",
+    "order": 5,
+    "title": "Bài 05: Mạng Nơ-ron 2 Tầng & Lan Truyền Ngược ReLU",
     "path": "./examples/hw0_tensor_memory/bai_04_twolayer_relu_backprop.html",
     "summary": "Cơ chế phi tuyến tính: Van một chiều ReLU chặn dòng gradient ở nơ-ron âm ($Z_1 \\le 0$). Đạo hàm dội ngược qua tầng ẩn.",
     "tags": [
@@ -74,8 +92,8 @@
     "id": "bai_05_minibatch_sgd",
     "track": "hw0",
     "trackTitle": "Track 0: Nền Tảng Tensor & Bộ Nhớ C++",
-    "order": 5,
-    "title": "Bài 05: Xử Lý Mini-batch $B=2$ & Phép Chuyển Vị $X^T$",
+    "order": 6,
+    "title": "Bài 06: Xử Lý Mini-batch $B=2$ & Phép Chuyển Vị $X^T$",
     "path": "./examples/hw0_tensor_memory/bai_05_minibatch_sgd.html",
     "summary": "Xử lý song song mini-batch 2 ảnh cùng lúc. Trực giác hình học phép nhân ma trận chuyển vị $X^T G$ để gom gradient toàn batch.",
     "tags": [
@@ -92,8 +110,8 @@
     "id": "bai_06a_cpp_matmul_loops",
     "track": "hw0",
     "trackTitle": "Track 0: Nền Tảng Tensor & Bộ Nhớ C++",
-    "order": 6,
-    "title": "Bài 06: Dò Tay Vòng Lặp Nhân Ma Trận C++",
+    "order": 7,
+    "title": "Bài 07: Dò Tay Vòng Lặp Nhân Ma Trận C++",
     "path": "./examples/hw0_tensor_memory/bai_06a_cpp_matmul_loops.html",
     "summary": "Dò từng bước 3 vòng lặp `for (i, j, k)` trong C++. Hiểu cơ chế tính toán offset 1D: `A[i * K + k]` và `B[k * N + j]`.",
     "tags": [
@@ -110,8 +128,8 @@
     "id": "bai_03b_memory_leak",
     "track": "hw0",
     "trackTitle": "Track 0: Nền Tảng Tensor & Bộ Nhớ C++",
-    "order": 7,
-    "title": "Bài 07: Robot Chết Đuối Vì Memory Leak",
+    "order": 8,
+    "title": "Bài 08: Robot Chết Đuối Vì Memory Leak",
     "path": "./examples/hw0_tensor_memory/bai_03b_memory_leak.html",
     "summary": "Mô phỏng rò rỉ bộ nhớ qua từng mini-batch. Quên lệnh `free(grad)` hoặc `delete[]` khiến RAM đầy tràn và hệ điều hành tiêu diệt tiến trình (OOM Killer).",
     "tags": [
@@ -128,8 +146,8 @@
     "id": "bai_03_cache_locality",
     "track": "hw0",
     "trackTitle": "Track 0: Nền Tảng Tensor & Bộ Nhớ C++",
-    "order": 8,
-    "title": "Bài 08: Row-Major vs Col-Major Cache Locality",
+    "order": 9,
+    "title": "Bài 09: Row-Major vs Col-Major Cache Locality",
     "path": "./examples/hw0_tensor_memory/bai_03_cache_locality.html",
     "summary": "Trực quan hóa CPU Cache L1/L2. Đọc theo dòng (Row-Major) tận dụng Cache Line vs Đọc theo cột (Col-Major) gây nhảy cóc Cache Miss làm tụt hiệu năng gấp 10 lần.",
     "tags": [
@@ -146,8 +164,8 @@
     "id": "strides_views",
     "track": "hw0",
     "trackTitle": "Track 0: Nền Tảng Tensor & Bộ Nhớ C++",
-    "order": 9,
-    "title": "Bài 09: Strides & View — Một Vùng Nhớ, Nhiều Cách Nhìn",
+    "order": 10,
+    "title": "Bài 10: Strides & View — Một Vùng Nhớ, Nhiều Cách Nhìn",
     "path": "./examples/hw0_tensor_memory/strides_views.html",
     "summary": "Mô hình NDArray dùng shape, strides và offset để transpose, slice, broadcast mà không tốn 1 byte sao chép. Khi nào bắt buộc phải gọi `compact()` sang bộ nhớ mới.",
     "tags": [
@@ -165,8 +183,8 @@
     "id": "bai_04_autograd_graph",
     "track": "hw1",
     "trackTitle": "Track 1: Động Cơ Tính Đạo Hàm (Autograd)",
-    "order": 10,
-    "title": "Bài 10: Đồ Thị Tính Toán DAG & Sóng Dội Ngược",
+    "order": 11,
+    "title": "Bài 11: Đồ Thị Tính Toán DAG & Sóng Dội Ngược",
     "path": "./examples/hw1_autograd_engine/bai_04_autograd_graph.html",
     "summary": "Đồ thị có hướng phi chu trình (DAG). Thứ tự topo (Topological Sort) định đoạt trình tự tính đạo hàm dội ngược trong Autograd Engine.",
     "tags": [
@@ -183,8 +201,8 @@
     "id": "bai_05_reverse_vs_forward_ad",
     "track": "hw1",
     "trackTitle": "Track 1: Động Cơ Tính Đạo Hàm (Autograd)",
-    "order": 11,
-    "title": "Bài 11: Reverse-mode vs Forward-mode AD",
+    "order": 12,
+    "title": "Bài 12: Reverse-mode vs Forward-mode AD",
     "path": "./examples/hw1_autograd_engine/bai_05_reverse_vs_forward_ad.html",
     "summary": "So sánh độ phức tạp tính toán giữa Forward AD (thích hợp $f: \\mathbb{R} \\to \\mathbb{R}^m$) và Reverse AD (thích hợp mạng nơ-ron $f: \\mathbb{R}^n \\to \\mathbb{R}$ với hàng triệu tham số).",
     "tags": [
@@ -201,8 +219,8 @@
     "id": "broadcast_grad",
     "track": "hw1",
     "trackTitle": "Track 1: Động Cơ Tính Đạo Hàm (Autograd)",
-    "order": 12,
-    "title": "Bài 12: Gradient Của Broadcast (Cộng dồn)",
+    "order": 13,
+    "title": "Bài 13: Gradient Của Broadcast (Cộng dồn)",
     "path": "./examples/hw1_autograd_engine/broadcast_grad.html",
     "summary": "Một bias được broadcast cho cả batch thì gradient của nó phải cộng dồn theo trục batch. Bắt bug gán đè `=` (lỗi im lặng) và quên `sum()` (lỗi shape).",
     "tags": [
@@ -219,8 +237,8 @@
     "id": "gradient_check",
     "track": "hw1",
     "trackTitle": "Track 1: Động Cơ Tính Đạo Hàm (Autograd)",
-    "order": 13,
-    "title": "Bài 13: Kiểm Tra Gradient Bằng Số (Gradient Check)",
+    "order": 14,
+    "title": "Bài 14: Kiểm Tra Gradient Bằng Số (Gradient Check)",
     "path": "./examples/hw1_autograd_engine/gradient_check.html",
     "summary": "So sánh gradient giải tích trong code với sai phân hữu hạn (Finite Difference). Đồ thị sai số chữ V, chọn $\\varepsilon$, và bẫy float32 gây báo động giả.",
     "tags": [
@@ -237,8 +255,8 @@
     "id": "bai_06_activation_valves",
     "track": "hw2",
     "trackTitle": "Track 2: Modules & Mạng Tích Chập",
-    "order": 14,
-    "title": "Bài 14: Van Kích Hoạt & Lời Nguyền Trọng Số 0",
+    "order": 15,
+    "title": "Bài 15: Van Kích Hoạt & Lời Nguyền Trọng Số 0",
     "path": "./examples/hw2_modules_conv/bai_06_activation_valves.html",
     "summary": "Hiện tượng Symmetry Breaking: Khởi tạo trọng số bằng 0 khiến mọi nơ-ron nhận cùng đạo hàm và chết chìm trong tính đối xứng. So sánh van ReLU, GELU và Sigmoid.",
     "tags": [
@@ -255,8 +273,8 @@
     "id": "kaiming_init",
     "track": "hw2",
     "trackTitle": "Track 2: Modules & Mạng Tích Chập",
-    "order": 15,
-    "title": "Bài 15: Khởi Tạo Kaiming — Giữ Tín Hiệu Qua Mạng Sâu",
+    "order": 16,
+    "title": "Bài 16: Khởi Tạo Kaiming — Giữ Tín Hiệu Qua Mạng Sâu",
     "path": "./examples/hw2_modules_conv/kaiming_init.html",
     "summary": "Mỗi tầng nhân năng lượng tín hiệu với $g = n \\sigma^2 k$. Vì sao Kaiming chọn phương sai $2/n$ cho mạng ReLU để ngăn chặn bùng nổ / tiêu biến qua 20 tầng.",
     "tags": [
@@ -273,8 +291,8 @@
     "id": "optimizers",
     "track": "hw2",
     "trackTitle": "Track 2: Modules & Mạng Tích Chập",
-    "order": 16,
-    "title": "Bài 16: Động Học Các Bộ Tối Ưu — SGD vs Momentum vs Adam",
+    "order": 17,
+    "title": "Bài 17: Động Học Các Bộ Tối Ưu — SGD vs Momentum vs Adam",
     "path": "./examples/hw2_modules_conv/optimizers.html",
     "summary": "Chạy đua trên hẻm núi dẹt (ill-conditioned valley): SGD dao động ziczac kẹt bước, Momentum tăng tốc dọc rãnh, Adam tự cân bằng tỉ lệ bước nhảy và tầm quan trọng của Bias Correction.",
     "tags": [
@@ -289,11 +307,29 @@
     "status": "ready"
   },
   {
+    "id": "adamw_weight_decay",
+    "track": "hw2",
+    "trackTitle": "Track 2: Khối Mạng & Tối Ưu Hóa",
+    "order": 18,
+    "title": "Bài 18: Weight Decay — L2 vs AdamW",
+    "path": "./examples/hw2_modules_conv/adamw_weight_decay.html",
+    "summary": "Cộng L2 vào gradient của Adam làm bước chuẩn hóa $1/\\sqrt{\\hat{v}}$ triệt tiêu hệ số $\\lambda$ và teo trọng số gấp 10 lần. Thuật toán AdamW tách rời (decoupled) giải cứu việc huấn luyện Transformer.",
+    "tags": [
+      "optimizers",
+      "weight-decay",
+      "adamw",
+      "regularization"
+    ],
+    "difficulty": "intermediate",
+    "estimatedMinutes": 15,
+    "status": "ready"
+  },
+  {
     "id": "bai_09_batch_norm_dynamics",
     "track": "hw2",
     "trackTitle": "Track 2: Modules & Mạng Tích Chập",
-    "order": 17,
-    "title": "Bài 17: Ổn Định Nội Bộ Với BatchNorm",
+    "order": 19,
+    "title": "Bài 19: Ổn Định Nội Bộ Với BatchNorm",
     "path": "./examples/hw2_modules_conv/bai_09_batch_norm_dynamics.html",
     "summary": "Chuẩn hóa trung bình và phương sai của batch. Hai tham số học $\\gamma$ (phóng đại) và $\\beta$ (dời trục). Phân biệt thống kê khi Train vs Running Stats khi Eval.",
     "tags": [
@@ -310,8 +346,8 @@
     "id": "dropout",
     "track": "hw2",
     "trackTitle": "Track 2: Modules & Mạng Tích Chập",
-    "order": 18,
-    "title": "Bài 18: Dropout — Phá Vỡ Co-Adaptation & Kỹ Thuật Inverted Scaling",
+    "order": 20,
+    "title": "Bài 20: Dropout — Phá Vỡ Co-Adaptation & Kỹ Thuật Inverted Scaling",
     "path": "./examples/hw2_modules_conv/dropout.html",
     "summary": "Tắt ngẫu nhiên nơ-ron để ép học đặc trưng độc lập. Sự khác biệt giữa Train và Eval, bẫy quên scale $\\frac{1}{1-p}$ và dòng gradient dội ngược qua mặt nạ.",
     "tags": [
@@ -328,8 +364,8 @@
     "id": "layernorm_residual",
     "track": "hw2",
     "trackTitle": "Track 2: Modules & Mạng Tích Chập",
-    "order": 19,
-    "title": "Bài 19: LayerNorm & Residual — Chuẩn Hóa Theo Mẫu, Cao Tốc Cho Gradient",
+    "order": 21,
+    "title": "Bài 21: LayerNorm & Residual — Chuẩn Hóa Theo Mẫu, Cao Tốc Cho Gradient",
     "path": "./examples/hw2_modules_conv/layernorm_residual.html",
     "summary": "Vì sao Transformer bỏ BatchNorm: khi sinh từng token batch chỉ có 1 mẫu nên phương sai bằng 0. LayerNorm chuẩn hóa theo hàng, còn kết nối residual $y = x + f(x)$ cho gradient một đường đi thẳng $(1 + f')^L$.",
     "tags": [
@@ -346,8 +382,8 @@
     "id": "bai_08_conv2d_im2col",
     "track": "hw2",
     "trackTitle": "Track 2: Modules & Mạng Tích Chập",
-    "order": 20,
-    "title": "Bài 20: Conv2D & Thần Chú Im2col",
+    "order": 22,
+    "title": "Bài 22: Conv2D & Thần Chú Im2col",
     "path": "./examples/hw2_modules_conv/bai_08_conv2d_im2col.html",
     "summary": "Phép cuộn 2D trượt cửa sổ. Kỹ thuật Im2col biến đổi ảnh và bộ lọc thành ma trận 2D khổng lồ để tận dụng tối đa nhân phần cứng GEMM (BLAS/cuBLAS).",
     "tags": [
@@ -364,8 +400,8 @@
     "id": "bai_07_minibatch_assembly",
     "track": "hw2",
     "trackTitle": "Track 2: Modules & Mạng Tích Chập",
-    "order": 21,
-    "title": "Bài 21: Băng Chuyền Mini-Batching Assembly Line",
+    "order": 23,
+    "title": "Bài 23: Băng Chuyền Mini-Batching Assembly Line",
     "path": "./examples/hw2_modules_conv/bai_07_minibatch_assembly.html",
     "summary": "Dataloader đa tiến trình: Cân đối giữa Worker CPU tiền xử lý và GPU nạp dữ liệu. Hiện tượng Starvation (GPU đói dữ liệu) khi I/O tắc nghẽn.",
     "tags": [
@@ -382,8 +418,8 @@
     "id": "bai_10_cuda_threads",
     "track": "hw3",
     "trackTitle": "Track 3: Kiến Trúc GPU & Lập Trình CUDA",
-    "order": 22,
-    "title": "Bài 22: Phân Cấp Luồng CUDA Grid, Blocks & Threads",
+    "order": 24,
+    "title": "Bài 24: Phân Cấp Luồng CUDA Grid, Blocks & Threads",
     "path": "./examples/hw3_cuda_architecture/bai_10_cuda_threads.html",
     "summary": "Ánh xạ thread 2D `(blockIdx, threadIdx)` thành tọa độ ma trận toàn cục `(row, col)`. Hiểu mô hình thực thi song song SPMD (Single Program Multiple Data).",
     "tags": [
@@ -400,8 +436,8 @@
     "id": "bai_11_shared_memory_tiling",
     "track": "hw3",
     "trackTitle": "Track 3: Kiến Trúc GPU & Lập Trình CUDA",
-    "order": 23,
-    "title": "Bài 23: Tiled MatMul & Shared Memory",
+    "order": 25,
+    "title": "Bài 25: Tiled MatMul & Shared Memory",
     "path": "./examples/hw3_cuda_architecture/bai_11_shared_memory_tiling.html",
     "summary": "Shared Memory (SRAM on-chip) nhanh gấp 100 lần Global Memory (DRAM). Kỹ thuật Tiling chia nhỏ ma trận thành khối và đồng bộ `__syncthreads()`.",
     "tags": [
@@ -418,8 +454,8 @@
     "id": "bai_12_coalescing_and_banks",
     "track": "hw3",
     "trackTitle": "Track 3: Kiến Trúc GPU & Lập Trình CUDA",
-    "order": 24,
-    "title": "Bài 24: Memory Coalescing & Bank Conflicts",
+    "order": 26,
+    "title": "Bài 26: Memory Coalescing & Bank Conflicts",
     "path": "./examples/hw3_cuda_architecture/bai_12_coalescing_and_banks.html",
     "summary": "Warp 32 luồng đọc bộ nhớ gộp (Coalesced 128-byte transaction). Cơn ác mộng Bank Conflict trong 32 banks Shared Memory và kỹ thuật đệm Padding.",
     "tags": [
@@ -436,8 +472,8 @@
     "id": "mixed_precision",
     "track": "hw3",
     "trackTitle": "Track 3: Kiến Trúc GPU & Lập Trình CUDA",
-    "order": 25,
-    "title": "Bài 25: Mixed Precision — FP16, BF16 & Loss Scaling",
+    "order": 27,
+    "title": "Bài 27: Mixed Precision — FP16, BF16 & Loss Scaling",
     "path": "./examples/hw3_cuda_architecture/mixed_precision.html",
     "summary": "Gradient $10^{-8}$ lưu bằng FP16 bị làm tròn thành 0 mà không báo lỗi. Loss Scaling dời gradient vào dải biểu diễn được, scale quá tay thì tràn $\\infty$; BF16 giữ dải mũ của FP32 nên khỏi cần scale.",
     "tags": [
@@ -452,11 +488,29 @@
     "status": "ready"
   },
   {
+    "id": "activation_checkpointing",
+    "track": "hw3",
+    "trackTitle": "Track 3: GPU & CUDA",
+    "order": 28,
+    "title": "Bài 28: Activation Checkpointing — Đổi 33% Thời Gian Lấy 50% RAM GPU",
+    "path": "./examples/hw3_cuda_architecture/activation_checkpointing.html",
+    "summary": "Forward activations chiếm phần lớn VRAM GPU khi train model sâu. Kỹ thuật tái tính toán (recompute) giảm bộ nhớ từ $O(L)$ xuống $O(\\sqrt{L})$ với chi phí chỉ thêm $+33\\%$ thời gian tính.",
+    "tags": [
+      "cuda",
+      "gpu-memory",
+      "activation-checkpointing",
+      "vram-optimization"
+    ],
+    "difficulty": "advanced",
+    "estimatedMinutes": 18,
+    "status": "ready"
+  },
+  {
     "id": "rnn_bptt",
     "track": "hw4",
     "trackTitle": "Track 4: Transformer & Hệ Thống LLM",
-    "order": 26,
-    "title": "Bài 26: RNN & BPTT — Vì Sao Cần Transformer?",
+    "order": 29,
+    "title": "Bài 29: RNN & BPTT — Vì Sao Cần Transformer?",
     "path": "./examples/hw4_transformer_llm/rnn_bptt.html",
     "summary": "Lan truyền ngược qua thời gian (BPTT). Hiện tượng tiêu biến và bùng nổ gradient trong chuỗi tuần hoàn, đường cao tốc LSTM và bước chuyển dịch sang Self-Attention.",
     "tags": [
@@ -474,8 +528,8 @@
     "id": "bai_13_self_attention",
     "track": "hw4",
     "trackTitle": "Track 4: Transformer & Hệ Thống LLM",
-    "order": 27,
-    "title": "Bài 27: Scaled Dot-Product Self-Attention",
+    "order": 30,
+    "title": "Bài 30: Scaled Dot-Product Self-Attention",
     "path": "./examples/hw4_transformer_llm/bai_13_self_attention.html",
     "summary": "Cơ chế $Q, K, V$. Tại sao phải chia cho $\\sqrt{d_k}$ (bảo toàn phương sai tránh bão hòa Softmax). Trực quan hóa ma trận trọng số tương quan Attention Map.",
     "tags": [
@@ -492,8 +546,8 @@
     "id": "positional_encoding",
     "track": "hw4",
     "trackTitle": "Track 4: Transformer & Hệ Thống LLM",
-    "order": 28,
-    "title": "Bài 28: Positional Encoding — Attention Không Biết Thứ Tự",
+    "order": 31,
+    "title": "Bài 31: Positional Encoding — Attention Không Biết Thứ Tự",
     "path": "./examples/hw4_transformer_llm/positional_encoding.html",
     "summary": "\"Chó cắn người\" và \"người cắn chó\" cho cùng một đầu ra khi chỉ có Self-Attention (bất biến hoán vị). Cộng mã vị trí sin/cos $\\text{PE}(i)$ vào embedding để thứ tự từ đi vào điểm số $QK^\\top$.",
     "tags": [
@@ -510,8 +564,8 @@
     "id": "multi_head_attention",
     "track": "hw4",
     "trackTitle": "Track 4: Transformer & Hệ Thống LLM",
-    "order": 29,
-    "title": "Bài 29: Multi-Head Attention — Nhiều Cặp Mắt Cùng Nhìn",
+    "order": 32,
+    "title": "Bài 32: Multi-Head Attention — Nhiều Cặp Mắt Cùng Nhìn",
     "path": "./examples/hw4_transformer_llm/multi_head_attention.html",
     "summary": "Chia $d_{model}$ thành $h$ đầu để mỗi đầu học một kiểu quan hệ khác nhau, số tham số vẫn là $4d^2$. Đánh đổi: đầu quá hẹp ($d_k = 1$) mất khả năng phân biệt; nền tảng của MQA/GQA giảm KV-Cache.",
     "tags": [
@@ -528,8 +582,8 @@
     "id": "bai_14_kv_cache_anatomy",
     "track": "hw4",
     "trackTitle": "Track 4: Transformer & Hệ Thống LLM",
-    "order": 30,
-    "title": "Bài 30: Giải Phẫu KV-Cache Trong LLM Serving",
+    "order": 33,
+    "title": "Bài 33: Giải Phẫu KV-Cache Trong LLM Serving",
     "path": "./examples/hw4_transformer_llm/bai_14_kv_cache_anatomy.html",
     "summary": "Suy diễn tự hồi quy (Autoregressive Generation): Tại sao phải lưu bộ nhớ đệm KV? Ước tính dung lượng RAM GPU của KV Cache theo batch size và độ dài sinh token.",
     "tags": [
@@ -546,8 +600,8 @@
     "id": "bai_15_flash_attention_concept",
     "track": "hw4",
     "trackTitle": "Track 4: Transformer & Hệ Thống LLM",
-    "order": 31,
-    "title": "Bài 31: FlashAttention SRAM Tiling & Online Softmax",
+    "order": 34,
+    "title": "Bài 34: FlashAttention SRAM Tiling & Online Softmax",
     "path": "./examples/hw4_transformer_llm/bai_15_flash_attention_concept.html",
     "summary": "IO-Aware Algorithm: Tại sao không bao giờ ghi ma trận Attention $N \\times N$ xuống HBM? Thuật toán Online Softmax chia khối chạy trọn vẹn trong SRAM GPU.",
     "tags": [

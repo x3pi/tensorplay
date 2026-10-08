@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bài 29: Multi-Head Attention — Nhiều Cặp Mắt Cùng Nhìn - TensorPlay</title>
+  <title>Bài 32: Multi-Head Attention — Nhiều Cặp Mắt Cùng Nhìn - TensorPlay</title>
   <meta name="description" content="Vì sao chia d_model thành nhiều đầu attention: mỗi đầu học một kiểu quan hệ khác nhau mà không tốn thêm tham số hay FLOPs.">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -150,7 +150,7 @@
         step: 4, badge: 'Bước 4 / 4',
         heading: 'Thêm đầu không tốn thêm tham số, nhưng không miễn phí',
         problem: 'Vậy cứ chia thật nhiều đầu cho mạnh?',
-        mechanism: 'Bốn ma trận $W_Q, W_K, W_V, W_O$ đều là $d \\times d$ nên tổng tham số là $4d^2 = 64$ cho mọi $h$. KV-Cache (Bài 30) mỗi token vẫn là $2 \\cdot h \\cdot d_k = 2 d = 8$ phần tử. Nhưng khi $h = 4$, mỗi đầu chỉ còn $d_k = 1$ chiều: hai đầu ở giữa chỉ thấy một con số nên chú ý đều $\\frac{1}{3}$, gần như vô dụng.',
+        mechanism: 'Bốn ma trận $W_Q, W_K, W_V, W_O$ đều là $d \\times d$ nên tổng tham số là $4d^2 = 64$ cho mọi $h$. KV-Cache (Bài 33) mỗi token vẫn là $2 \\cdot h \\cdot d_k = 2 d = 8$ phần tử. Nhưng khi $h = 4$, mỗi đầu chỉ còn $d_k = 1$ chiều: hai đầu ở giữa chỉ thấy một con số nên chú ý đều $\\frac{1}{3}$, gần như vô dụng.',
         action: '👉 Thao tác (Cột 2): Bấm preset "4 đầu (mỗi đầu 1 chiều)".\n👁️ Quan sát (Cột 3): Đầu 2 và 3 có trọng số $[0.33, 0.33, 0.33]$ — không phân biệt được gì.',
         takeaway: 'Số đầu và độ rộng mỗi đầu $d_k$ đánh đổi nhau: đầu quá hẹp thì mất khả năng biểu diễn.'
       }
@@ -159,7 +159,7 @@
     const STEP_COMMENTS = {
       2: [{
         id: 'mh2', author: 'Học Viên DL Systems', role: 'Student', avatar: '🎓', tag: 'Gotcha kinh điển', tagType: 'gotcha',
-        content: 'Khi cài đặt, không ai cắt từng đầu bằng vòng lặp. Ta reshape $(B, N, d)$ thành $(B, N, h, d_k)$ rồi hoán vị thành $(B, h, N, d_k)$, và các đầu chạy song song như một batch lớn. Đó cũng là bài toán strides ở Bài 09: `transpose` chỉ đổi view, nhưng matmul phía sau thường cần `contiguous()`.'
+        content: 'Khi cài đặt, không ai cắt từng đầu bằng vòng lặp. Ta reshape $(B, N, d)$ thành $(B, N, h, d_k)$ rồi hoán vị thành $(B, h, N, d_k)$, và các đầu chạy song song như một batch lớn. Đó cũng là bài toán strides ở Bài 10: `transpose` chỉ đổi view, nhưng matmul phía sau thường cần `contiguous()`.'
       }],
       3: [{
         id: 'mh3', author: 'Nhà Toán Học AI', role: 'Math', avatar: '📐', tag: 'Giải thích hình học', tagType: 'math',

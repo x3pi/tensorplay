@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import { LessonLogic } from './bai_06a_cpp_matmul_loops.logic.js';
 
-test('Bài 6.1 C++ Matmul loops', () => {
+test('C++ Matmul loops cơ bản', () => {
   const logic = new LessonLogic();
   const st = logic.reset();
 

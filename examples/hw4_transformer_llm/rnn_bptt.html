@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bài 26: RNN &amp; BPTT — Vì Sao Cần Transformer? - TensorPlay</title>
+  <title>Bài 29: RNN &amp; BPTT — Vì Sao Cần Transformer? - TensorPlay</title>
   <meta name="description" content="Trực quan hóa lan truyền ngược qua thời gian (BPTT), căn bệnh tiêu biến và bùng nổ gradient trong RNN, đường cao tốc LSTM và bước chuyển dịch sang Self-Attention.">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -186,8 +186,8 @@
         step: 5, badge: 'Bước 5 / 5',
         heading: 'Cổ chai tuần tự và Sự ra đời của Transformer',
         problem: 'Dù LSTM giải quyết được tiêu biến, tại sao thế giới AI vẫn chuyển dịch hoàn toàn sang Transformer?',
-        mechanism: 'Vì RNN mang tính tuần tự cố hữu: $h_t$ bắt buộc phải đợi $h_{t-1}$ tính xong mới được chạy. Mạng không thể tận dụng hàng nghìn nhân CUDA song song của GPU (Bài 22). Transformer loại bỏ hoàn toàn đệ quy thời gian, dùng Self-Attention (Bài 27) để kết nối mọi cặp từ với độ dài đường dẫn $O(1)$ và tính toán song song 100%!',
-        action: '👉 Thao tác (Cột 1): Bấm chuyển sang Bài 27 trong mục lục sau khi hoàn thành.\n👁️ Quan sát (Cột 3): Kết luận xác nhận đã mở khóa cánh cổng bước vào kỷ nguyên Transformer.',
+        mechanism: 'Vì RNN mang tính tuần tự cố hữu: $h_t$ bắt buộc phải đợi $h_{t-1}$ tính xong mới được chạy. Mạng không thể tận dụng hàng nghìn nhân CUDA song song của GPU (Bài 24). Transformer loại bỏ hoàn toàn đệ quy thời gian, dùng Self-Attention (Bài 30) để kết nối mọi cặp từ với độ dài đường dẫn $O(1)$ và tính toán song song 100%!',
+        action: '👉 Thao tác (Cột 1): Bấm chuyển sang Bài 30 trong mục lục sau khi hoàn thành.\n👁️ Quan sát (Cột 3): Kết luận xác nhận đã mở khóa cánh cổng bước vào kỷ nguyên Transformer.',
         takeaway: 'Tạm biệt $O(T)$ tuần tự của RNN — Chào đón $O(1)$ song song hóa của Transformer!'
       }
     ];

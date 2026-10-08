@@ -1,5 +1,5 @@
 /**
- * Bài 20: Conv2D & Thần Chú Im2col (Needle HW2)
+ * Bài 22: Conv2D & Thần Chú Im2col (Needle HW2)
  * Biến đổi phép chập tích chập không gian (spatial convolution) thành phép nhân ma trận GEMM.
  * Ảnh 3x3, Kernel 2x2, Stride=1, Pad=0 -> Output 2x2.
  * Ma trận Im2col kích thước 4x4 (4 vị trí trượt x 4 phần tử mỗi vùng đón nhận).

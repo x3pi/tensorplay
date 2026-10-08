@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bài 15: Khởi Tạo Kaiming — Giữ Tín Hiệu Qua Mạng Sâu - TensorPlay</title>
+  <title>Bài 16: Khởi Tạo Kaiming — Giữ Tín Hiệu Qua Mạng Sâu - TensorPlay</title>
   <meta name="description" content="Vì sao khởi tạo trọng số quá nhỏ làm tín hiệu tiêu biến, quá lớn làm bùng nổ, và vì sao Kaiming chọn phương sai 2/n cho mạng ReLU.">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -164,7 +164,7 @@
         problem: 'Tiêu biến ở chiều xuôi thì liên quan gì tới việc học?',
         mechanism: 'Khi lan truyền ngược, gradient đi qua cùng các ma trận $W^T$ và cùng các van ReLU, nên cũng bị nhân $g$ mỗi tầng. Với $g = 0.5$ và 10 tầng, gradient về tới tầng đầu nhỏ đi khoảng 1000 lần: tầng đầu gần như đứng yên.',
         action: '👉 Thao tác (Cột 2): Giữ \"Xavier + ReLU\", kéo Số tầng từ 3 lên 20.\n👁️ Quan sát (Cột 3): Kết luận chuyển từ vàng (tạm ổn) sang đỏ khi vượt khoảng 10 tầng.',
-        takeaway: 'Khởi tạo tốt là điều kiện để mạng sâu học được ngay từ bước đầu tiên. BatchNorm (Bài 17) là một cách khác để giữ $g \\approx 1$ trong suốt quá trình huấn luyện.'
+        takeaway: 'Khởi tạo tốt là điều kiện để mạng sâu học được ngay từ bước đầu tiên. BatchNorm (Bài 19) là một cách khác để giữ $g \\approx 1$ trong suốt quá trình huấn luyện.'
       }
     ];
 

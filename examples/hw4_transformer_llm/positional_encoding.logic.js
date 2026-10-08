@@ -1,5 +1,5 @@
 /**
- * Bài 28: Positional Encoding — Self-Attention Không Biết Thứ Tự
+ * Bài 31: Positional Encoding — Self-Attention Không Biết Thứ Tự
  * Path: examples/hw4_transformer_llm/positional_encoding.logic.js
  *
  * Embedding 2 chiều: chó = [1, 0], cắn = [0, 1], người = [1, 1].

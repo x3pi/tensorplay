@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bài 28: Positional Encoding — Attention Không Biết Thứ Tự - TensorPlay</title>
+  <title>Bài 31: Positional Encoding — Attention Không Biết Thứ Tự - TensorPlay</title>
   <meta name="description" content="Self-Attention là hàm bất biến theo hoán vị: đảo thứ tự từ không đổi đầu ra. Mã hóa vị trí sin/cos phá vỡ tính đối xứng đó.">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -124,7 +124,7 @@
       {
         step: 1, badge: 'Bước 1 / 4',
         heading: 'Hai câu, hai nghĩa trái ngược',
-        problem: '"Chó cắn người" và "người cắn chó" dùng đúng ba từ nhưng nghĩa khác hẳn. Một mô hình ngôn ngữ phải phân biệt được chúng. Bài 27 cho thấy Self-Attention chỉ so sánh Query với Key, không hề hỏi từ nào đứng ở đâu.',
+        problem: '"Chó cắn người" và "người cắn chó" dùng đúng ba từ nhưng nghĩa khác hẳn. Một mô hình ngôn ngữ phải phân biệt được chúng. Bài 30 cho thấy Self-Attention chỉ so sánh Query với Key, không hề hỏi từ nào đứng ở đâu.',
         mechanism: 'Mỗi token được biểu diễn chỉ bằng embedding của chính nó. Khi tính $\\text{out}_i = \\sum_j \\text{softmax}_j(x_i \\cdot x_j)\\, x_j$, phép cộng trên $j$ không quan tâm thứ tự. Đảo các từ chỉ làm đảo thứ tự các số hạng trong tổng.',
         action: '👉 Thao tác (Cột 2): Bấm preset "Không mã vị trí ❌".\n👁️ Quan sát (Cột 3): Token "cắn" nhận cùng một vector ở cả hai câu, thanh kết luận đỏ.',
         takeaway: 'Self-Attention thuần túy là hàm bất biến theo hoán vị: nó nhìn câu như một cái túi từ.'
@@ -158,11 +158,11 @@
     const STEP_COMMENTS = {
       1: [{
         id: 'pe1', author: 'Nhà Toán Học AI', role: 'Math', avatar: '📐', tag: 'Hoán vị bất biến', tagType: 'math',
-        content: 'Nếu $P$ là ma trận hoán vị thì $\\text{Attn}(PX) = P\\,\\text{Attn}(X)$: đầu ra bị hoán vị theo, nhưng giá trị từng token không đổi. RNN (Bài 26) biết thứ tự vì xử lý tuần tự, còn Transformer đánh đổi điều đó để lấy song song nên phải bù lại bằng mã vị trí.'
+        content: 'Nếu $P$ là ma trận hoán vị thì $\\text{Attn}(PX) = P\\,\\text{Attn}(X)$: đầu ra bị hoán vị theo, nhưng giá trị từng token không đổi. RNN (Bài 29) biết thứ tự vì xử lý tuần tự, còn Transformer đánh đổi điều đó để lấy song song nên phải bù lại bằng mã vị trí.'
       }],
       2: [{
         id: 'pe2', author: 'Kỹ Sư Backend', role: 'Systems', avatar: '⚙️', tag: 'Gotcha kinh điển', tagType: 'gotcha',
-        content: 'Khi dùng KV-Cache (Bài 30), vị trí của token mới phải là độ dài cache hiện tại chứ không phải 0. Quên cập nhật offset vị trí khi sinh từng token là bug khiến chất lượng sinh văn bản tụt dần mà không báo lỗi.'
+        content: 'Khi dùng KV-Cache (Bài 33), vị trí của token mới phải là độ dài cache hiện tại chứ không phải 0. Quên cập nhật offset vị trí khi sinh từng token là bug khiến chất lượng sinh văn bản tụt dần mà không báo lỗi.'
       }],
       4: [{
         id: 'pe4', author: 'Chuyên Gia LLM', role: 'LLM', avatar: '🧠', tag: 'RoPE & ALiBi', tagType: 'systems',

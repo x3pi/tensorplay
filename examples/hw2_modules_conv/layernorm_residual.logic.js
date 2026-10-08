@@ -1,5 +1,5 @@
 /**
- * Bài 19: LayerNorm & Residual — Chuẩn Hóa Theo Từng Mẫu, Đường Cao Tốc Cho Gradient
+ * Bài 21: LayerNorm & Residual — Chuẩn Hóa Theo Từng Mẫu, Đường Cao Tốc Cho Gradient
  * Path: examples/hw2_modules_conv/layernorm_residual.logic.js
  *
  * Ma trận kích hoạt X (B mẫu x d đặc trưng), toy: X = [[1, 3], [2, 6]].

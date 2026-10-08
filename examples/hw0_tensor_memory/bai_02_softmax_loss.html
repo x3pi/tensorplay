@@ -176,7 +176,7 @@
         problem: 'Khi nào mô hình cần đưa ra quyết định dứt khoát 100% (Hard ArgMax) và khi nào cần giữ phân phối mềm dẻo để khám phá hay thận trọng (Soft Sampling)?',
         mechanism: 'Đưa thêm tham số nhiệt độ $T > 0$ vào số mũ:\n$$P_i = \\frac{e^{z_i / T}}{\\sum e^{z_j / T}}$$\n• Khi $T \\to 0$ (Nhiệt độ đóng băng, ví dụ $T = 0.2$): Khuếch đại tối đa chênh lệch điểm số $\\to$ Softmax tiệm cận hàm **ArgMax** (lớp cao hơn giành gần như $100\\%$ xác suất).\n• Khi $T$ lớn (Nhiệt độ nóng rực, ví dụ $T = 5.0$): San phẳng mọi khác biệt $\\to$ Phân phối tiến dần về đều ($50\\% - 50\\%$) giúp mô hình sáng tạo/thận trọng hơn.',
         action: '👉 Thao tác (Cột 2): Bấm thử preset ❄️ "Đóng Băng T=0.2" hoặc kéo thanh trượt "Nhiệt Độ T".\n👁️ Quan sát (Cột 3): Xem xác suất dồn $100\\%$ về lựa chọn dẫn đầu khi $T$ nhỏ, và san phẳng về $50\\% - 50\\%$ khi $T$ lớn!',
-        takeaway: 'Temperature Scaling là chiếc núm vặn điều chỉnh tính quyết đoán vs sáng tạo trong LLM (ChatGPT/Claude) và là tiền đề của hệ số tỉ lệ $1/\\sqrt{d_k}$ trong Self-Attention (Bài 27).'
+        takeaway: 'Temperature Scaling là chiếc núm vặn điều chỉnh tính quyết đoán vs sáng tạo trong LLM (ChatGPT/Claude) và là tiền đề của hệ số tỉ lệ $1/\\sqrt{d_k}$ trong Self-Attention (Bài 30).'
       }
     ];
 

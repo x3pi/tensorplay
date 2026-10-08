@@ -1,5 +1,5 @@
 /**
- * Bài 07: Robot "chết đuối" vì Memory Leak (Rò rỉ bộ nhớ)
+ * Bài 08: Robot "chết đuối" vì Memory Leak (Rò rỉ bộ nhớ)
  * Tính toán lượng byte, MB rò rỉ nếu dùng `new` mà không `delete`.
  */
 

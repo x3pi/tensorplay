@@ -1,5 +1,5 @@
 /**
- * Bài 27: Scaled Dot-Product Self-Attention (Needle HW4)
+ * Bài 30: Scaled Dot-Product Self-Attention (Needle HW4)
  * Trực quan hóa cơ chế Attention: QK^T / sqrt(d_k) + Causal Mask + Softmax.
  * So sánh Softmax có scale vs không scale (bão hòa gradient)
  * và vai trò của Causal Mask tam giác trên chặn nhìn trước tương lai.

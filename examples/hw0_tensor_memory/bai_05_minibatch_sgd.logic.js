@@ -1,5 +1,5 @@
 /**
- * Bài 05: Xử Lý Mini-batch B = 2 & Bản Chất Phép Chuyển Vị X^T
+ * Bài 06: Xử Lý Mini-batch B = 2 & Bản Chất Phép Chuyển Vị X^T
  */
 
 export class LessonLogic {
@@ -107,7 +107,7 @@ export class LessonLogic {
 export const PRESETS = [
   {
     id: "bai5_init",
-    label: "Bài 5: Khởi tạo 0, B=2",
+    label: "Khởi tạo ma trận 0, B=2",
     state: {
       x00: 1.0, x01: 0.0,
       x10: 0.0, x11: 1.0,

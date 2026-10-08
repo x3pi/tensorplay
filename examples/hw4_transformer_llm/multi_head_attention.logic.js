@@ -1,5 +1,5 @@
 /**
- * Bài 29: Multi-Head Attention — Nhiều Cặp Mắt Cùng Nhìn
+ * Bài 32: Multi-Head Attention — Nhiều Cặp Mắt Cùng Nhìn
  * Path: examples/hw4_transformer_llm/multi_head_attention.logic.js
  *
  * d_model = 4, 3 token, W_Q = W_K = W_V = W_O = I (đơn vị) để dễ nhẩm.

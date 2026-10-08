@@ -1,5 +1,5 @@
 /**
- * Bài 21: Mini-Batching Assembly Line (Needle HW2)
+ * Bài 23: Mini-Batching Assembly Line (Needle HW2)
  * Băng chuyền xử lý lô mini-batch B = 1, 2, 4, 8.
  * Vector hóa X (B x D) * W (D x H) -> Z (B x H).
  * Tính toán hiệu suất tận dụng GPU Cores và dung lượng Activation Buffer trong VRAM.

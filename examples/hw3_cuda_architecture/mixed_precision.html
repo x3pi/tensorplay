@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bài 25: Mixed Precision — FP16, BF16 &amp; Loss Scaling - TensorPlay</title>
+  <title>Bài 27: Mixed Precision — FP16, BF16 &amp; Loss Scaling - TensorPlay</title>
   <meta name="description" content="Vì sao gradient nhỏ biến mất trong FP16, Loss Scaling cứu chúng thế nào, và vì sao BF16 không cần scale. Ước tính bộ nhớ huấn luyện mixed precision.">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -129,7 +129,7 @@
         problem: 'Một trọng số ở tầng sâu có gradient thật là $10^{-8}$. Lưu nó bằng FP16 thì sao?',
         mechanism: '$10^{-8}$ nhỏ hơn nửa bước subnormal nhỏ nhất ($\\approx 3 \\times 10^{-8}$), nên bị làm tròn thành $0$ tuyệt đối. Chương trình không báo lỗi, loss vẫn giảm, nhưng những trọng số như vậy không bao giờ được học.',
         action: '👉 Thao tác (Cột 2): Bấm preset "FP16, gradient 1e-8, chưa scale ❌".\n👁️ Quan sát (Cột 3): Giá trị lưu là 0, thanh kết luận đỏ báo tiêu biến.',
-        takeaway: 'Underflow là lỗi im lặng: giống bug gán đè `=` ở Bài 12, chỉ khác là nó nằm trong định dạng số.'
+        takeaway: 'Underflow là lỗi im lặng: giống bug gán đè `=` ở Bài 13, chỉ khác là nó nằm trong định dạng số.'
       },
       {
         step: 3, badge: 'Bước 3 / 5',
@@ -168,7 +168,7 @@
       }],
       5: [{
         id: 'mp5', author: 'Chuyên Gia GPU', role: 'GPU', avatar: '⚡', tag: 'Bộ nhớ thật sự tiết kiệm ở đâu', tagType: 'systems',
-        content: 'Với Adam, mixed precision cần: trọng số FP16 (2) + gradient FP16 (2) + bản master FP32 (4) + $m$ (4) + $v$ (4) = 16 byte/tham số, bằng FP32 thuần. Khoản giảm bộ nhớ thật đến từ activation (lưu ở 16 bit) và từ băng thông bộ nhớ, như Bài 23-24 đã cho thấy tắc nghẽn thật nằm ở việc di chuyển dữ liệu.'
+        content: 'Với Adam, mixed precision cần: trọng số FP16 (2) + gradient FP16 (2) + bản master FP32 (4) + $m$ (4) + $v$ (4) = 16 byte/tham số, bằng FP32 thuần. Khoản giảm bộ nhớ thật đến từ activation (lưu ở 16 bit) và từ băng thông bộ nhớ, như Bài 25-26 đã cho thấy tắc nghẽn thật nằm ở việc di chuyển dữ liệu.'
       }]
     };
 

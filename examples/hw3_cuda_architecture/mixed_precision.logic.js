@@ -1,5 +1,5 @@
 /**
- * Bài 25: Mixed Precision — FP16, BF16 & Loss Scaling
+ * Bài 27: Mixed Precision — FP16, BF16 & Loss Scaling
  * Path: examples/hw3_cuda_architecture/mixed_precision.logic.js
  *
  * Gradient thật g = 10^e (e nguyên, ví dụ 1e-8) được nhân với hệ số loss scale S = 2^k

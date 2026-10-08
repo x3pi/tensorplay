@@ -1,5 +1,5 @@
 /**
- * Bài 06: Dò tay phép nhân ma trận trên chip của robot
+ * Bài 07: Dò tay phép nhân ma trận trên chip của robot
  * Mô phỏng 3 vòng lặp `for i, for j, for l` và mảng 1D.
  */
 
@@ -78,7 +78,7 @@ export class LessonLogic {
 export const PRESETS = [
   {
     id: "bai6_1_init",
-    label: "Bài 6.1 (A 2x3, B 3x2)",
+    label: "Ma trận mẫu (A 2x3, B 3x2)",
     state: {
       A: [1, 2, 0, 0, 1, -1],
       B: [1, 0, 0, 1, 1, 1],

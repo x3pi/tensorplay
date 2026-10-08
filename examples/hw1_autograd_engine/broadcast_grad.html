@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bài 11: Gradient Của Broadcast — Vì Sao Phải Cộng Dồn - TensorPlay</title>
+  <title>Bài 12: Gradient Của Broadcast — Vì Sao Phải Cộng Dồn - TensorPlay</title>
   <meta name="description" content="Bias được broadcast cho cả batch thì gradient của nó phải cộng dồn theo trục batch. Trải nghiệm hai lỗi kinh điển: gán đè (lỗi im lặng) và quên sum (lỗi shape).">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -166,7 +166,7 @@
         problem: 'Khi tự viết vòng lặp backward bằng C++, chỉ cần gõ nhầm `=` thay cho `+=`. Chương trình không báo lỗi. Hậu quả là gì?',
         mechanism: 'Mỗi vòng lặp ghi đè kết quả cũ, nên gradient chỉ còn hàng cuối: $[-1, -1]$. Mô hình vẫn học, loss vẫn giảm, nhưng nó chỉ \"nghe\" ảnh cuối batch. Chạy lâu thì $b \\to [1, 1]$ và loss kẹt ở $0.5$, gấp đôi mức tối ưu $0.25$.',
         action: '👉 Thao tác (Cột 2): Bấm preset \"Bug gán đè\", kéo Số bước lên 10.\n👁️ Quan sát (Cột 3): Loss giảm nhưng dừng ở 0.5, không chạm đường đứt.',
-        takeaway: 'Lỗi nguy hiểm nhất là lỗi không làm crash. Đây là lý do cần kiểm tra gradient bằng số (Bài 12).'
+        takeaway: 'Lỗi nguy hiểm nhất là lỗi không làm crash. Đây là lý do cần kiểm tra gradient bằng số (Bài 13).'
       },
       {
         step: 4, badge: 'Bước 4 / 5',

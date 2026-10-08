@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bài 12: Kiểm Tra Gradient Bằng Số (Gradient Check) - TensorPlay</title>
+  <title>Bài 13: Kiểm Tra Gradient Bằng Số (Gradient Check) - TensorPlay</title>
   <meta name="description" content="Bắt bug backward bằng sai phân hữu hạn: so sánh gradient trong code với gradient đo bằng số, chọn ε thế nào, vì sao float32 dễ gây báo động giả.">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -137,7 +137,7 @@
       {
         step: 1, badge: 'Bước 1 / 5',
         heading: 'Làm sao biết backward của mình đúng?',
-        problem: 'Bạn vừa tự viết hàm backward cho một phép toán mới. Chương trình chạy, không báo lỗi. Nhưng Bài 11 đã cho thấy: gradient sai vẫn có thể làm loss giảm. Có cách nào kiểm tra độc lập không?',
+        problem: 'Bạn vừa tự viết hàm backward cho một phép toán mới. Chương trình chạy, không báo lỗi. Nhưng Bài 12 đã cho thấy: gradient sai vẫn có thể làm loss giảm. Có cách nào kiểm tra độc lập không?',
         mechanism: 'Đạo hàm là độ dốc. Ta có thể đo độ dốc trực tiếp: nhích $w_0$ một chút $\\varepsilon$ sang hai phía rồi xem $f$ thay đổi bao nhiêu:\n$$\\frac{\\partial f}{\\partial w_0} \\approx \\frac{f(w_0 + \\varepsilon) - f(w_0 - \\varepsilon)}{2\\varepsilon}$$\nCách này không cần biết công thức đạo hàm, chỉ cần gọi forward 2 lần.',
         action: '👉 Thao tác (Cột 2): Giữ preset \"Code đúng ✅\".\n👁️ Quan sát (Cột 3): Gradient của code $[-3, -6]$ và gradient đo được gần như trùng khớp.',
         takeaway: 'Gradient check = so đáp án của công thức với đáp án của phép đo.'

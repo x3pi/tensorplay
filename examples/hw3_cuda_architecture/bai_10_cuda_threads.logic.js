@@ -1,5 +1,5 @@
 /**
- * Bài 10: CUDA Grid, Blocks & Threads (Needle HW3)
+ * Bài 22: CUDA Grid, Blocks & Threads (Needle HW3)
  * Mô phỏng phân cấp thực thi CUDA: Grid -> Blocks -> Threads.
  * Công thức chỉ số toàn cục: idx = blockIdx.x * blockDim.x + threadIdx.x
  * Kiểm chứng Boundary Guard if (idx < N) bảo vệ bộ nhớ GPU.

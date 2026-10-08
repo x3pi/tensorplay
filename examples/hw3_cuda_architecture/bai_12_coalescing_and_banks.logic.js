@@ -1,5 +1,5 @@
 /**
- * Bài 12: Memory Coalescing & Bank Conflicts (Needle HW3)
+ * Bài 24: Memory Coalescing & Bank Conflicts (Needle HW3)
  * Mô phỏng hiện tượng gom giao dịch bộ nhớ (Coalesced Access) trong Warp 32 luồng
  * và xung đột ngân hàng bộ nhớ chia sẻ (Shared Memory Bank Conflicts).
  */

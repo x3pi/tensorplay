@@ -1,5 +1,5 @@
 /**
- * Bài 04: The Computational Graph Flow (Needle HW1)
+ * Bài 10: The Computational Graph Flow (Needle HW1)
  * Thuật toán tính toán thuần túy: Forward Pass qua DAG và Backward Pass tích lũy gradient.
  * Đồ thị mẫu: z = x * w + b, Loss L = 0.5 * (z - y)^2
  * Thể hiện nguyên lý += (accumulate gradient) khi nơ-ron có nhiều nhánh rẽ.

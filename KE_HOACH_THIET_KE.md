@@ -27,7 +27,7 @@
 ```text
 tensorplay/
 ├── KE_HOACH_THIET_KE.md             # Tài liệu kiến trúc & kế hoạch này
-├── index.html                       # Trang DANH MỤC: thẻ liên kết tới 15 ví dụ theo track, đọc catalog.json
+├── index.html                       # Trang DANH MỤC: thẻ liên kết tới 31 ví dụ theo track, đọc catalog.json
 ├── package.json                     # Scripts: dev / build / test (Vite + Vitest, chỉ devDependencies)
 ├── vite.config.js                   # Multi-page build: quét toàn bộ examples/**/*.html làm entry point
 │
@@ -50,7 +50,7 @@ tensorplay/
 │       └── CommentSection.js        # Hệ thống chú giải chuyên gia (Toán/C++/Gotchas) + ghi chú học tập per-step
 │
 └── examples/                        # 📦 MỖI VÍ DỤ = 3 FILE TĨNH, KHÔNG QUA ROUTER/ENGINE NÀO CẢ
-    ├── catalog.json                 # Metadata của 15 ví dụ để index.html render thẻ — KHÔNG dùng để load logic
+    ├── catalog.json                 # Metadata của 31 ví dụ để index.html render thẻ — KHÔNG dùng để load logic
     │
     ├── hw0_tensor_memory/           # === TRACK 0 (xem Mục IX) ===
     │   ├── bai_01_robot_vision.html
@@ -265,7 +265,7 @@ Không có `router.js`. Mỗi bài tự đọc tham số của chính nó khi t�
 
 Dự án TensorPlay xoay quanh 5 track kinh điển của Deep Learning Systems, mỗi track bóc tách thành các ví dụ độc lập trong `examples/<track>/`:
 
-### Track 0 — `hw0_tensor_memory/`: Nền Tảng Tensor & Kỹ Nghệ Bộ Nhớ C++ (8 Bài)
+### Track 0 — `hw0_tensor_memory/`: Nền Tảng Tensor & Kỹ Nghệ Bộ Nhớ C++ (9 Bài)
 *Trọng tâm: Chuyển dịch tư duy từ vòng lặp toán học sang layout bộ nhớ máy tính thực tế.*
 - **Bài 01 — Robot Vision & Vector Dot Product:** Nhận diện biển báo gạch ngang $2\times2$. Trọng số âm là "bằng chứng bác bỏ" triệt tiêu đèn pha chói lóa. Trải phẳng 2D→1D, `offset = r*N + c`.
 - **Bài 02 — Softmax & Cơn Ác Mộng Lóa Sáng:** Logits $\to +1000 \to e^{1000} \to$ `Infinity`/`NaN`. "Safe Softmax": trừ $\max(z)$ trước khi `exp`.
@@ -275,37 +275,44 @@ Dự án TensorPlay xoay quanh 5 track kinh điển của Deep Learning Systems,
 - **Bài 06 — Dò Tay Vòng Lặp Nhân Ma Trận C++:** Dò từng bước 3 vòng lặp `for (i, j, k)`, offset 1D `A[i * K + k]` và `B[k * N + j]`.
 - **Bài 07 — Robot Chết Đuối Vì Memory Leak:** Quên `free(grad)` hoặc `delete[]`, RAM tràn và OOM Killer tiêu diệt tiến trình.
 - **Bài 08 — Row-Major vs Col-Major Cache Locality:** CPU Cache L1/L2. Đọc theo dòng (Row-Major) Cache Hit vs quét cột Cache Miss chậm ~10 lần.
+- **Bài 09 — Strides & View — Một Vùng Nhớ, Nhiều Cách Nhìn:** Dùng shape, strides, offset để transpose, slice, broadcast mà không tốn 1 byte sao chép; khi nào phải `compact()`. *(Chuyển từ Track 3 sang đây: là phần mở rộng tự nhiên của `offset = r*N + c`, và là kiến thức nền cho broadcast ở Bài 12, im2col ở Bài 20, CUDA ở Track 3.)*
 
-### Track 1 — `hw1_autograd_engine/`: Động Cơ Tự Động Tính Đạo Hàm (5 Bài)
-*Trọng tâm: Đồ thị tính toán (DAG), quy tắc chuỗi, và kiểm tra tính đúng đắn của đạo hàm.*
-- **Bài 09 — Đồ Thị Tính Toán DAG & Sóng Dội Ngược:** Node phép tính; Topological Sort định đoạt trình tự tính đạo hàm dội ngược.
-- **Bài 10 — Reverse-mode vs Forward-mode AD:** 1 triệu input, 1 output Loss — Reverse-mode chỉ tốn 1 lượt dội ngược.
-- **Bài 11 — Gradient Của Broadcast (Cộng dồn):** Bias broadcast cho cả batch thì gradient phải cộng dồn theo trục batch. Bắt bug gán đè `=` và quên sum.
-- **Bài 12 — Kiểm Tra Gradient Bằng Số (Gradient Check):** Sai phân hữu hạn, đồ thị sai số chữ V, chọn $\varepsilon$, và bẫy float32 gây báo động giả.
-- **Bài 13 — Van Kích Hoạt & Lời Nguyền Trọng Số 0:** Van ReLU khóa gradient âm; khởi tạo trọng số = 0 → tê liệt đối xứng toàn tầng ẩn.
+### Track 1 — `hw1_autograd_engine/`: Động Cơ Tự Động Tính Đạo Hàm (4 Bài)
+*Trọng tâm: Autograd không phải phép màu — là đồ thị + quy tắc dây chuyền + kiểm chứng bằng số.*
+- **Bài 10 — Đồ Thị Tính Toán DAG & Sóng Dội Ngược:** Node phép tính; Topological Sort định đoạt trình tự tính đạo hàm dội ngược.
+- **Bài 11 — Reverse-mode vs Forward-mode AD:** 1 triệu input, 1 output Loss — Reverse-mode chỉ tốn 1 lượt dội ngược.
+- **Bài 12 — Gradient Của Broadcast (Cộng dồn):** Bias broadcast cho cả batch thì gradient phải cộng dồn theo trục batch. Bắt bug gán đè `=` và quên sum.
+- **Bài 13 — Kiểm Tra Gradient Bằng Số (Gradient Check):** Sai phân hữu hạn, đồ thị sai số chữ V, chọn $\varepsilon$, và bẫy float32 gây báo động giả.
 
-### Track 2 — `hw2_modules_conv/`: Thư Viện Nơ-ron & Phép Chập Tối Ưu (6 Bài)
-*Trọng tâm: Module, khởi tạo, regularization, optimizer và phép biến đổi GEMM.*
-- **Bài 14 — Băng Chuyền Mini-Batching Assembly Line:** Dataloader đa tiến trình: Cân đối giữa Worker CPU và GPU, hiện tượng Starvation.
+### Track 2 — `hw2_modules_conv/`: Thư Viện Nơ-ron, Huấn Luyện Ổn Định & Phép Chập (8 Bài)
+*Trọng tâm: Làm cho mạng sâu học được — khởi tạo, tối ưu, chuẩn hóa, regularization, rồi mới đến CNN và pipeline dữ liệu.*
+- **Bài 14 — Van Kích Hoạt & Lời Nguyền Trọng Số 0:** Van ReLU khóa gradient âm (Dying ReLU); khởi tạo trọng số = 0 → tê liệt đối xứng toàn tầng ẩn. *(Chuyển từ Track 1: đây là bài về khởi tạo, đứng ngay trước Kaiming.)*
 - **Bài 15 — Khởi Tạo Kaiming — Giữ Tín Hiệu Qua Mạng Sâu:** Hệ số $g = n \sigma^2 k$. Vì sao Kaiming chọn phương sai $2/n$ cho mạng ReLU để ngăn bùng nổ / tiêu biến qua 20 tầng.
-- **Bài 16 — Dropout — Phá Vỡ Co-Adaptation & Kỹ Thuật Inverted Scaling:** Tắt nơ-ron ép học độc lập; Train vs Eval, bẫy quên chia $1-p$.
-- **Bài 17 — Động Học Các Bộ Tối Ưu (SGD vs Momentum vs Adam):** Chạy đua trên hẻm núi dẹt (ill-conditioned); Momentum vượt rãnh, Adam tự cân bằng bước nhảy và Bias Correction.
-- **Bài 18 — Ổn Định Nội Bộ Với BatchNorm:** Chuẩn hóa batch mean 0/var 1; Training stats vs Inference running stats.
-- **Bài 19 — Conv2D & Thần Chú Im2col:** Mở cuộn vùng trượt thành cột ma trận, biến tích chập thành GEMM tối ưu trên phần cứng.
+- **Bài 16 — Động Học Các Bộ Tối Ưu (SGD vs Momentum vs Adam):** Chạy đua trên hẻm núi dẹt (ill-conditioned); Momentum vượt rãnh, Adam tự cân bằng bước nhảy và Bias Correction.
+- **Bài 17 — Ổn Định Nội Bộ Với BatchNorm:** Chuẩn hóa batch mean 0/var 1; Training stats vs Inference running stats.
+- **Bài 18 — Dropout — Phá Vỡ Co-Adaptation & Kỹ Thuật Inverted Scaling:** Tắt nơ-ron ép học độc lập; Train vs Eval, bẫy quên chia $1-p$.
+- **Bài 19 — LayerNorm & Residual 🆕:** Vì sao Transformer bỏ BatchNorm (batch=1 khi sinh token → phương sai 0); kết nối $y = x + f(x)$ cho gradient $(1+f')^L$ thay vì $f'^L$.
+- **Bài 20 — Conv2D & Thần Chú Im2col:** Mở cuộn vùng trượt thành cột ma trận, biến tích chập thành GEMM tối ưu trên phần cứng.
+- **Bài 21 — Băng Chuyền Mini-Batching Assembly Line:** Dataloader đa tiến trình: Cân đối giữa Worker CPU và GPU, hiện tượng Starvation. *(Dời xuống cuối Track: là bài về pipeline hệ thống, không phải điều kiện để hiểu các bài trên.)*
 
 ### Track 3 — `hw3_cuda_architecture/`: Tăng Tốc Phần Cứng GPU (4 Bài)
-*Trọng tâm: Layout NDArray, SIMT và hệ thống phân cấp bộ nhớ GPU.*
-- **Bài 20 — Strides & View — Một Vùng Nhớ, Nhiều Cách Nhìn:** Dùng shape, strides, offset để transpose, slice, broadcast mà không tốn 1 byte sao chép; khi nào phải `compact()`.
-- **Bài 21 — Phân Cấp Luồng CUDA Grid, Blocks & Threads:** `(blockIdx, threadIdx)` thành tọa độ ma trận toàn cục; Boundary Guard `if (idx < N)`.
-- **Bài 22 — Tiled MatMul & Shared Memory:** DRAM xa xôi vs Shared Memory (SRAM) gần; Tiling $2\times2$ + `__syncthreads()`.
-- **Bài 23 — Memory Coalescing & Bank Conflicts:** Đọc liền kề gộp 1 giao dịch bus vs đọc nhảy cóc nghẽn bus; 32 banks Shared Memory & padding.
+*Trọng tâm: Tính toán nhanh hay chậm do bộ nhớ và độ chính xác số, không chỉ do số phép tính.*
+- **Bài 22 — Phân Cấp Luồng CUDA Grid, Blocks & Threads:** `(blockIdx, threadIdx)` thành tọa độ ma trận toàn cục; Boundary Guard `if (idx < N)`.
+- **Bài 23 — Tiled MatMul & Shared Memory:** DRAM xa xôi vs Shared Memory (SRAM) gần; Tiling $2\times2$ + `__syncthreads()`.
+- **Bài 24 — Memory Coalescing & Bank Conflicts:** Đọc liền kề gộp 1 giao dịch bus vs đọc nhảy cóc nghẽn bus; 32 banks Shared Memory & padding.
+- **Bài 25 — Mixed Precision: FP16, BF16 & Loss Scaling 🆕:** Gradient $10^{-8}$ bị FP16 làm tròn thành 0; Loss Scaling dời gradient vào dải biểu diễn; scale quá tay thì tràn; BF16 khỏi cần scale; bộ nhớ Adam 16 byte/param.
 
-### Track 4 — `hw4_transformer_llm/`: Kiến Trúc Transformer & LLM Systems (4 Bài)
-*Trọng tâm: Chuỗi tuần hoàn RNN, Attention, KV-Cache, tối ưu I/O.*
-- **Bài 24 — RNN & BPTT — Vì Sao Cần Transformer?:** Lan truyền ngược qua thời gian (BPTT), căn bệnh tiêu biến/bùng nổ gradient, cao tốc LSTM và bước nhảy vọt sang Attention $O(1)$.
-- **Bài 25 — Scaled Dot-Product Self-Attention:** Query/Key tạo bảng điểm, chia $\sqrt{d}$; Causal Mask tam giác.
-- **Bài 26 — Giải Phẫu KV-Cache Trong LLM Serving:** Giữ $K,V$ cũ, chỉ tính Query mới — $O(N^2) \to O(N)$.
-- **Bài 27 — FlashAttention SRAM Tiling & Online Softmax:** Cắt block vào SRAM, Online Softmax, tránh lưu $N\times N$ ra HBM.
+### Track 4 — `hw4_transformer_llm/`: Kiến Trúc Transformer & LLM Systems (6 Bài)
+*Trọng tâm: Từ vì sao bỏ RNN, đến từng bộ phận của khối Transformer, rồi đến các tối ưu khi phục vụ (serving).*
+- **Bài 26 — RNN & BPTT — Vì Sao Cần Transformer?:** Lan truyền ngược qua thời gian (BPTT), căn bệnh tiêu biến/bùng nổ gradient, cao tốc LSTM và bước nhảy vọt sang Attention $O(1)$.
+- **Bài 27 — Scaled Dot-Product Self-Attention:** Query/Key tạo bảng điểm, chia $\sqrt{d}$; Causal Mask tam giác.
+- **Bài 28 — Positional Encoding 🆕:** Self-Attention bất biến hoán vị ("chó cắn người" = "người cắn chó"); mã vị trí sin/cos phá đối xứng; giới thiệu RoPE/ALiBi.
+- **Bài 29 — Multi-Head Attention 🆕:** Chia $d_{model}$ thành $h$ đầu, mỗi đầu một kiểu quan hệ; số tham số không đổi; đầu quá hẹp mất khả năng; MQA/GQA giảm KV-Cache.
+- **Bài 30 — Giải Phẫu KV-Cache Trong LLM Serving:** Giữ $K,V$ cũ, chỉ tính Query mới — $O(N^2) \to O(N)$.
+- **Bài 31 — FlashAttention SRAM Tiling & Online Softmax:** Cắt block vào SRAM, Online Softmax, tránh lưu $N\times N$ ra HBM.
+
+### Gợi ý thứ tự học & Backlog
+Mỗi bài vẫn mở độc lập được (Zero Hard Dependencies), nhưng thứ tự khuyến nghị là thứ tự số bài 01 → 31. Các chủ đề còn thiếu, chưa làm: Cross-Entropy dạng Log-Sum-Exp ổn định số học, Weight Decay/L2 vs AdamW, Learning-rate schedule & warmup, Activation Checkpointing (đổi FLOPs lấy RAM), Data/Tensor Parallelism & All-Reduce, Embedding & Tokenization.
 
 ---
 
@@ -419,6 +426,6 @@ Theo quy chuẩn thiết kế bài tập toán học, **mọi `*.logic.js` bắt
 - [ ] Thiết kế **Timeline/Scrubber** cho Bài 14; tái dùng ValueGrid làm ma trận Attention (Bài 13/15).
 
 ### Giai Đoạn 7: Hoàn Thiện & Phát Hành
-- [ ] `npm test` xanh 100% cho toàn bộ 15 bài + `shared/`.
+- [ ] `npm test` xanh 100% cho toàn bộ 31 bài + `shared/`.
 - [ ] Kiểm tra breakpoint <900px và điều hướng bàn phím trên cả 15 trang.
 - [ ] `npm run build`, deploy static bundle (GitHub Pages/Cloudflare Pages) — không cần cấu hình fallback route.

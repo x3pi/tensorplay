@@ -1,5 +1,5 @@
 /**
- * Bài 6.1: Dò tay phép nhân ma trận trên chip của robot
+ * Bài 06: Dò tay phép nhân ma trận trên chip của robot
  * Mô phỏng 3 vòng lặp `for i, for j, for l` và mảng 1D.
  */
 

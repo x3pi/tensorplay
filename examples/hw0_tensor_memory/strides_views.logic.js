@@ -1,6 +1,6 @@
 /**
  * Logic Module: Strides & View — một vùng nhớ phẳng, nhiều cách nhìn.
- * Path: examples/hw3_cuda_architecture/strides_views.logic.js
+ * Path: examples/hw0_tensor_memory/strides_views.logic.js
  *
  * Mô hình NDArray (giống backend Needle / PyTorch / NumPy):
  *   phần tử (i, j) nằm ở ô nhớ  addr = offset + i * s0 + j * s1

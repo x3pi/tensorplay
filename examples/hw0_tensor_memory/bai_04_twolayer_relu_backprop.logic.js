@@ -1,5 +1,5 @@
 /**
- * Bài 4.1: Mạng Nơ-ron 2 Tầng & Cơ Chế Đóng/Mở Van ReLU (Matrix Backprop)
+ * Bài 04: Mạng Nơ-ron 2 Tầng & Cơ Chế Đóng/Mở Van ReLU (Matrix Backprop)
  */
 
 export class LessonLogic {

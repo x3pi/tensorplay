@@ -1,5 +1,5 @@
 /**
- * Bài 11: Tiled MatMul & Shared Memory (Needle HW3)
+ * Bài 23: Tiled MatMul & Shared Memory (Needle HW3)
  * Mô phỏng kỹ thuật Tiling chia nhỏ ma trận vào bộ nhớ chia sẻ (__shared__ SRAM).
  * Ma trận 4x4, Tile 2x2, số pha k = 2.
  * So sánh số lượt truy cập DRAM chậm chạp vs SRAM siêu tốc.

@@ -11,10 +11,10 @@ export class LessonLogic {
 
   reset() {
     this.state = {
-      x1: 2.0, // Pixel 1 (Cảm biến ngang)
-      x2: 1.0, // Pixel 2 (Cảm biến dọc)
-      w00: 0.0, w01: 0.0, // Trọng số từ x1 -> lớp 0, lớp 1
-      w10: 0.0, w11: 0.0, // Trọng số từ x2 -> lớp 0, lớp 1
+      x1: 2.0, // Cảm biến vạch ngang x0
+      x2: 1.0, // Cảm biến vạch dọc x1
+      w00: 0.0, w01: 0.0, // Trọng số từ x0 -> lớp 0 (Dừng), lớp 1 (Đi thẳng)
+      w10: 0.0, w11: 0.0, // Trọng số từ x1 -> lớp 0 (Dừng), lớp 1 (Đi thẳng)
       y: 0, // Nhãn thật (0 = Dừng lại 🛑, 1 = Đi thẳng ⬆️)
       lr: 0.1, // Tốc độ học (Learning Rate alpha)
       stepCount: 0 // Đếm số bước huấn luyện

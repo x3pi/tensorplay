@@ -3,7 +3,7 @@ import { LessonLogic, PRESETS, MEMORY, isContiguous } from './strides_views.logi
 
 const pick = (id) => PRESETS.find(p => p.id === id).state;
 
-describe('examples/hw3_cuda_architecture/strides_views.logic.js', () => {
+describe('examples/hw0_tensor_memory/strides_views.logic.js', () => {
   it('View gốc 2×3 strides [3,1]: ô (1,2) nằm ở địa chỉ 5 = "f"', () => {
     const logic = new LessonLogic();
     const r = logic.calculate();

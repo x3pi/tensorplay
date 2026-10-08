@@ -190,10 +190,10 @@
         step: 1,
         badge: 'Bước 1 / 5',
         heading: 'Chấm Điểm Tuyến Tính (Logits $Z = X \\cdot W$)',
-        problem: 'Camera robot đọc 2 pixel: $X_0$ (ngang) và $X_1$ (dọc). Làm sao phân loại thành DỪNG (lớp 0) hay ĐI THẲNG (lớp 1)?',
-        mechanism: 'Mỗi cột của ma trận $W$ là một bộ tiêu chí chấm điểm riêng. Phép nhân ma trận $Z = X \\cdot W$ tính song song điểm thô cho cả 2 hành động:\n$$Z = [x_0 w_{0,0} + x_1 w_{1,0}, \\; x_0 w_{0,1} + x_1 w_{1,1}]$$\n• **Quy tắc quyết định:** Lớp nào có điểm số $Z$ cao hơn thì robot sẽ ưu tiên hành động đó.\n• **Trạng thái ban đầu ($W = 0$):** Với $X = [2.0, 1.0]$ và $W = \\begin{bmatrix} 0 & 0 \\\\ 0 & 0 \\end{bmatrix}$, điểm số là $Z = [0.0, 0.0]$. Hai bên bằng điểm nhau nên robot hoàn toàn phân vân ($50\\% - 50\\%$) vì chưa học được gì!\n• **Mục tiêu học máy:** Tìm các trọng số $W$ sao cho điểm lớp đúng (Biển Dừng $Z_0$) cao vượt trội so với lớp sai ($Z_1$).',
-        action: '👉 Thao tác (Cột 2): Thử kéo các thanh trượt $X_0, X_1$ hoặc chỉnh ma trận $W$.\n👁️ Quan sát (Cột 3): Xem vector điểm thô $Z = [Z_0, Z_1]$ ở Thẻ 1 tự động nhảy số theo phép nhân ma trận!',
-        takeaway: 'Vector $Z_{(1 \\times 2)}$ chứa điểm thô (Logits): hành động nào có điểm cao hơn sẽ được robot ưu tiên lựa chọn.'
+        problem: 'Robot có 2 mắt cảm biến $X = [x_0, x_1]$ để quan sát đường đi. Làm sao từ 2 tín hiệu cảm biến này tính ra điểm số để quyết định DỪNG (lớp 0) hay ĐI THẲNG (lớp 1)?',
+        mechanism: '• **Đầu vào $X = [x_0, x_1]$ (Cảm biến quan sát):**\n  - $x_0$: Tín hiệu cảm biến đo vạch ngang (đang đo được mức $2.0$).\n  - $x_1$: Tín hiệu cảm biến đo vạch dọc (đang đo được mức $1.0$).\n• **Đầu ra $Z = [z_0, z_1]$ (Điểm số quyết định / Logits):**\n  - $z_0$: Điểm số dành cho hành động **Dừng Lại (🛑)**.\n  - $z_1$: Điểm số dành cho hành động **Đi Thẳng (⬆️)**.\n• **Bộ não chấm điểm $Z = X \\cdot W$:** Mỗi cột của ma trận trọng số $W$ là một bộ tiêu chí chấm điểm riêng:\n$$Z = [x_0 w_{00} + x_1 w_{10}, \\; x_0 w_{01} + x_1 w_{11}]$$\n• **Trạng thái ban đầu ($W = 0$):** Khi chưa học ($W = 0$), điểm số là $Z = [0.0, 0.0] \\implies$ robot phân vân $50\\% - 50\\%$. Quá trình huấn luyện sẽ tự điều chỉnh $W$ sao cho hành động đúng có điểm $Z$ cao vượt trội.',
+        action: '👉 Thao tác (Cột 2): Thử kéo các thanh trượt cảm biến $x_0, x_1$ hoặc chỉnh ma trận $W$.\n👁️ Quan sát (Cột 3): Xem vector điểm thô $Z = [z_0, z_1]$ ở Thẻ 1 tự động nhảy số theo phép nhân ma trận!',
+        takeaway: '$X$ là tín hiệu cảm biến (đầu vào); $Z = X \\cdot W$ là điểm số quyết định (đầu ra). Hai đại lượng này hoàn toàn khác nhau!'
       },
       {
         step: 2,
@@ -218,8 +218,8 @@
         badge: 'Bước 4 / 5',
         heading: 'Đạo Hàm Ma Trận: $\\nabla_W = X^T \\cdot G$',
         problem: 'Làm sao phân bổ lực sai số $G$ từ đầu ra dội ngược về từng trọng số cụ thể trong $W_{ij}$?',
-        mechanism: 'Quy tắc chuỗi ma trận: $\\nabla_W = X^T \\cdot G$. Từng phần tử của ma trận gradient là tích giữa pixel đầu vào $X_i$ và sai số dội ngược $G_j$:\n$$\\nabla_W = \\begin{bmatrix} x_0 \\\\ x_1 \\end{bmatrix} \\begin{bmatrix} G_0 & G_1 \\end{bmatrix} = \\begin{bmatrix} x_0 G_0 & x_0 G_1 \\\\ x_1 G_0 & x_1 G_1 \\end{bmatrix}$$\nVới $X = [2.0, 1.0]$ và $G = [-0.5, +0.5]$, tính nhẩm tức thì:\n$$\\nabla_W = \\begin{bmatrix} 2.0 \\times (-0.5) & 2.0 \\times (+0.5) \\\\ 1.0 \\times (-0.5) & 1.0 \\times (+0.5) \\end{bmatrix} = \\begin{bmatrix} -1.0 & +1.0 \\\\ -0.5 & +0.5 \\end{bmatrix}$$\nPixel nào sáng mạnh ($x_0 = 2.0$) sẽ gánh chịu lực gradient gấp đôi pixel $x_1 = 1.0$; pixel nào tắt ($x_i = 0$) có gradient bằng 0!',
-        action: '👉 Thao tác (Cột 2): Thử kéo pixel $X_0$ hoặc $X_1$ về 0.\n👁️ Quan sát (Cột 3): Nhìn ma trận gradient $\\nabla_W = X^T \\cdot G$ ở Thẻ 3. Hàng tương ứng với pixel bằng 0 sẽ có gradient bằng 0 ngay lập tức!',
+        mechanism: 'Quy tắc chuỗi ma trận: $\\nabla_W = X^T \\cdot G$. Từng phần tử của ma trận gradient là tích giữa cảm biến đầu vào $x_i$ và sai số dội ngược $G_j$:\n$$\\nabla_W = \\begin{bmatrix} x_0 \\\\ x_1 \\end{bmatrix} \\begin{bmatrix} G_0 & G_1 \\end{bmatrix} = \\begin{bmatrix} x_0 G_0 & x_0 G_1 \\\\ x_1 G_0 & x_1 G_1 \\end{bmatrix}$$\nVới $X = [2.0, 1.0]$ và $G = [-0.5, +0.5]$, tính nhẩm tức thì:\n$$\\nabla_W = \\begin{bmatrix} 2.0 \\times (-0.5) & 2.0 \\times (+0.5) \\\\ 1.0 \\times (-0.5) & 1.0 \\times (+0.5) \\end{bmatrix} = \\begin{bmatrix} -1.0 & +1.0 \\\\ -0.5 & +0.5 \\end{bmatrix}$$\nCảm biến nào đo tín hiệu mạnh ($x_0 = 2.0$) sẽ gánh chịu lực gradient gấp đôi cảm biến $x_1 = 1.0$; cảm biến nào bằng 0 ($x_i = 0$) có gradient bằng 0!',
+        action: '👉 Thao tác (Cột 2): Thử kéo cảm biến $x_0$ hoặc $x_1$ về 0.\n👁️ Quan sát (Cột 3): Nhìn ma trận gradient $\\nabla_W = X^T \\cdot G$ ở Thẻ 3. Hàng tương ứng với cảm biến bằng 0 sẽ có gradient bằng 0 ngay lập tức!',
         takeaway: 'Toàn bộ đạo hàm của mạng nơ-ron được tính toán bằng đúng một phép nhân ma trận chuyển vị $X^T G$, không cần bất kỳ vòng lặp thủ công nào!'
       },
       {
@@ -241,6 +241,13 @@
           tag: 'Kích Thước Ma Trận',
           tagType: 'math',
           content: 'Kiểm tra kích thước ma trận: $X$ là $(1 \\times 2)$, $W$ là $(2 \\times 2)$, tích $Z = X W$ là $(1 \\times 2)$. Phép toán hoàn toàn hợp lệ.'
+        },
+        {
+          author: 'Kỹ Sư AI',
+          avatar: '🤖',
+          tag: 'Cảm Biến vs Điểm Số',
+          tagType: 'system',
+          content: 'Lưu ý rạch ròi: $X = [x_0, x_1]$ là 2 cảm biến đầu vào từ mắt robot. Còn $Z = X \\cdot W$ là điểm số do não robot tính ra (Đầu ra). Điểm $Z$ của hành động nào cao hơn thì robot sẽ ưu tiên chọn hành động đó!'
         }
       ],
       2: [
@@ -354,37 +361,37 @@
 
     // 4. Mount Sliders (Inputs & Weights)
     const sliderX1 = createLiveSlider(document.getElementById('mount-slider-x1'), {
-      label: 'Cảm biến ngang ($X_0$)',
+      label: 'Cảm biến nét ngang ($x_0$)',
       min: -3, max: 3, step: 0.5, initial: state.x1,
       onChange: (v) => { state = logic.onUserUpdate({ x1: v }); renderAll(); }
     });
 
     const sliderX2 = createLiveSlider(document.getElementById('mount-slider-x2'), {
-      label: 'Cảm biến dọc ($X_1$)',
+      label: 'Cảm biến nét dọc ($x_1$)',
       min: -3, max: 3, step: 0.5, initial: state.x2,
       onChange: (v) => { state = logic.onUserUpdate({ x2: v }); renderAll(); }
     });
 
     const sliderW00 = createLiveSlider(document.getElementById('mount-slider-w00'), {
-      label: '$W_{00}$ (ngang $\\to$ 0)',
+      label: '$W_{00}$ (ngang $\\to$ Dừng)',
       min: -3, max: 3, step: 0.1, initial: state.w00,
       onChange: (v) => { state = logic.onUserUpdate({ w00: v }); renderAll(); }
     });
 
     const sliderW01 = createLiveSlider(document.getElementById('mount-slider-w01'), {
-      label: '$W_{01}$ (ngang $\\to$ 1)',
+      label: '$W_{01}$ (ngang $\\to$ Đi thẳng)',
       min: -3, max: 3, step: 0.1, initial: state.w01,
       onChange: (v) => { state = logic.onUserUpdate({ w01: v }); renderAll(); }
     });
 
     const sliderW10 = createLiveSlider(document.getElementById('mount-slider-w10'), {
-      label: '$W_{10}$ (dọc $\\to$ 0)',
+      label: '$W_{10}$ (dọc $\\to$ Dừng)',
       min: -3, max: 3, step: 0.1, initial: state.w10,
       onChange: (v) => { state = logic.onUserUpdate({ w10: v }); renderAll(); }
     });
 
     const sliderW11 = createLiveSlider(document.getElementById('mount-slider-w11'), {
-      label: '$W_{11}$ (dọc $\\to$ 1)',
+      label: '$W_{11}$ (dọc $\\to$ Đi thẳng)',
       min: -3, max: 3, step: 0.1, initial: state.w11,
       onChange: (v) => { state = logic.onUserUpdate({ w11: v }); renderAll(); }
     });
@@ -397,10 +404,10 @@
         return ` <span style="font-size: 0.72rem; font-weight: 700; color: ${color}; font-family: var(--font-code); background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 3px;">(${sign}${d.toFixed(2)} ${arrow})</span>`;
       };
 
-      sliderW00.setLabel(`$W_{00}$ (ngang $\\to$ 0)${fmtDelta(state.deltaW00)}`);
-      sliderW01.setLabel(`$W_{01}$ (ngang $\\to$ 1)${fmtDelta(state.deltaW01)}`);
-      sliderW10.setLabel(`$W_{10}$ (dọc $\\to$ 0)${fmtDelta(state.deltaW10)}`);
-      sliderW11.setLabel(`$W_{11}$ (dọc $\\to$ 1)${fmtDelta(state.deltaW11)}`);
+      sliderW00.setLabel(`$W_{00}$ (ngang $\\to$ Dừng)${fmtDelta(state.deltaW00)}`);
+      sliderW01.setLabel(`$W_{01}$ (ngang $\\to$ Đi thẳng)${fmtDelta(state.deltaW01)}`);
+      sliderW10.setLabel(`$W_{10}$ (dọc $\\to$ Dừng)${fmtDelta(state.deltaW10)}`);
+      sliderW11.setLabel(`$W_{11}$ (dọc $\\to$ Đi thẳng)${fmtDelta(state.deltaW11)}`);
     }
 
     function syncSliders() {

@@ -1,5 +1,5 @@
 /**
- * Bài 14: KV-Cache Anatomy (Needle HW4)
+ * Bài 30: KV-Cache Anatomy (Needle HW4)
  * Giải phẫu cơ chế lưu đệm Key-Value Cache trong LLM Serving.
  * So sánh chi phí O(N^2) khi không dùng cache vs O(N) khi có KV-Cache.
  * Tính toán dung lượng VRAM tiêu hao cho bộ đệm KV.

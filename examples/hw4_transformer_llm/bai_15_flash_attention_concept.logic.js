@@ -1,5 +1,5 @@
 /**
- * Bài 15: FlashAttention SRAM Tiling & Online Softmax (Needle HW4)
+ * Bài 31: FlashAttention SRAM Tiling & Online Softmax (Needle HW4)
  * Trực quan hóa đột phá FlashAttention:
  * 1. Cắt nhỏ Q, K, V thành các khối nạp vào SRAM của GPU.
  * 2. Thuật toán Online Softmax cập nhật động running max (m) và running sum (l).

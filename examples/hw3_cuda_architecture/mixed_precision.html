@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bài 25: Mixed Precision — FP16, BF16 &amp; Loss Scaling - TensorPlay</title>
+  <meta name="description" content="Vì sao gradient nhỏ biến mất trong FP16, Loss Scaling cứu chúng thế nào, và vì sao BF16 không cần scale. Ước tính bộ nhớ huấn luyện mixed precision.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">← Về Danh Mục</a>
+      </div>
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step" style="border-color: rgba(245, 158, 11, 0.4);">Track 3: GPU &amp; CUDA</span>
+      </div>
+    </header>
+
+    <main class="lab-grid">
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt &amp; Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Bàn Thí Nghiệm Độ Chính Xác Thấp</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Đặt Lại</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">🔢 Định dạng lưu gradient trên GPU</div>
+            <div class="tp-seg" id="seg-format">
+              <button data-v="fp16">FP16 (5 bit mũ, 10 bit mantissa)</button>
+              <button data-v="bf16">BF16 (8 bit mũ, 7 bit mantissa)</button>
+            </div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">🌡️ Gradient thật của một trọng số sâu trong mạng</div>
+            <div id="mount-grad-slider"></div>
+            <div class="tp-matrix-caption" id="txt-grad"></div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">🔍 Hệ số Loss Scale $S = 2^k$</div>
+            <div id="mount-scale-slider"></div>
+            <div class="tp-matrix-caption" id="txt-scale"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math &amp; Telemetry</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div class="tp-panel">
+            <div class="tp-panel-title">🚚 Đường đi của gradient</div>
+            <table class="tp-kv-table" id="pipe-table"></table>
+            <div class="tp-math-box" id="katex-store"></div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">📐 Giới hạn của định dạng</div>
+            <table class="tp-kv-table" id="limits-table"></table>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">💾 RAM huấn luyện cho mô hình 1 tỉ tham số (Adam)</div>
+            <table class="tp-kv-table" id="mem-table"></table>
+            <div class="tp-matrix-caption">Phần trọng số/gradient/optimizer hầu như không giảm — khoản tiết kiệm thật nằm ở activation</div>
+          </div>
+
+          <div class="tp-verdict" id="verdict"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createLiveSlider } from '../../shared/components/LiveSlider.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
+    import { markCompleted } from '../../shared/progress.js';
+    import { LessonLogic, PRESETS, trainingBytesPerParam } from './mixed_precision.logic.js';
+
+    const LESSON_ID = 'mixed_precision';
+
+    const STEPS = [
+      {
+        step: 1, badge: 'Bước 1 / 5',
+        heading: 'Vì sao ai cũng muốn dùng 16 bit?',
+        problem: 'Một tensor FP32 tốn 4 byte mỗi phần tử. GPU có Tensor Core chỉ chạy cực nhanh ở FP16/BF16 (2 byte). Nếu chuyển hết sang 16 bit, bộ nhớ activation giảm một nửa và phép nhân ma trận nhanh hơn nhiều lần. Có cái giá nào không?',
+        mechanism: 'Có: 16 bit chỉ có 65536 mã khác nhau. FP16 dành 5 bit cho số mũ nên số lớn nhất là $65504$ và số dương nhỏ nhất là $2^{-24} \\approx 6 \\times 10^{-8}$. Gradient của tầng sâu thường nhỏ hơn thế rất nhiều.',
+        action: '👉 Thao tác (Cột 2): Xem mục "Giới hạn của định dạng" ở Cột 3, rồi chuyển qua lại FP16 và BF16.\n👁️ Quan sát (Cột 3): BF16 có max cỡ $3.4 \\times 10^{38}$ giống FP32, FP16 thì chỉ 65504.',
+        takeaway: 'Ít bit hơn nghĩa là hoặc mất dải số (FP16), hoặc mất độ chi tiết (BF16).'
+      },
+      {
+        step: 2, badge: 'Bước 2 / 5',
+        heading: 'Gradient biến mất không báo lỗi',
+        problem: 'Một trọng số ở tầng sâu có gradient thật là $10^{-8}$. Lưu nó bằng FP16 thì sao?',
+        mechanism: '$10^{-8}$ nhỏ hơn nửa bước subnormal nhỏ nhất ($\\approx 3 \\times 10^{-8}$), nên bị làm tròn thành $0$ tuyệt đối. Chương trình không báo lỗi, loss vẫn giảm, nhưng những trọng số như vậy không bao giờ được học.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "FP16, gradient 1e-8, chưa scale ❌".\n👁️ Quan sát (Cột 3): Giá trị lưu là 0, thanh kết luận đỏ báo tiêu biến.',
+        takeaway: 'Underflow là lỗi im lặng: giống bug gán đè `=` ở Bài 12, chỉ khác là nó nằm trong định dạng số.'
+      },
+      {
+        step: 3, badge: 'Bước 3 / 5',
+        heading: 'Loss Scaling: phóng to rồi thu nhỏ',
+        problem: 'Làm sao cứu những gradient nhỏ mà không đổi định dạng?',
+        mechanism: 'Nhân loss với $S = 1024$ trước khi lan truyền ngược: nhờ quy tắc dây chuyền, mọi gradient đều được nhân $S$. $10^{-8} \\times 1024 \\approx 1.02 \\times 10^{-5}$ nằm trong vùng FP16 biểu diễn được. Trước khi cập nhật trọng số, chia lại cho $S$ trong FP32.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "FP16 + Loss Scale 1024 ✅".\n👁️ Quan sát (Cột 3): Gradient khôi phục xấp xỉ $10^{-8}$ với sai số khoảng 0.1%.',
+        takeaway: 'Loss scaling là phép dịch trục số mũ: dời gradient vào vùng mà FP16 còn chi tiết, rồi dời ngược lại.'
+      },
+      {
+        step: 4, badge: 'Bước 4 / 5',
+        heading: 'Scale quá tay: tràn số và NaN',
+        problem: 'Vậy cứ chọn $S$ thật lớn cho chắc?',
+        mechanism: 'Với gradient $1.0$ và $S = 2^{16} = 65536$, tích $65536$ vượt $65504$ nên thành $\\infty$. Gradient $\\infty$ qua vài phép tính sẽ thành NaN và phá hỏng toàn bộ trọng số. Vì vậy các framework dùng dynamic loss scaling: tràn thì bỏ bước đó và giảm $S$ một nửa, ổn định sau nhiều bước thì tăng $S$ gấp đôi.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Scale quá tay → tràn số ❌", rồi kéo $k$ giảm dần.\n👁️ Quan sát (Cột 3): Dòng gợi ý chuyển từ "giảm S" về "giữ nguyên S".',
+        takeaway: 'Không có $S$ cố định tốt cho mọi bước huấn luyện, nên $S$ phải tự điều chỉnh.'
+      },
+      {
+        step: 5, badge: 'Bước 5 / 5',
+        heading: 'BF16: đổi độ chi tiết lấy dải số',
+        problem: 'Có cách nào khỏi phải lo scale không?',
+        mechanism: 'BF16 giữ nguyên 8 bit số mũ của FP32 nên dải số y hệt, chỉ cắt mantissa còn 7 bit (sai số tương đối tới khoảng $0.4\%$). Gradient $10^{-8}$ sống khỏe mà không cần scale. Đó là lý do TPU và các GPU đời mới (A100 trở đi) ưa dùng BF16 để huấn luyện LLM.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "BF16, không cần scale ✅".\n👁️ Quan sát (Cột 3): Giá trị lưu khác 0, sai số dưới 0.5%.',
+        takeaway: 'FP16 cần Loss Scaling, BF16 thì không. Cả hai đều giữ bản master trọng số ở FP32 để cộng dồn các cập nhật nhỏ.'
+      }
+    ];
+
+    const STEP_COMMENTS = {
+      3: [{
+        id: 'mp3', author: 'Kỹ Sư Backend', role: 'Systems', avatar: '⚙️', tag: 'Gotcha kinh điển', tagType: 'gotcha',
+        content: 'Phải unscale gradient TRƯỚC khi gradient clipping và weight decay. Nếu clip ở trạng thái đã nhân $S$, ngưỡng clip bị sai $S$ lần. Trong PyTorch đó là lý do có bước `scaler.unscale_(optimizer)`.'
+      }],
+      4: [{
+        id: 'mp4', author: 'Nhà Toán Học AI', role: 'Math', avatar: '📐', tag: 'Làm tròn đúng chuẩn', tagType: 'math',
+        content: 'Theo IEEE-754, 65519 vẫn làm tròn về 65504 còn 65520 mới thành Infinity (hòa thì làm tròn về số chẵn). Con số 65504 là max, nhưng ngưỡng tràn thực sự là 65520.'
+      }],
+      5: [{
+        id: 'mp5', author: 'Chuyên Gia GPU', role: 'GPU', avatar: '⚡', tag: 'Bộ nhớ thật sự tiết kiệm ở đâu', tagType: 'systems',
+        content: 'Với Adam, mixed precision cần: trọng số FP16 (2) + gradient FP16 (2) + bản master FP32 (4) + $m$ (4) + $v$ (4) = 16 byte/tham số, bằng FP32 thuần. Khoản giảm bộ nhớ thật đến từ activation (lưu ở 16 bit) và từ băng thông bộ nhớ, như Bài 23-24 đã cho thấy tắc nghẽn thật nằm ở việc di chuyển dữ liệu.'
+      }]
+    };
+
+    const logic = new LessonLogic();
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
+    });
+
+    createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 1,
+      onStepChange: (n) => {
+        comments.setStep(n, STEP_COMMENTS[n] || []);
+        if (n === STEPS.length) markCompleted(LESSON_ID, true);
+      }
+    });
+
+    const sGrad = createLiveSlider(document.getElementById('mount-grad-slider'), {
+      label: 'Số mũ gradient $e$ (g = 10^e)', min: -10, max: 2, step: 1, initial: logic.state.gradExp,
+      onChange: (v) => { logic.onUserUpdate({ gradExp: v }); presets.setActive(null); render(); }
+    });
+    const sScale = createLiveSlider(document.getElementById('mount-scale-slider'), {
+      label: 'Số mũ scale $k$ (S = 2^k)', min: 0, max: 20, step: 1, initial: logic.state.scaleLog2,
+      onChange: (v) => { logic.onUserUpdate({ scaleLog2: v }); presets.setActive(null); render(); }
+    });
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      initialActiveId: 'fp16_tiny_grad',
+      onPick: (p) => {
+        logic.applyPreset(p.state);
+        sGrad.setValue(logic.state.gradExp);
+        sScale.setValue(logic.state.scaleLog2);
+        render();
+      }
+    });
+
+    document.querySelectorAll('#seg-format button').forEach(btn => btn.addEventListener('click', () => {
+      logic.onUserUpdate({ format: btn.dataset.v });
+      presets.setActive(null);
+      render();
+    }));
+
+    const GB = 1e9; // 1 tỉ tham số * byte = GB
+    function render() {
+      const r = logic.calculate();
+      const s = logic.state;
+
+      document.querySelectorAll('#seg-format button').forEach(b => b.classList.toggle('active', b.dataset.v === s.format));
+      document.getElementById('txt-grad').textContent = `g = ${r.fmtSci(r.g)}`;
+      document.getElementById('txt-scale').textContent = `S = ${r.scale}`;
+
+      const mark = r.overflow ? ' ❌ Infinity' : r.underflow ? ' ❌ bằng 0' : '';
+      document.getElementById('pipe-table').innerHTML = `
+        <tr><td>1. Gradient thật (FP32)</td><td>${r.fmtSci(r.g)}</td></tr>
+        <tr><td>2. Sau khi nhân S</td><td>${r.fmtSci(r.scaled)}</td></tr>
+        <tr><td>3. Lưu ở ${r.name}</td><td>${r.fmtSci(r.stored)}${mark}</td></tr>
+        <tr><td>4. Chia lại S (FP32)</td><td>${Number.isFinite(r.recovered) ? r.fmtSci(r.recovered) : '—'}</td></tr>
+        <tr><td>Sai số tương đối</td><td>${Number.isFinite(r.relError) ? (r.relError * 100).toFixed(2) + '%' : '—'}</td></tr>
+      `;
+      renderMath(document.getElementById('katex-store'), r.formulaKaTeX, { displayMode: true });
+
+      document.getElementById('limits-table').innerHTML = `
+        <tr><td>Số lớn nhất của ${r.name}</td><td>${r.fmtSci(r.maxVal)}</td></tr>
+        <tr><td>Số dương nhỏ nhất của ${r.name}</td><td>${r.fmtSci(r.minSub)}</td></tr>
+        <tr><td>Gợi ý bộ scaler động</td><td>${r.advice}</td></tr>
+      `;
+
+      const fp32 = trainingBytesPerParam(false);
+      const mixed = trainingBytesPerParam(true);
+      document.getElementById('mem-table').innerHTML = `
+        <tr><td>FP32 thuần (w + g + m + v)</td><td>${fp32} byte/tham số = ${fp32 * 1e9 / GB} GB</td></tr>
+        <tr><td>Mixed (w16 + g16 + master + m + v)</td><td>${mixed} byte/tham số = ${mixed * 1e9 / GB} GB</td></tr>
+      `;
+
+      const verdict = document.getElementById('verdict');
+      verdict.className = `tp-verdict ${r.verdict.type}`;
+      verdict.textContent = r.verdict.text;
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      sGrad.setValue(logic.state.gradExp);
+      sScale.setValue(logic.state.scaleLog2);
+      presets.setActive('fp16_tiny_grad');
+      render();
+    });
+
+    renderAllInlineMath(document.querySelector('.col-sandbox'));
+    render();
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

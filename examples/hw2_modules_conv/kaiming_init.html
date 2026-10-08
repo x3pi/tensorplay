@@ -164,7 +164,7 @@
         problem: 'Tiêu biến ở chiều xuôi thì liên quan gì tới việc học?',
         mechanism: 'Khi lan truyền ngược, gradient đi qua cùng các ma trận $W^T$ và cùng các van ReLU, nên cũng bị nhân $g$ mỗi tầng. Với $g = 0.5$ và 10 tầng, gradient về tới tầng đầu nhỏ đi khoảng 1000 lần: tầng đầu gần như đứng yên.',
         action: '👉 Thao tác (Cột 2): Giữ \"Xavier + ReLU\", kéo Số tầng từ 3 lên 20.\n👁️ Quan sát (Cột 3): Kết luận chuyển từ vàng (tạm ổn) sang đỏ khi vượt khoảng 10 tầng.',
-        takeaway: 'Khởi tạo tốt là điều kiện để mạng sâu học được ngay từ bước đầu tiên. BatchNorm (Bài 18) là một cách khác để giữ $g \\approx 1$ trong suốt quá trình huấn luyện.'
+        takeaway: 'Khởi tạo tốt là điều kiện để mạng sâu học được ngay từ bước đầu tiên. BatchNorm (Bài 17) là một cách khác để giữ $g \\approx 1$ trong suốt quá trình huấn luyện.'
       }
     ];
 

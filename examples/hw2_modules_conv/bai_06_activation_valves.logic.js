@@ -1,5 +1,5 @@
 /**
- * Bài 06: Van Kích Hoạt & Lời Nguyền Trọng Số 0 (Needle HW1)
+ * Bài 14: Van Kích Hoạt & Lời Nguyền Trọng Số 0 (Needle HW2)
  * Mô phỏng cơ chế van ReLU (cho qua nếu > 0, khóa sập nếu <= 0)
  * và Lời nguyền khởi tạo trọng số bằng 0 làm tê liệt đối xứng nơ-ron.
  */

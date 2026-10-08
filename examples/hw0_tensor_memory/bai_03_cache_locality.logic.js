@@ -1,5 +1,5 @@
 /**
- * Logic Module for Bài 03: Row-Major vs Col-Major Cache Locality
+ * Logic Module for Bài 08: Row-Major vs Col-Major Cache Locality
  * Path: examples/hw0_tensor_memory/bai_03_cache_locality.logic.js
  */
 

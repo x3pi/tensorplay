@@ -1,5 +1,5 @@
 /**
- * Bài 5: Xử Lý Mini-batch B = 2 & Bản Chất Phép Chuyển Vị X^T
+ * Bài 05: Xử Lý Mini-batch B = 2 & Bản Chất Phép Chuyển Vị X^T
  */
 
 export class LessonLogic {

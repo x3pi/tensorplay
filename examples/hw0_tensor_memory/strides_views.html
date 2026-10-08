@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bài 20: Strides &amp; View — Một Vùng Nhớ, Nhiều Cách Nhìn - TensorPlay</title>
+  <title>Bài 09: Strides &amp; View — Một Vùng Nhớ, Nhiều Cách Nhìn - TensorPlay</title>
   <meta name="description" content="Hiểu cách NDArray dùng shape, strides và offset để transpose, slice, broadcast mà không sao chép dữ liệu. Khi nào phải gọi compact().">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -45,7 +45,7 @@
         <a href="../../index.html" class="btn-back-catalog">← Về Danh Mục</a>
       </div>
       <div class="lab-header-right">
-        <span class="tp-badge tp-badge-step">Track 3: NDArray Backend &amp; GPU</span>
+        <span class="tp-badge tp-badge-step">Track 0: Nền Tảng Tensor &amp; Bộ Nhớ C++</span>
       </div>
     </header>
 
@@ -169,7 +169,7 @@
         problem: 'Cộng bias $b$ (1 hàng) vào cả batch 3 hàng. Có phải nhân bản $b$ thành 3 hàng trong RAM không?',
         mechanism: 'Đặt stride của chiều được broadcast bằng 0: đi xuống hàng nào thì vẫn đọc lại cùng một hàng. Shape $(3,3)$, strides $(0, 1)$ → 9 phần tử logic chỉ dùng 3 ô nhớ thật.',
         action: '👉 Thao tác (Cột 2): Bấm preset "Broadcast hàng 0".\n👁️ Quan sát (Cột 3): "Ô nhớ thật được dùng" = 3, trong khi "Số phần tử logic" = 9.',
-        takeaway: 'Broadcast không tốn bộ nhớ. Đây cũng là lý do gradient của broadcast phải CỘNG DỒN lại (xem Bài 11).'
+        takeaway: 'Broadcast không tốn bộ nhớ. Đây cũng là lý do gradient của broadcast phải CỘNG DỒN lại (xem Bài 12).'
       },
       {
         step: 5, badge: 'Bước 5 / 6',
@@ -191,7 +191,7 @@
 
     const STEP_COMMENTS = {
       2: [{
-        id: 'sv2', author: 'Kỹ Sư Backend Tensor', role: 'Systems', avatar: '⚙️', tag: 'Needle HW3', tagType: 'systems',
+        id: 'sv2', author: 'Kỹ Sư Backend Tensor', role: 'Systems', avatar: '⚙️', tag: 'Needle NDArray', tagType: 'systems',
         content: 'Trong backend NDArray, các hàm `permute`, `broadcast_to`, `reshape` (khi liền mạch) và `__getitem__` chỉ trả về một đối tượng mới chia sẻ cùng `_handle` bộ nhớ với strides khác. Chỉ `compact()` mới gọi kernel sao chép.'
       }],
       4: [{
@@ -200,7 +200,7 @@
       }],
       5: [{
         id: 'sv5', author: 'Chuyên Gia CUDA', role: 'GPU', avatar: '⚡', tag: 'Hiệu năng', tagType: 'gotcha',
-        content: 'Đọc một view không liền mạch trên GPU dễ phá vỡ memory coalescing (Bài 23). Vì vậy nhiều kernel gọi compact() trước, chấp nhận trả chi phí sao chép một lần để các lần đọc sau nhanh hơn.'
+        content: 'Đọc một view không liền mạch trên GPU dễ phá vỡ memory coalescing (Bài 24). Vì vậy nhiều kernel gọi compact() trước, chấp nhận trả chi phí sao chép một lần để các lần đọc sau nhanh hơn.'
       }]
     };
 

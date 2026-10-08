@@ -1,5 +1,5 @@
 /**
- * Bài 05: Reverse-mode vs Forward-mode AD (Needle HW1)
+ * Bài 11: Reverse-mode vs Forward-mode AD (Needle HW1)
  * So sánh độ phức tạp tính toán giữa Forward-mode (JVP) và Reverse-mode (VJP).
  * Chứng minh tại sao Deep Learning với N triệu tham số và M=1 hàm mất mát Loss
  * bắt buộc phải dùng Reverse-mode (Backpropagation).

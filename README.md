@@ -17,16 +17,16 @@ Không có app shell / router / registry trung tâm — mỗi ví dụ là 1 tra
 ```text
 tensorplay/
 ├── KE_HOACH_THIET_KE.md   # Kiến trúc, hợp đồng component & hợp đồng gói ví dụ
-├── index.html             # Trang danh mục, liệt kê 27 ví dụ theo 5 track
+├── index.html             # Trang danh mục, liệt kê 31 ví dụ theo 5 track
 ├── package.json           # Scripts dev / build / test
 ├── shared/                # Component tái sử dụng (StepWizard, ValueGrid, LiveSlider, MemoryTape, ScoreBar, PresetPicker...)
 └── examples/              # Mỗi ví dụ = 3 file (.html / .logic.js / .logic.test.js), nhóm theo track
     ├── catalog.json       # Metadata để index.html render thẻ ví dụ
-    ├── hw0_tensor_memory/     # Bài 01–08: Nền tảng Tensor & Bộ nhớ C++
-    ├── hw1_autograd_engine/   # Bài 09–13: Động cơ Autograd & Gradient
-    ├── hw2_modules_conv/      # Bài 14–19: Modules, Khởi tạo, Regularization & CNN
-    ├── hw3_cuda_architecture/ # Bài 20–23: NDArray Strides/Views & Lập trình CUDA
-    └── hw4_transformer_llm/   # Bài 24–27: Chuỗi Tuần Hoàn RNN & Hệ Thống LLM Transformer
+    ├── hw0_tensor_memory/     # Bài 01–09: Nền tảng Tensor, Bộ nhớ C++ & Strides/Views
+    ├── hw1_autograd_engine/   # Bài 10–13: Động cơ Autograd & Kiểm tra Gradient
+    ├── hw2_modules_conv/       # Bài 14–21: Khởi tạo, Tối ưu, Chuẩn hóa, Regularization, CNN & Dataloader
+    ├── hw3_cuda_architecture/  # Bài 22–25: Lập trình CUDA, Bộ nhớ GPU & Mixed Precision
+    └── hw4_transformer_llm/    # Bài 26–31: RNN, Attention, Positional Encoding, Multi-Head, KV-Cache, FlashAttention
 ```
 
 ## ⚙️ Chạy Dự Án

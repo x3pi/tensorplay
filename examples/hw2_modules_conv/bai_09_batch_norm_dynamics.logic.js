@@ -1,5 +1,5 @@
 /**
- * Bài 09: Ổn Định Nội Bộ Với BatchNorm (Needle HW2)
+ * Bài 17: Ổn Định Nội Bộ Với BatchNorm (Needle HW2)
  * Chuẩn hóa mini-batch về mean=0, var=1, scale gamma và shift beta.
  * Phân định rõ ràng:
  * - Training Mode: dùng mean/var của batch hiện tại và cập nhật running stats.

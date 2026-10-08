@@ -69,12 +69,12 @@ export class LessonLogic {
 
 export const PRESETS = [
   {
-    id: "hw0_default",
+    id: "leak_default",
     label: "Cấu hình HW0 (60k ảnh, Batch 100)",
     state: { m: 60000, batch: 100, k: 10, num_epochs: 50, isFixed: false }
   },
   {
-    id: "hw0_fixed",
+    id: "leak_fixed",
     label: "Đã sửa lỗi (Thêm delete[])",
     state: { m: 60000, batch: 100, k: 10, num_epochs: 50, isFixed: true }
   },

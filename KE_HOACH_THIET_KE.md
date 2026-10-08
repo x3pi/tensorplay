@@ -28,48 +28,40 @@
 
 ```text
 tensorplay/
-├── KE_HOACH_THIET_KE.md             # Tài liệu kiến trúc & kế hoạch này
-├── index.html                       # Trang DANH MỤC: thẻ liên kết tới 31 ví dụ theo track, đọc catalog.json
-├── package.json                     # Scripts: dev / build / test (Vite + Vitest, chỉ devDependencies)
-├── vite.config.js                   # Multi-page build: quét toàn bộ examples/**/*.html làm entry point
+├── KE_HOACH_THIET_KE.md             # Tài liệu kiến trúc này
+├── KE_HOACH_CAU_TRUC_LINH_HOAT.md   # Kế hoạch & lý do của cấu trúc "kho bài + lộ trình"
+├── index.html                       # Trang DANH MỤC: chọn lộ trình, lọc chủ đề, tìm kiếm; đọc catalog sinh tự động
+├── package.json                     # Scripts: dev / build / test / check / verify / catalog / new-lesson
+├── vite.config.js                   # Multi-page build: quét lessons/**/index.html làm entry point
 │
-├── shared/                          # 🧩 THƯ VIỆN COMPONENT TÁI SỬ DỤNG (dùng chung MỌI ví dụ)
-│   ├── styles/
-│   │   ├── tokens.css               # Design tokens: màu, font, hiệu ứng glass (Mục VI)
-│   │   ├── layout.css               # .lab-grid 3 cột + breakpoint <900px → tab, THUẦN CSS không cần JS
-│   │   └── components.css           # Style cho mọi widget bên dưới
-│   ├── math.js                      # Hàm toán thuần dùng ≥2 bài: dot(), safeSoftmax(), relu(), clamp(), offset2D()
-│   ├── math.test.js                 # Vitest kiểm chứng math.js (chạy độc lập, không cần DOM)
-│   ├── katex-render.js              # renderMath(el, latex) — nạp KaTeX từ CDN một lần, cache instance
-│   ├── katex-lint.test.js           # Vitest quét toàn bộ examples/**/*.{html,js} chặn `\text{___}` / `_` trần
-│   └── components/                  # 🔧 7 COMPONENT NỀN TẢNG — xem Hợp Đồng ở Mục III
-│       ├── StepWizard.js            # Khung dẫn dắt Socratic (Cột 1): problem→challenge→takeaway, phím ←/→
-│       ├── ValueGrid.js             # Lưới ô N×N click/kéo đổi giá trị (pixel, ma trận, chỉ số thread...)
-│       ├── LiveSlider.js            # Thanh trượt số liên kết trực tiếp 1 giá trị trong state
-│       ├── MemoryTape.js            # Dải ô nhớ 1D, highlight offset con trỏ, báo lỗi out-of-bound
-│       ├── ScoreBar.js              # Thanh đo % / điểm số, màu theo token ngữ nghĩa (reward/penalty)
-│       ├── PresetPicker.js          # Dãy nút bấm thử nhanh dữ liệu mồi
-│       └── CommentSection.js        # Hệ thống chú giải chuyên gia (Toán/C++/Gotchas) + ghi chú học tập per-step
+├── lessons/                         # 📦 KHO BÀI HỌC — MỖI BÀI = 1 THƯ MỤC TỰ ĐỦ, KHÔNG SỐ TRONG TÊN
+│   └── <slug>/
+│       ├── index.html               # Trang bài (URL: /lessons/<slug>/)
+│       ├── logic.js                 # LessonLogic + PRESETS (chạy được trong Node)
+│       ├── logic.test.js            # Vitest kiểm chứng logic
+│       ├── kiem_tra.py              # Kiểm chứng số học độc lập bằng numpy (AGENTS.md)
+│       ├── lesson.json              # Metadata: id, title, summary, topic, tags, prerequisites, aliases...
+│       └── assets/                  # (tùy chọn) SVG/ảnh riêng
 │
-└── examples/                        # 📦 MỖI VÍ DỤ = 3 FILE TĨNH, KHÔNG QUA ROUTER/ENGINE NÀO CẢ
-    ├── catalog.json                 # Metadata của 31 ví dụ để index.html render thẻ — KHÔNG dùng để load logic
-    │
-    ├── hw0_tensor_memory/           # === TRACK 0 (xem Mục IX) ===
-    │   ├── bai_01_robot_vision.html
-    │   ├── bai_01_robot_vision.logic.js
-    │   ├── bai_01_robot_vision.logic.test.js
-    │   ├── bai_02_softmax_loss.html
-    │   ├── bai_02_softmax_loss.logic.js
-    │   ├── bai_02_softmax_loss.logic.test.js
-    │   ├── bai_03_cache_locality.html
-    │   ├── bai_03_cache_locality.logic.js
-    │   ├── bai_03_cache_locality.logic.test.js
-    │   └── assets/                  # SVG riêng của track (robot_camera.svg, sun_glare.svg, ...)
-    │
-    ├── hw1_autograd_engine/         # === TRACK 1: bài 04–06 (cùng mẫu 3 file) ===
-    ├── hw2_modules_conv/            # === TRACK 2: bài 07–09 ===
-    ├── hw3_cuda_architecture/       # === TRACK 3: bài 10–12 ===
-    └── hw4_transformer_llm/         # === TRACK 4: bài 13–15 ===
+├── curriculum/                      # THỨ TỰ & NHÓM — chỗ DUY NHẤT chứa thứ tự bài
+│   ├── topics.json                  # Danh mục chủ đề (nhãn, màu)
+│   ├── paths/*.json                 # Các lộ trình (main, llm-systems, cpp-memory, cmu-10414...)
+│   └── legacy-map.json              # URL/id cũ → slug mới (tương thích ngược)
+│
+├── public/curriculum/catalog.json   # SINH TỰ ĐỘNG từ lessons/*/lesson.json + curriculum/** (commit vào git)
+│
+├── shared/                          # 🧩 THƯ VIỆN DÙNG CHUNG
+│   ├── curriculum.js                # Nạp catalog, tra bài theo slug, lộ trình, prev/next, resolveRefs()
+│   ├── lesson-context.js            # getLessonSlug() — slug của trang hiện tại
+│   ├── progress.js                  # Tiến độ học (có tra alias id cũ)
+│   ├── math.js, katex-render.js     # Hàm toán thuần, render KaTeX
+│   ├── *.test.js                    # math, katex-lint, curriculum-consistency, progress...
+│   ├── styles/                      # tokens.css, layout.css, components.css
+│   └── components/                  # StepWizard, ValueGrid, LiveSlider, MemoryTape, ScoreBar,
+│                                    # PresetPicker, CommentSection, LessonNav, AiTutor, LayoutResizer
+│
+├── templates/lesson/                # Mẫu để `npm run new-lesson` sao chép
+└── tools/                           # build-catalog.mjs, new-lesson.mjs, run_checks.py, generate_legacy_redirects.mjs
 ```
 
 > **So với bản kế hoạch trước:** bỏ `core/engine.js` (state machine toàn app), `core/router.js` (hash router), và `lessons/registry.json` (sổ đăng ký bắt buộc để engine nạp bài). Lý do: với 15 bài độc lập theo triết lý "Atomic Concept Sandbox" ở Mục I.2, một app shell đứng giữa chỉ thêm tầng gián tiếp mà không giải quyết vấn đề học — mở thẳng file HTML quan trọng hơn.
@@ -119,9 +111,9 @@ Mỗi component mới vẫn phải tuân Hợp Đồng ở Mục III.1.
 
 ## 📐 IV. Chuẩn Hóa Gói Ví Dụ (Example Page Contract)
 
-Mỗi ví dụ trong `examples/<track>/` chỉ gồm **đúng 3 file bắt buộc** (+ `assets/` nếu cần):
+Mỗi bài trong `lessons/<slug>/` gồm các file bắt buộc `index.html`, `logic.js`, `logic.test.js`, `kiem_tra.py`, `lesson.json` (+ `assets/` nếu cần). Các mục dưới đây mô tả nội dung từng file (tên cũ `<ten_bai>.logic.js` nay là `logic.js`):
 
-### 1. File Thuật Toán (`<ten_bai>.logic.js`)
+### 1. File Thuật Toán (`logic.js`)
 Chạy được cả trong browser và Node (headless, không đụng DOM) — để test độc lập với UI:
 ```javascript
 export class LessonLogic {
@@ -161,7 +153,7 @@ export const PRESETS = [
 ];
 ```
 
-### 2. File Kiểm Chứng (`<ten_bai>.logic.test.js`)
+### 2. File Kiểm Chứng (`logic.test.js`)
 ```javascript
 import { describe, it, expect } from "vitest";
 import { LessonLogic } from "./bai_01_robot_vision.logic.js";
@@ -175,7 +167,7 @@ describe("bai_01_robot_vision", () => {
 });
 ```
 
-### 3. File Trang (`<ten_bai>.html`)
+### 3. File Trang (`index.html`)
 Chứa: `<link>` tới `shared/styles/*.css` + KaTeX CDN, khung layout 3 cột (Mục V), và 1 `<script type="module">` import `shared/components/*` + `.logic.js` cùng tên, khai báo mảng `STEPS` (nội dung Socratic) trực tiếp trong script — không cần file JSON riêng vì không có engine nào khác đọc nó.
 
 ### 4. Quy Tắc Nội Dung KaTeX An Toàn
@@ -245,7 +237,7 @@ Layout mặc định là **thuần CSS Grid** (`shared/styles/layout.css`, class
 
 ### 1. URL Thật Thay Cho Hash Router
 Không có `router.js`. Mỗi bài tự đọc tham số của chính nó khi tải trang:
-- `examples/hw0_tensor_memory/bai_01_robot_vision.html?step=4&preset=headlight_glare`
+- `lessons/robot_vision/?step=4&preset=headlight_glare` (thêm `&path=llm-systems` để chọn lộ trình điều hướng)
 - `StepWizard` đọc `?step=` để nhảy thẳng bước N; `PresetPicker`/`LessonLogic` đọc `?preset=` để áp dụng ngay — đọc một lần bằng `new URLSearchParams(location.search)`, không cần thư viện routing.
 - Khi người dùng đổi bước/preset, cập nhật URL bằng `history.replaceState` (tùy chọn, không bắt buộc vì trang đã hoạt động đúng dù không có query string).
 
@@ -263,65 +255,23 @@ Không có `router.js`. Mỗi bài tự đọc tham số của chính nó khi t�
 
 ---
 
-## 🗺️ IX. Lộ Trình Hệ Thống Học Sâu (Deep Learning Systems Mapping)
+## 🗺️ IX. Lộ Trình & Chủ Đề (Curriculum — thay cho "track theo homework")
 
-Dự án TensorPlay xoay quanh 5 track kinh điển của Deep Learning Systems, mỗi track bóc tách thành các ví dụ độc lập trong `examples/<track>/`:
+Thứ tự bài **không còn nằm trong tên file hay tiêu đề**. Nó được khai báo trong `curriculum/paths/*.json`; chủ đề nằm trong `curriculum/topics.json`; danh sách bài thực tế là các thư mục trong `lessons/` (xem `public/curriculum/catalog.json` hoặc trang chủ).
 
-### Track 0 — `hw0_tensor_memory/`: Nền Tảng Tensor & Kỹ Nghệ Bộ Nhớ C++ (10 Bài)
-*Trọng tâm: Chuyển dịch tư duy từ vòng lặp toán học sang layout bộ nhớ máy tính thực tế.*
-- **Bài 01 — Robot Vision & Vector Dot Product:** Nhận diện biển báo gạch ngang $2\times2$. Trọng số âm là "bằng chứng bác bỏ" triệt tiêu đèn pha chói lóa. Trải phẳng 2D→1D, `offset = r*N + c`.
-- **Bài 02 — Softmax & Cơn Ác Mộng Lóa Sáng:** Logits $\to +1000 \to e^{1000} \to$ `Infinity`/`NaN`. "Safe Softmax": trừ $\max(z)$ trước khi `exp`.
-- **Bài 03 — Chu Trình Softmax Regression (Ma trận):** Forward $Z = X\theta \to$ Softmax $P \to$ Loss $\to$ Gradient $\nabla_\theta = X^T G \to$ Cập nhật SGD.
-- **Bài 04 — Cross-Entropy dạng Log-Sum-Exp 🆕:** Tính Softmax trước rồi log sau làm sụp đổ số học; công thức Log-Sum-Exp $c + \ln\sum e^{z-c}$ cứu nguy hệ thống Deep Learning, trị cả overflow lẫn underflow.
-- **Bài 05 — Mạng Nơ-ron 2 Tầng & Lan Truyền Ngược ReLU:** Van một chiều ReLU chặn dòng gradient ở nơ-ron âm ($Z_1 \le 0$). Đạo hàm dội ngược qua tầng ẩn.
-- **Bài 06 — Xử Lý Mini-batch $B=2$ & Phép Chuyển Vị $X^T$:** Mini-batch song song, trực giác hình học nhân ma trận $X^T G$ gom gradient.
-- **Bài 07 — Dò Tay Vòng Lặp Nhân Ma Trận C++:** Dò từng bước 3 vòng lặp `for (i, j, k)`, offset 1D `A[i * K + k]` và `B[k * N + j]`.
-- **Bài 08 — Robot Chết Đuối Vì Memory Leak:** Quên `free(grad)` hoặc `delete[]`, RAM tràn và OOM Killer tiêu diệt tiến trình.
-- **Bài 09 — Row-Major vs Col-Major Cache Locality:** CPU Cache L1/L2. Đọc theo dòng (Row-Major) Cache Hit vs quét cột Cache Miss chậm ~10 lần.
-- **Bài 10 — Strides & View — Một Vùng Nhớ, Nhiều Cách Nhìn:** Dùng shape, strides, offset để transpose, slice, broadcast mà không tốn 1 byte sao chép; khi nào phải `compact()`.
+- **Lộ trình:** `main` (đầy đủ), `llm-systems` (đường nhanh tới LLM), `cpp-memory` (bộ nhớ & C++/CUDA), `cmu-10414` (đang `planned`, chỉ lập khi đối chiếu được đề bài CMU thật).
+- **Chủ đề:** foundations, memory-systems, autograd, training-stability, cnn-data, gpu, transformer, llm-serving.
+- **Tiên quyết:** khai báo mềm trong `lesson.json` (`prerequisites`), được test chặn chu trình và kiểm tra xuất hiện trước trong `main`.
+- **Tham chiếu chéo trong văn bản:** dùng `[[lesson:<slug>]]`, không bao giờ dùng "Bài NN".
+- **Số hiển thị** ("Bài 7/34") được tính lúc chạy theo lộ trình đang chọn.
 
-### Track 1 — `hw1_autograd_engine/`: Động Cơ Tự Động Tính Đạo Hàm (4 Bài)
-*Trọng tâm: Autograd không phải phép màu — là đồ thị + quy tắc dây chuyền + kiểm chứng bằng số.*
-- **Bài 11 — Đồ Thị Tính Toán DAG & Sóng Dội Ngược:** Node phép tính; Topological Sort định đoạt trình tự tính đạo hàm dội ngược.
-- **Bài 12 — Reverse-mode vs Forward-mode AD:** 1 triệu input, 1 output Loss — Reverse-mode chỉ tốn 1 lượt dội ngược.
-- **Bài 13 — Gradient Của Broadcast (Cộng dồn):** Bias broadcast cho cả batch thì gradient phải cộng dồn theo trục batch. Bắt bug gán đè `=` và quên sum.
-- **Bài 14 — Kiểm Tra Gradient Bằng Số (Gradient Check):** Sai phân hữu hạn, đồ thị sai số chữ V, chọn $\varepsilon$, và bẫy float32 gây báo động giả.
-
-### Track 2 — `hw2_modules_conv/`: Thư Viện Nơ-ron, Huấn Luyện Ổn Định & Phép Chập (9 Bài)
-*Trọng tâm: Làm cho mạng sâu học được — khởi tạo, tối ưu, chuẩn hóa, regularization, rồi mới đến CNN và pipeline dữ liệu.*
-- **Bài 15 — Van Kích Hoạt & Lời Nguyền Trọng Số 0:** Van ReLU khóa gradient âm (Dying ReLU); khởi tạo trọng số = 0 → tê liệt đối xứng toàn tầng ẩn.
-- **Bài 16 — Khởi Tạo Kaiming — Giữ Tín Hiệu Qua Mạng Sâu:** Hệ số $g = n \sigma^2 k$. Vì sao Kaiming chọn phương sai $2/n$ cho mạng ReLU để ngăn bùng nổ / tiêu biến qua 20 tầng.
-- **Bài 17 — Động Học Các Bộ Tối Ưu (SGD vs Momentum vs Adam):** Chạy đua trên hẻm núi dẹt (ill-conditioned); Momentum vượt rãnh, Adam tự cân bằng bước nhảy và Bias Correction.
-- **Bài 18 — Weight Decay — L2 vs AdamW 🆕:** Vì sao cộng $L_2$ vào gradient trong Adam làm méo mó lực phạt; AdamW tách rời decay trực tiếp độc lập khỏi bộ đếm moment.
-- **Bài 19 — Ổn Định Nội Bộ Với BatchNorm:** Chuẩn hóa batch mean 0/var 1; Training stats vs Inference running stats.
-- **Bài 20 — Dropout — Phá Vỡ Co-Adaptation & Kỹ Thuật Inverted Scaling:** Tắt nơ-ron ép học độc lập; Train vs Eval, bẫy quên chia $1-p$.
-- **Bài 21 — LayerNorm & Residual:** Vì sao Transformer bỏ BatchNorm (batch=1 khi sinh token → phương sai 0); kết nối $y = x + f(x)$ cho gradient $(1+f')^L$ thay vì $f'^L$.
-- **Bài 22 — Conv2D & Thần Chú Im2col:** Mở cuộn vùng trượt thành cột ma trận, biến tích chập thành GEMM tối ưu trên phần cứng.
-- **Bài 23 — Băng Chuyền Mini-Batching Assembly Line:** Dataloader đa tiến trình: Cân đối giữa Worker CPU và GPU, hiện tượng Starvation.
-
-### Track 3 — `hw3_cuda_architecture/`: Tăng Tốc Phần Cứng GPU (5 Bài)
-*Trọng tâm: Tính toán nhanh hay chậm do bộ nhớ và độ chính xác số, không chỉ do số phép tính.*
-- **Bài 24 — Phân Cấp Luồng CUDA Grid, Blocks & Threads:** `(blockIdx, threadIdx)` thành tọa độ ma trận toàn cục; Boundary Guard `if (idx < N)`.
-- **Bài 25 — Tiled MatMul & Shared Memory:** DRAM xa xôi vs Shared Memory (SRAM) gần; Tiling $2\times2$ + `__syncthreads()`.
-- **Bài 26 — Memory Coalescing & Bank Conflicts:** Đọc liền kề gộp 1 giao dịch bus vs đọc nhảy cóc nghẽn bus; 32 banks Shared Memory & padding.
-- **Bài 27 — Mixed Precision: FP16, BF16 & Loss Scaling:** Gradient $10^{-8}$ bị FP16 làm tròn thành 0; Loss Scaling dời gradient vào dải biểu diễn; scale quá tay thì tràn; BF16 khỏi cần scale; bộ nhớ Adam 16 byte/param.
-- **Bài 28 — Activation Checkpointing — Đổi FLOPs Lấy VRAM 🆕:** Lưu toàn bộ activation gây OOM; checkpoint $k = \sqrt{L}$ giảm bộ nhớ từ $L$ xuống $2\sqrt{L}$ với cái giá forward thêm 1 lần (+33% thời gian).
-
-### Track 4 — `hw4_transformer_llm/`: Kiến Trúc Transformer & LLM Systems (6 Bài)
-*Trọng tâm: Từ vì sao bỏ RNN, đến từng bộ phận của khối Transformer, rồi đến các tối ưu khi phục vụ (serving).*
-- **Bài 29 — RNN & BPTT — Vì Sao Cần Transformer?:** Lan truyền ngược qua thời gian (BPTT), căn bệnh tiêu biến/bùng nổ gradient, cao tốc LSTM và bước nhảy vọt sang Attention $O(1)$.
-- **Bài 30 — Scaled Dot-Product Self-Attention:** Query/Key tạo bảng điểm, chia $\sqrt{d}$; Causal Mask tam giác.
-- **Bài 31 — Positional Encoding:** Self-Attention bất biến hoán vị ("chó cắn người" = "người cắn chó"); mã vị trí sin/cos phá đối xứng; giới thiệu RoPE/ALiBi.
-- **Bài 32 — Multi-Head Attention:** Chia $d_{model}$ thành $h$ đầu, mỗi đầu một kiểu quan hệ; số tham số không đổi; đầu quá hẹp mất khả năng; MQA/GQA giảm KV-Cache.
-- **Bài 33 — Giải Phẫu KV-Cache Trong LLM Serving:** Giữ $K,V$ cũ, chỉ tính Query mới — $O(N^2) \to O(N)$.
-- **Bài 34 — FlashAttention SRAM Tiling & Online Softmax:** Cắt block vào SRAM, Online Softmax, tránh lưu $N\times N$ ra HBM.
-
-### Gợi ý thứ tự học & Backlog
-Mỗi bài vẫn mở độc lập được (Zero Hard Dependencies), nhưng thứ tự khuyến nghị là thứ tự số bài 01 → 34. Các chủ đề backlog ưu tiên thấp cho tương lai:
-- Learning-rate schedule & warmup (cosine, linear warmup)
-- Data/Tensor Parallelism & All-Reduce (tổng gradient trên nhiều GPU)
-- Embedding & Tokenization (bảng tra, chỉ số `index = token * d + j`)
+### Backlog ý tưởng bài mới (chưa làm)
+- Learning-rate schedule & warmup (cosine, linear warmup).
+- Data/Tensor Parallelism & All-Reduce (tổng gradient trên nhiều GPU).
+- Embedding & Tokenization (bảng tra, chỉ số `index = token * d + j`).
 - Bài ôn tập tổng hợp "mini-GPT một khối" ghép LN + MHA + residual.
+
+Thêm/sửa/đổi thứ tự/đổi tên/xóa bài: xem Mục XII.
 
 ---
 
@@ -381,28 +331,36 @@ Mỗi bài vẫn mở độc lập được (Zero Hard Dependencies), nhưng th�
 
 Theo quy chuẩn thiết kế bài tập toán học, **mọi `*.logic.js` bắt buộc có `*.logic.test.js` đi kèm**:
 
-1. **Kiểm thử logic số học từng bài** (`examples/<track>/<ten_bai>.logic.test.js`):
+1. **Kiểm thử logic số học từng bài** (`lessons/<slug>/logic.test.js`):
    - Khớp 100% giá trị kỳ vọng ở các preset/bước quan trọng.
    - Bao phủ trường hợp biên: Bài 01 `pixels=[1,1,1,1]` → `score=0` (đèn pha triệt tiêu); Bài 02 `logits=[1000,1000]` → Safe Softmax phải ra `[0.5,0.5]` không `NaN`; Bài 06 trọng số = 0 → gradient bằng nhau mọi hidden unit; Bài 14 KV-Cache chỉ thêm đúng 1 slot mỗi token mới.
 2. **`shared/math.test.js`:** kiểm `dot()`, `safeSoftmax()`, `relu()`, `offset2D()` — vì các hàm này được tái dùng ở nhiều bài, lỗi ở đây ảnh hưởng dây chuyền.
-3. **`shared/katex-lint.test.js`:** quét toàn bộ `examples/**/*.{html,js}`, chặn `_` trần trong `$...$`/`bmatrix` hoặc `\text{___}`.
-4. **Cổng chất lượng:** `npm test` phải xanh 100% trước khi một ví dụ được thêm vào `examples/catalog.json`.
+3. **`shared/katex-lint.test.js`:** quét toàn bộ `lessons/**/*.{html,js}`, chặn `_` trần trong `$...$`/`bmatrix` hoặc `\text{___}`.
+4. **Cổng chất lượng:** `npm test` phải xanh 100% trước khi một bài được thêm vào lộ trình (`npm run check` = kiểm tra catalog + Vitest; `npm run verify` thêm bộ kiểm chứng Python).
 
 ---
 
-## 📝 XII. Hướng Dẫn Thêm Bài Học Mới (Contributor Checklist)
+## 📝 XII. Hướng Dẫn Thêm / Sửa Bài Học (Contributor Checklist)
 
-1. Chọn thư mục track `examples/<track>/`, tạo 3 file `<ten_bai>.html` / `.logic.js` / `.logic.test.js` (Mục IV).
-2. Viết `.logic.js`: class `LessonLogic` (`reset/applyPreset/onUserUpdate/calculate`) + export `PRESETS`.
-3. Viết `.logic.test.js` bao phủ mốc giá trị + trường hợp biên; chạy `npm test` xanh.
-4. Dựng `.html`: import CSS dùng chung + KaTeX CDN, chọn component cần từ `shared/components/` (Mục III.2), khai báo `STEPS` Socratic ngay trong script.
-5. Thêm `assets/` SVG riêng của track nếu cần.
-6. Thêm 1 entry vào `examples/catalog.json` (id, title, track, path, tags, difficulty, estimatedMinutes, summary).
-7. Kiểm tra bằng tay: desktop 3 cột, mobile tab (<900px), điều hướng hoàn toàn bằng bàn phím.
+**Thêm bài:** `npm run new-lesson -- <slug> --topic <chu_de> --path main --after <slug_khac>` rồi:
+1. Viết `logic.js` (`LessonLogic`: `reset/applyPreset/onUserUpdate/calculate` + export `PRESETS`) và `logic.test.js` bao phủ mốc giá trị + trường hợp biên.
+2. Viết `index.html` từ mẫu `templates/lesson/` (STEPS Socratic, `STEP_COMMENTS`, tham chiếu bài khác bằng `[[lesson:<slug>]]`).
+3. Viết `kiem_tra.py` kiểm chứng độc lập bằng numpy; điền `lesson.json` (summary, tags, prerequisites...).
+4. `npm run verify` xanh; kiểm tay: desktop 3 cột, mobile tab (<900px), điều hướng bằng bàn phím.
+
+| Muốn | Làm |
+|---|---|
+| Đổi thứ tự | Sửa `curriculum/paths/<id>.json`, không sửa file bài |
+| Tạo lộ trình mới | Thêm `curriculum/paths/<id>.json` |
+| Đổi tên hiển thị | Sửa `title` trong `lesson.json` |
+| Đổi slug | `git mv` thư mục, đổi `id`, thêm slug cũ vào `aliases`, cập nhật `legacy-map.json` và các `[[lesson:…]]` (test chỉ ra chỗ sót) |
+| Xóa bài | Xóa thư mục và slug khỏi lộ trình (test chỉ ra tham chiếu thừa) |
 
 ---
 
-## 🚀 XIII. Lộ Trình Triển Khai Chi Tiết (Execution Roadmap)
+## 🚀 XIII. Lộ Trình Triển Khai Ban Đầu (Execution Roadmap — LỊCH SỬ)
+
+> Mục này ghi lại kế hoạch dựng dự án ban đầu theo track `hw0…hw4`; cấu trúc hiện hành là `lessons/` + `curriculum/` (Mục II, IX, XII). Giữ lại để tham khảo lịch sử.
 
 ### Giai Đoạn 0: Khởi Tạo Tooling
 - [ ] `npm init`, cài `vite` + `vitest` làm devDependencies; viết `vite.config.js` (multi-page, Mục X).

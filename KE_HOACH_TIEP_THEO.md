@@ -1,5 +1,8 @@
 # 🚀 Kế Hoạch Giai Đoạn Tiếp Theo — TensorPlay (dành cho Agent thực hiện)
 
+> ⚠️ **CẬP NHẬT (cấu trúc mới):** Dự án đã chuyển sang `lessons/<slug>/` + `curriculum/` (xem `KE_HOACH_CAU_TRUC_LINH_HOAT.md`). **Task 0 (đánh số lại) và Task 4 (đổi tên file cho khớp số bài) đã lỗi thời và không cần làm.** Task 1–3 đã hoàn thành. Khi làm các task còn lại (Task 5 bài tập trong repo `AI`, Task 6 backlog), dùng `npm run new-lesson` thay vì đánh số, và đường dẫn bài là `lessons/<slug>/`.
+
+
 > Tài liệu tự đủ để một agent chưa biết gì về dự án có thể làm tiếp. Đọc hết Mục 0–2 trước khi sửa bất kỳ file nào.
 > Ngày lập: 2026-10-08. Trạng thái nền: 31 bài, 40 file test / 190 test xanh, `vite build` chạy được, nhánh `main` đã đồng bộ `origin/main`.
 

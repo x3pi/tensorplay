@@ -1,0 +1,24 @@
+{
+  "id": "overfitting_validation",
+  "title": "Overfitting & Validation — Tập Train Nói Dối, Tập Val Nói Thật",
+  "summary": "Đa thức bậc 3 đi qua cả 4 điểm train (lỗi $0$) nhưng lỗi val vọt lên $2.375$; bậc 1 lỗi train $0.2$ mà val chỉ $0.06$. Chọn mô hình bằng tập validation, không phải bằng loss train.",
+  "topic": "training-stability",
+  "tags": [
+    "overfitting",
+    "validation",
+    "generalization",
+    "early-stopping"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 10,
+  "status": "ready",
+  "prerequisites": [
+    "softmax_regression"
+  ],
+  "related": [
+    "dropout",
+    "adamw_weight_decay"
+  ],
+  "sources": [],
+  "aliases": []
+}

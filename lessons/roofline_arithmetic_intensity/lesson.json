@@ -1,0 +1,26 @@
+{
+  "id": "roofline_arithmetic_intensity",
+  "title": "Roofline — Chậm Vì Tính Toán Hay Vì Chờ Dữ Liệu?",
+  "summary": "Điểm gấp $P/B = 100$ FLOP/byte: giải mã batch 1 có $\\text{AI} \\approx 1$ chỉ dùng 1% sức GPU (7B: 7 ms/token), gom batch $\\ge 128$ mới chạm trần tính toán.",
+  "topic": "gpu",
+  "tags": [
+    "roofline",
+    "arithmetic-intensity",
+    "memory-bound",
+    "batching"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 12,
+  "status": "ready",
+  "prerequisites": [
+    "shared_memory_tiling",
+    "coalescing_and_banks"
+  ],
+  "related": [
+    "kv_cache_anatomy",
+    "flash_attention",
+    "mixed_precision"
+  ],
+  "sources": [],
+  "aliases": []
+}

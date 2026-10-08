@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta name="tp-lesson" content="sampling_decoding">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sampling &amp; Decoding — Từ Logits Đến Token Được Chọn - TensorPlay</title>
+  <meta name="description" content="Greedy, nhiệt độ, top-k, top-p: vì sao cắt đuôi phân phối là cần thiết khi sinh văn bản dài, với ví dụ 5 token tính tay được.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">← Về Danh Mục</a>
+      </div>
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step" data-topic-badge></span>
+      </div>
+    </header>
+
+    <main class="lab-grid">
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt &amp; Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Bàn Thí Nghiệm Giải Mã</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Đặt Lại</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🎲 Chế độ chọn token</div>
+            <div class="tp-seg" id="seg-mode">
+              <button data-v="greedy">Greedy (argmax)</button>
+              <button data-v="sample">Bốc ngẫu nhiên</button>
+            </div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🌡️ Nhiệt độ $T$</div>
+            <div class="tp-seg" id="seg-t">
+              <button data-v="0.5">T = 0.5</button>
+              <button data-v="1">T = 1</button>
+              <button data-v="2">T = 2</button>
+            </div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">✂️ top-k (0 = không giới hạn)</div>
+            <div class="tp-seg" id="seg-k">
+              <button data-v="0">Tắt</button>
+              <button data-v="2">k = 2</button>
+              <button data-v="3">k = 3</button>
+            </div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🧮 top-p (tổng xác suất tối thiểu được giữ)</div>
+            <div class="tp-seg" id="seg-p">
+              <button data-v="1">Tắt</button>
+              <button data-v="0.9">p = 0.9</button>
+              <button data-v="0.5">p = 0.5</button>
+            </div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🎯 Số ngẫu nhiên $u \in [0, 1)$ dùng để bốc</div>
+            <div id="mount-u-slider"></div>
+            <div class="tp-matrix-caption" id="txt-u"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math &amp; Telemetry</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div class="tp-panel">
+            <div class="tp-panel-title">📐 Công thức</div>
+            <div class="tp-math-box" id="katex-samp"></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">📊 Phân phối xác suất từng token</div>
+            <table class="tp-kv-table" id="prob-table"></table>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">📈 Số liệu</div>
+            <table class="tp-kv-table" id="stats-table"></table>
+          </div>
+          <div class="tp-verdict" id="verdict"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createLiveSlider } from '../../shared/components/LiveSlider.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
+    import { markCompleted } from '../../shared/progress.js';
+    import { LessonLogic, PRESETS } from './logic.js';
+
+    const LESSON_ID = 'sampling_decoding';
+
+    const STEPS = [
+      {
+        step: 1, badge: 'Bước 1 / 4',
+        heading: 'Từ logits đến một token',
+        problem: 'Robot có 5 hành động kế tiếp, logits $z = [3, 2, 1, 0, -1]$. Hai hành động cuối ("bay", "nổ") là vô nghĩa. Làm sao chọn đúng một hành động?',
+        mechanism: 'Softmax cho $P = [0.636, 0.234, 0.086, 0.032, 0.012]$ ([[lesson:softmax_stability]]). Greedy luôn lấy token cao nhất, "đi thẳng". An toàn nhưng hoàn toàn xác định: cùng đầu vào luôn ra cùng một đầu ra, nên văn bản dễ lặp. Bốc ngẫu nhiên: lấy số $u \in [0, 1)$ rồi xem nó rơi vào đoạn nào của hàm phân phối tích lũy: $u = 0.5 \to$ "đi thẳng", $u = 0.8 \to$ "rẽ trái", $u = 0.95 \to$ "dừng".',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Greedy" rồi "Bốc thuần T = 1", kéo thanh $u$ từ 0 đến 1.\n👁️ Quan sát (Cột 3): Greedy luôn ra "đi thẳng"; khi bốc, token đổi theo $u$.',
+        takeaway: 'Sinh văn bản là bốc từ một phân phối, không phải luôn lấy giá trị lớn nhất.'
+      },
+      {
+        step: 2, badge: 'Bước 2 / 4',
+        heading: 'Nhiệt độ: nhọn hay phẳng',
+        problem: 'Muốn kiểm soát độ "liều" của việc bốc thì chỉnh gì?',
+        mechanism: 'Chia logits cho $T$ trước softmax. $T = 0.5$ làm nhọn: $P_1 = 0.865$. $T = 2$ làm phẳng: $P_1 = 0.429$ và hai token vô nghĩa chiếm tới $0.154$. $T \to 0$ tiến về greedy, $T \to \infty$ tiến về bốc đều.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Quá nóng T = 2 ❌".\n👁️ Quan sát (Cột 3): Đuôi xấu $15.4\%$ mỗi bước, kết luận đỏ: sinh 50 token gần như chắc chắn dính ít nhất một token vô nghĩa ($> 99.9\%$).',
+        takeaway: 'Xác suất lỗi nhỏ mỗi bước cộng dồn qua cả chuỗi dài thành gần như chắc chắn.'
+      },
+      {
+        step: 3, badge: 'Bước 3 / 4',
+        heading: 'Top-k và top-p: cắt đuôi',
+        problem: 'Giữ độ đa dạng của nhiệt độ cao nhưng loại bỏ các token vô nghĩa thì sao?',
+        mechanism: 'Top-k giữ $k$ token có xác suất cao nhất rồi chuẩn hóa lại: $k = 2$ cho $[0.731, 0.269]$ và đuôi xấu $= 0$. Top-p (nucleus) giữ tập nhỏ nhất có tổng xác suất $\ge p$: ở $T = 1$, $p = 0.9$ giữ 3 token với tổng $0.957$. Top-p tự co giãn: phân phối nhọn thì giữ ít token, phân phối phẳng thì giữ nhiều.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "T = 2 + top-p 0.9" rồi "T = 1 + top-k 2 ✅".\n👁️ Quan sát (Cột 3): Cột "giữ" đổi, đuôi xấu giảm còn $10.2\%$ rồi về $0\%$.',
+        takeaway: 'Top-k và top-p cắt phần đuôi nơi các token hiếm, vô nghĩa nằm.'
+      },
+      {
+        step: 4, badge: 'Bước 4 / 4',
+        heading: 'Không có cấu hình đúng cho mọi tác vụ',
+        problem: 'Vậy chọn cấu hình nào?',
+        mechanism: 'Tác vụ cần chính xác (dịch máy, sinh mã, trích xuất) dùng $T$ thấp hoặc greedy. Tác vụ sáng tạo dùng $T \approx 0.7$–$1$ kèm top-p khoảng $0.9$. Các tham số này chỉ tốn một vài phép toán trên vector logits, không phải phép nhân ma trận, nên gần như miễn phí so với bước tính logits ([[lesson:kv_cache_anatomy]]).',
+        action: '👉 Thao tác (Cột 2): Thử tổ hợp tùy ý và theo dõi entropy trước/sau lọc.\n👁️ Quan sát (Cột 3): Entropy (bit) giảm khi lọc: ít bất định hơn.',
+        takeaway: 'Chiến lược giải mã là núm vặn giữa chính xác và đa dạng, tách biệt hoàn toàn khỏi mô hình.'
+      }
+    ];
+
+    const STEP_COMMENTS = {
+      2: [{
+        id: 'sd2', author: 'Kỹ Sư AI', role: 'Systems', avatar: '🚀', tag: 'Gotcha kinh điển', tagType: 'gotcha',
+        content: 'Cùng seed và cùng đầu vào chưa chắc cho cùng kết quả: phép cộng số thực song song trên GPU không giao hoán chính xác, nên logits lệch ở chữ số cuối và có thể đổi token được bốc ở đúng ranh giới CDF. Đừng viết test yêu cầu hai lần sinh giống hệt từng ký tự.'
+      }],
+      3: [{
+        id: 'sd3', author: 'Nhà Toán Học AI', role: 'Math', avatar: '📐', tag: 'Thứ tự lọc', tagType: 'math',
+        content: 'Thứ tự chuẩn: chia $T$, softmax, top-k, top-p, chuẩn hóa lại, bốc. Đổi thứ tự cho kết quả khác: lọc trước khi chia $T$ cố định tập token bất kể nhiệt độ. Beam search là một họ khác: giữ nhiều chuỗi ứng viên có tổng log-xác suất cao nhất thay vì bốc ngẫu nhiên.'
+      }],
+      4: [{
+        id: 'sd4', author: 'Chuyên Gia LLM', role: 'LLM', avatar: '🧠', tag: 'Đã có ở đây chưa', tagType: 'systems',
+        content: 'Ngoài các tham số trên còn có repetition penalty (trừ logit các token đã xuất hiện), min-p (cắt token có xác suất dưới một tỉ lệ so với token cao nhất) và giải mã ràng buộc ngữ pháp (che logit các token sai cú pháp JSON). Tất cả đều là biến đổi trên vector logits trước bước bốc.'
+      }]
+    };
+
+    const logic = new LessonLogic();
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
+    });
+
+    createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 1,
+      onStepChange: (n) => {
+        comments.setStep(n, STEP_COMMENTS[n] || []);
+        if (n === STEPS.length) markCompleted(LESSON_ID, true);
+      }
+    });
+
+    const sU = createLiveSlider(document.getElementById('mount-u-slider'), {
+      label: 'u', min: 0, max: 0.99, step: 0.01, initial: logic.state.u,
+      onChange: (v) => { logic.onUserUpdate({ u: v }); presets.setActive(null); render(); }
+    });
+
+    function syncControls() {
+      sU.setValue(logic.state.u);
+    }
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      initialActiveId: 'plain_t1',
+      onPick: (p) => {
+        logic.applyPreset(p.state);
+        syncControls();
+        render();
+      }
+    });
+
+    function segBind(id, apply) {
+      document.querySelectorAll(`#${id} button`).forEach(btn => btn.addEventListener('click', () => {
+        logic.onUserUpdate(apply(btn.dataset.v));
+        presets.setActive(null);
+        render();
+      }));
+    }
+    segBind('seg-mode', v => ({ greedy: v === 'greedy' }));
+    segBind('seg-t', v => ({ T: Number(v) }));
+    segBind('seg-k', v => ({ topK: Number(v) }));
+    segBind('seg-p', v => ({ topP: Number(v) }));
+
+    function render() {
+      const r = logic.calculate();
+      const s = logic.state;
+      document.querySelectorAll('#seg-mode button').forEach(b => b.classList.toggle('active', (b.dataset.v === 'greedy') === s.greedy));
+      document.querySelectorAll('#seg-t button').forEach(b => b.classList.toggle('active', Number(b.dataset.v) === s.T));
+      document.querySelectorAll('#seg-k button').forEach(b => b.classList.toggle('active', Number(b.dataset.v) === s.topK));
+      document.querySelectorAll('#seg-p button').forEach(b => b.classList.toggle('active', Number(b.dataset.v) === s.topP));
+      document.getElementById('txt-u').textContent = s.greedy ? 'Greedy không dùng số ngẫu nhiên' : `u = ${s.u}`;
+
+      renderMath(document.getElementById('katex-samp'), r.formulaKaTeX, { displayMode: true });
+      const bar = (p, color) => `<div style="height:8px; width:${Math.max(0, p) * 100}%; background:${color}; border-radius:4px; min-width:${p > 0 ? 2 : 0}px;"></div>`;
+      document.getElementById('prob-table').innerHTML = r.tokens.map((t, i) => {
+        const isBad = i >= 3;
+        const mark = i === r.chosen ? ' 🎯' : '';
+        return `<tr><td>${t}${isBad ? ' (vô nghĩa)' : ''}${mark}</td><td>P = ${r.baseProbs[i]}${r.keep[i] ? '' : ' ✂️ bị cắt'} → ${r.finalProbs[i]}${bar(r.finalProbs[i], isBad ? '#ef4444' : '#38bdf8')}</td></tr>`;
+      }).join('');
+      document.getElementById('stats-table').innerHTML = `
+        <tr><td>Token được chọn</td><td><strong>${r.chosenToken}</strong></td></tr>
+        <tr><td>Số token còn lại sau lọc</td><td>${r.nKept} / 5</td></tr>
+        <tr><td>Entropy trước → sau lọc (bit)</td><td>${r.entropyBefore} → ${r.entropyAfter}</td></tr>
+        <tr><td>Xác suất bốc phải token vô nghĩa (mỗi bước)</td><td>${(r.badBefore * 100).toFixed(1)}% → ${(r.badAfter * 100).toFixed(1)}%</td></tr>
+        <tr><td>Sinh 50 token: dính ít nhất 1 token tệ</td><td>${(r.in50Before * 100).toFixed(1)}% → ${(r.in50 * 100).toFixed(1)}%</td></tr>`;
+      renderAllInlineMath(document.querySelector('.col-telemetry'));
+      const verdict = document.getElementById('verdict');
+      verdict.className = `tp-verdict ${r.verdict.type}`;
+      verdict.textContent = r.verdict.text;
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      syncControls();
+      presets.setActive('plain_t1');
+      render();
+    });
+
+    renderAllInlineMath(document.querySelector('.col-sandbox'));
+    render();
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

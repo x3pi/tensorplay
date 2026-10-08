@@ -1,3 +1,4 @@
+import { resolveRefs } from './curriculum.js';
 /**
  * TensorPlay KaTeX Renderer Utility
  * Safely renders LaTeX formulas with universal DOM TreeWalker, CDN auto-retry, and inline parsing.
@@ -232,6 +233,9 @@ function escapeHtml(str) {
 export function renderRichText(text, options = {}) {
   if (!text || typeof text !== 'string') return text || '';
   const { renderCues = false } = options;
+
+  // Thay [[lesson:slug]] bằng liên kết «Tiêu đề bài» (đồng bộ nhờ shared/lesson-titles.js)
+  text = resolveRefs(text, undefined, { asLink: true });
 
   // Normalize double-escaped LaTeX commands such as \\to, \\nabla, \\cdot, \\le, \\{
   let normalized = text.replace(/\\\\([a-zA-Z]+|[^a-zA-Z\s])/g, '\\$1');

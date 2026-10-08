@@ -1,0 +1,25 @@
+{
+  "id": "data_parallel_allreduce",
+  "title": "Data Parallel & All-Reduce — Chia Batch Cho Nhiều GPU, Cộng Gradient Bằng Vòng Tròn",
+  "summary": "Gradient trung bình của các shard bằng gradient cả batch ($-5.25$) nếu gộp có trọng số; quên chia cho số GPU làm bước học gấp $N$ lần. Ring all-reduce mỗi GPU gửi $2(N-1)S/N \\to 2S$, gần như không đổi theo $N$.",
+  "topic": "gpu",
+  "tags": [
+    "data-parallel",
+    "all-reduce",
+    "distributed-training",
+    "gradient"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 14,
+  "status": "ready",
+  "prerequisites": [
+    "minibatch_sgd",
+    "broadcast_grad"
+  ],
+  "related": [
+    "activation_checkpointing",
+    "mixed_precision"
+  ],
+  "sources": [],
+  "aliases": []
+}

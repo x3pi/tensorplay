@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta name="tp-lesson" content="overfitting_validation">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Overfitting &amp; Validation — Tập Train Nói Dối, Tập Val Nói Thật - TensorPlay</title>
+  <meta name="description" content="Vì sao lỗi train bằng 0 vẫn có thể là mô hình tệ: so sánh đa thức bậc 0–3 trên tập train và tập validation.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">← Về Danh Mục</a>
+      </div>
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step" data-topic-badge></span>
+      </div>
+    </header>
+
+    <main class="lab-grid">
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt &amp; Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Bàn Thí Nghiệm Độ Phức Tạp</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Đặt Lại</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🎚️ Bậc của đa thức (độ phức tạp mô hình)</div>
+            <div class="tp-seg" id="seg-degree">
+              <button data-v="0">Bậc 0</button>
+              <button data-v="1">Bậc 1</button>
+              <button data-v="2">Bậc 2</button>
+              <button data-v="3">Bậc 3</button>
+            </div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">📈 Dữ liệu và đường khớp</div>
+            <svg id="plot" viewBox="0 0 320 200" style="width:100%; background:#090d15; border-radius:8px;"></svg>
+            <div class="tp-matrix-caption">● xanh lá = train (có nhiễu) · ◆ cam = val (chưa từng thấy) · đường = mô hình</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math &amp; Telemetry</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div class="tp-panel">
+            <div class="tp-panel-title">📐 Mô hình đã học</div>
+            <div class="tp-math-box" id="katex-model"></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">📊 Lỗi bình phương trung bình (MSE)</div>
+            <table class="tp-kv-table" id="err-table"></table>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🔍 Dự đoán so với đáp án</div>
+            <table class="tp-kv-table" id="pred-table"></table>
+          </div>
+          <div class="tp-verdict" id="verdict"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createLiveSlider } from '../../shared/components/LiveSlider.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
+    import { markCompleted } from '../../shared/progress.js';
+    import { LessonLogic, PRESETS } from './logic.js';
+    import { TRAIN, VAL } from './logic.js';
+
+    const LESSON_ID = 'overfitting_validation';
+
+    const STEPS = [
+      {
+        step: 1, badge: 'Bước 1 / 4',
+        heading: 'Hai tập dữ liệu: một để học, một để kiểm tra',
+        problem: 'Robot đoán độ sáng đèn pha theo khoảng cách. Quy luật thật là $y = x$, nhưng 4 phép đo train bị nhiễu: $y = [0.5, 0.5, 2.5, 2.5]$ thay vì $[0, 1, 2, 3]$. Làm sao biết mô hình học được quy luật chứ không phải thuộc lòng nhiễu?',
+        mechanism: 'Ta giữ lại một tập val gồm 4 điểm mô hình chưa từng thấy: $x = [0.5, 1.5, 2.5, 3.5]$ với đáp án sạch $y = x$. Loss trên tập train cho biết mô hình khớp dữ liệu cũ tới đâu, loss trên val cho biết nó tổng quát hóa tới đâu.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Bậc 1: đường thẳng ✅".\n👁️ Quan sát (Cột 3): Lỗi train $0.2$ nhưng lỗi val chỉ $0.06$.',
+        takeaway: 'Loss train đo khả năng ghi nhớ, loss val mới đo khả năng hiểu.'
+      },
+      {
+        step: 2, badge: 'Bước 2 / 4',
+        heading: 'Bậc 3: đi qua mọi điểm, tệ nhất ngoài đời',
+        problem: 'Đa thức bậc 3 có 4 hệ số, đủ để đi qua cả 4 điểm train. Lỗi train bằng 0 nghe như hoàn hảo, đúng không?',
+        mechanism: 'Đường cong uốn lượn để chui qua từng điểm nhiễu: $\hat{y} = 0.5 - 2.33x + 3x^2 - 0.67x^3$. Tại $x = 3.5$ nó dự đoán $0.5$ trong khi đáp án là $3.5$. Lỗi val vọt lên $2.375$, gấp hơn 39 lần bậc 1.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Bậc 3: đi qua mọi điểm train ❌".\n👁️ Quan sát (Cột 3): Lỗi train $= 0$, lỗi val $= 2.375$, thanh kết luận đỏ.',
+        takeaway: 'Quá khớp (overfitting): mô hình đủ mạnh để thuộc cả nhiễu, nên loss train thấp mà lỗi thực tế cao.'
+      },
+      {
+        step: 3, badge: 'Bước 3 / 4',
+        heading: 'Dưới khớp và vừa vặn',
+        problem: 'Vậy cứ chọn mô hình thật đơn giản cho an toàn?',
+        mechanism: 'Bậc 0 chỉ đoán trung bình $1.5$: lỗi train $1.0$ và lỗi val $1.5$, cả hai đều cao (dưới khớp, underfitting). Bậc 1 cho lỗi val thấp nhất ($0.06$). Bậc 2 không cải thiện thêm vì hệ số $x^2$ ra đúng $0$. Lỗi train giảm đơn điệu theo bậc, còn lỗi val có dạng chữ U.',
+        action: '👉 Thao tác (Cột 2): Bấm lần lượt bậc 0, 1, 2, 3.\n👁️ Quan sát (Cột 3): Dòng "Lỗi val ở mọi bậc" cho thấy đáy chữ U nằm ở bậc 1–2.',
+        takeaway: 'Chọn độ phức tạp mô hình bằng lỗi val, không bao giờ bằng lỗi train.'
+      },
+      {
+        step: 4, badge: 'Bước 4 / 4',
+        heading: 'Quy tắc thực chiến',
+        problem: 'Nếu tôi chỉnh siêu tham số cho đến khi lỗi val thấp nhất, lỗi val đó còn đáng tin không?',
+        mechanism: 'Mỗi lần chỉnh theo val, thông tin của val rò rỉ vào mô hình, nên lỗi val dần lạc quan. Vì vậy cần ba tập: train để học, val để chọn mô hình và dừng sớm (early stopping), test để chấm một lần duy nhất ở cuối. Các kỹ thuật như [[lesson:dropout]] và weight decay giảm quá khớp mà không cần thu nhỏ mô hình.',
+        action: '👉 Thao tác: Đọc chú giải ở dưới và xem lại bảng so sánh các bậc.\n👁️ Quan sát: Khoảng cách val trừ train (generalization gap) lớn nhất ở bậc 3.',
+        takeaway: 'Quan sát loss train đi xuống nhưng loss val đi lên là tín hiệu dừng huấn luyện.'
+      }
+    ];
+
+    const STEP_COMMENTS = {
+      2: [{
+        id: 'ov2', author: 'Nhà Toán Học AI', role: 'Math', avatar: '📐', tag: 'Nhiều tham số hơn dữ liệu', tagType: 'math',
+        content: 'Bậc $d$ có $d+1$ hệ số. Khi số hệ số bằng số điểm train ($d + 1 = 4$) hệ phương trình có nghiệm đúng, nên lỗi train bằng $0$. Trong học sâu, mạng có hàng tỉ tham số nhưng vẫn tổng quát hóa được nhờ regularization, dữ liệu lớn và dừng sớm.'
+      }],
+      3: [{
+        id: 'ov3', author: 'Kỹ Sư AI', role: 'Systems', avatar: '🚀', tag: 'Gotcha kinh điển', tagType: 'gotcha',
+        content: 'Đừng chia val/train sau khi đã xáo trộn dữ liệu có chuỗi thời gian hoặc có nhiều ảnh cùng một đối tượng: ảnh gần giống nhau lọt vào cả hai tập sẽ làm lỗi val đẹp giả tạo (rò rỉ dữ liệu).'
+      }],
+      4: [{
+        id: 'ov4', author: 'Kỹ Sư AI', role: 'Systems', avatar: '🚀', tag: 'Theo dõi hai đường cong', tagType: 'gotcha',
+        content: 'Luôn vẽ cả loss train và loss val theo epoch. Khi val bắt đầu tăng mà train vẫn giảm thì checkpoint tốt nhất nằm ở epoch ngay trước điểm đó.'
+      }]
+    };
+
+    const logic = new LessonLogic();
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
+    });
+
+    createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 1,
+      onStepChange: (n) => {
+        comments.setStep(n, STEP_COMMENTS[n] || []);
+        if (n === STEPS.length) markCompleted(LESSON_ID, true);
+      }
+    });
+
+    const W = 320, H = 200, X0 = -0.5, X1 = 4, Y0 = -2, Y1 = 5;
+    const px = x => ((x - X0) / (X1 - X0)) * W;
+    const py = y => H - ((y - Y0) / (Y1 - Y0)) * H;
+
+    function syncControls() {
+      document.querySelectorAll('#seg-degree button').forEach(b => b.classList.toggle('active', Number(b.dataset.v) === logic.state.degree));
+    }
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      initialActiveId: 'good_fit',
+      onPick: (p) => {
+        logic.applyPreset(p.state);
+        syncControls();
+        render();
+      }
+    });
+
+    document.querySelectorAll('#seg-degree button').forEach(btn => btn.addEventListener('click', () => {
+      logic.onUserUpdate({ degree: Number(btn.dataset.v) });
+      presets.setActive(null);
+      render();
+    }));
+
+    function render() {
+      const r = logic.calculate();
+      const s = logic.state;
+      document.querySelectorAll('#seg-degree button').forEach(b => b.classList.toggle('active', Number(b.dataset.v) === s.degree));
+
+      // Vẽ đường khớp bằng cách lấy mẫu mô hình
+      const coef = logic.calculate().coef;
+      const poly = x => coef.reduce((acc, c, j) => acc + c * Math.pow(x, j), 0);
+      let d = '';
+      for (let i = 0; i <= 60; i++) {
+        const x = X0 + (i / 60) * (X1 - X0);
+        d += `${i === 0 ? 'M' : 'L'}${px(x).toFixed(1)},${Math.max(-50, Math.min(H + 50, py(poly(x)))).toFixed(1)} `;
+      }
+      const trainDots = TRAIN.x.map((x, i) => `<circle cx="${px(x)}" cy="${py(TRAIN.y[i])}" r="5" fill="#10b981"/>`).join('');
+      const valDots = VAL.x.map((x, i) => `<rect x="${px(x) - 5}" y="${py(VAL.y[i]) - 5}" width="10" height="10" transform="rotate(45 ${px(x)} ${py(VAL.y[i])})" fill="#f59e0b"/>`).join('');
+      const truth = `<line x1="${px(X0)}" y1="${py(X0)}" x2="${px(X1)}" y2="${py(X1)}" stroke="#64748b" stroke-dasharray="4 4"/>`;
+      document.getElementById('plot').innerHTML =
+        `<clipPath id="clip"><rect width="${W}" height="${H}"/></clipPath><g clip-path="url(#clip)">${truth}<path d="${d}" fill="none" stroke="#38bdf8" stroke-width="2.5"/>${trainDots}${valDots}</g>`;
+
+      renderMath(document.getElementById('katex-model'), r.formulaKaTeX, { displayMode: true });
+      document.getElementById('err-table').innerHTML = `
+        <tr><td>MSE train (bậc ${r.degree})</td><td>${r.trainMse}</td></tr>
+        <tr><td>MSE val (bậc ${r.degree})</td><td>${r.valMse}</td></tr>
+        <tr><td>Khoảng cách val − train</td><td>${r.gap}</td></tr>
+        <tr><td>Lỗi val ở mọi bậc 0 / 1 / 2 / 3</td><td>${r.allVal.join(' / ')}</td></tr>`;
+      document.getElementById('pred-table').innerHTML =
+        TRAIN.x.map((x, i) => `<tr><td>train x = ${x}: đáp án ${TRAIN.y[i]}</td><td>dự đoán ${r.trainPred[i]}</td></tr>`).join('') +
+        VAL.x.map((x, i) => `<tr><td>val x = ${x}: đáp án ${VAL.y[i]}</td><td>dự đoán ${r.valPred[i]}</td></tr>`).join('');
+      const verdict = document.getElementById('verdict');
+      verdict.className = `tp-verdict ${r.verdict.type}`;
+      verdict.textContent = r.verdict.text;
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      syncControls();
+      presets.setActive('good_fit');
+      render();
+    });
+
+    renderAllInlineMath(document.querySelector('.col-sandbox'));
+    render();
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

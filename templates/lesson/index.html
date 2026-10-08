@@ -1,113 +1,180 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+  <meta name="tp-lesson" content="{{SLUG}}">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="tp-lesson" content="{{SLUG}}">
   <title>{{TITLE}} - TensorPlay</title>
   <meta name="description" content="{{SUMMARY}}">
 
-  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
-  <!-- KaTeX Pin v0.16.21 -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
 
-  <!-- Shared CSS -->
   <link rel="stylesheet" href="../../shared/styles/tokens.css">
   <link rel="stylesheet" href="../../shared/styles/layout.css">
   <link rel="stylesheet" href="../../shared/styles/components.css">
 </head>
 <body class="theme-dark">
   <div class="lab-shell">
-    
-    <!-- Top Header -->
     <header class="lab-header">
       <div class="lab-header-left">
         <a href="../../index.html" class="lab-header-title">
           <span style="color: var(--color-warning);">⚡</span>
           <span>Tensor<span style="color: var(--color-info);">Play</span></span>
-          <span style="background: linear-gradient(135deg, var(--color-info), var(--color-purple)); color: #fff; font-size: 0.65rem; font-weight: 800; padding: 1px 6px; border-radius: 4px;">LAB</span>
         </a>
+        <a href="../../index.html" class="btn-back-catalog">← Về Danh Mục</a>
       </div>
       <div class="lab-header-right">
-        <span style="font-size: var(--text-xs); color: var(--text-muted);">
-          {{TITLE}}
-        </span>
+        <span class="tp-badge tp-badge-step" data-topic-badge></span>
       </div>
     </header>
 
-    <!-- 3-Column Workspace -->
-    <main class="lab-workspace">
-      
-      <!-- Cột 1: Hướng Dẫn & Lý Thuyết -->
-      <section class="workspace-col workspace-col1" id="col-guide">
-        <div class="col-content">
-          <div class="theory-card">
-            <h2 class="theory-title">{{TITLE}}</h2>
-            <p class="theory-desc">{{SUMMARY}}</p>
-          </div>
-          <div id="mount-wizard"></div>
+    <main class="lab-grid">
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt &amp; Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
         </div>
       </section>
 
-      <div class="col-resizer" id="resizer-1"></div>
-
-      <!-- Cột 2: Trực Quan Tương Tác (Sandbox) -->
-      <section class="workspace-col workspace-col2" id="col-sandbox">
-        <div class="col-content">
-          <div class="sandbox-panel">
-            <h3 class="panel-title">Mô Phỏng Trực Quan</h3>
-            <div id="mount-sandbox"></div>
-          </div>
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Bàn Thí Nghiệm (TODO)</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Đặt Lại</button>
         </div>
-      </section>
-
-      <div class="col-resizer" id="resizer-2"></div>
-
-      <!-- Cột 3: Chỉ Số & Đo Đạc Hệ Thống -->
-      <section class="workspace-col workspace-col3" id="col-telemetry">
-        <div class="col-content">
-          <div class="telemetry-panel">
-            <h3 class="panel-title">Chỉ Số & Phân Tích</h3>
-            <div id="mount-telemetry"></div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🎚️ Tham số $x$ (TODO)</div>
+            <div id="mount-x-slider"></div>
+            <div class="tp-matrix-caption" id="txt-x"></div>
           </div>
         </div>
       </section>
 
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math &amp; Telemetry</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div class="tp-panel">
+            <div class="tp-panel-title">📐 Công thức sống</div>
+            <div class="tp-math-box" id="katex-main"></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">📊 Số liệu</div>
+            <table class="tp-kv-table" id="stats-table"></table>
+          </div>
+          <div class="tp-verdict" id="verdict"></div>
+        </div>
+      </section>
     </main>
-
   </div>
 
-  <!-- Component & Logic Modules -->
-  <script type="module" src="../../shared/components/LessonNav.js"></script>
   <script type="module">
-    import { computeStep } from './logic.js';
-    import { StepWizard } from '../../shared/components/StepWizard.js';
-    import { renderMath } from '../../shared/katex-render.js';
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createLiveSlider } from '../../shared/components/LiveSlider.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
+    import { markCompleted } from '../../shared/progress.js';
+    import { LessonLogic, PRESETS } from './logic.js';
+
+    const LESSON_ID = '{{SLUG}}';
 
     const STEPS = [
       {
-        badge: 'Bước 1',
-        title: 'Khám Phá Khái Niệm',
-        desc: 'Quan sát và tương tác để hiểu bản chất.'
+        step: 1, badge: 'Bước 1 / 2',
+        heading: 'TODO: tiêu đề bước 1',
+        problem: 'TODO: nêu tình huống thực / câu hỏi gây tò mò. Có thể nhắc bài khác bằng [[lesson:slug_bai_khac]] (không bao giờ viết "Bài NN").',
+        mechanism: 'TODO: cơ chế toán, dùng $...$ cho công thức. Lưu ý: không dùng **đậm** (StepWizard không render Markdown), xuống dòng bằng \n.',
+        action: '👉 Thao tác (Cột 2): TODO.\n👁️ Quan sát (Cột 3): TODO.',
+        takeaway: 'TODO: điều rút ra (một "Aha!" duy nhất).'
+      },
+      {
+        step: 2, badge: 'Bước 2 / 2',
+        heading: 'TODO: tiêu đề bước 2',
+        problem: 'TODO',
+        mechanism: 'TODO',
+        action: '👉 Thao tác: TODO\n👁️ Quan sát: TODO',
+        takeaway: 'TODO'
       }
     ];
 
-    const wizard = new StepWizard({
-      mount: '#mount-wizard',
+    const STEP_COMMENTS = {
+      2: [{
+        id: 'tpl2', author: 'Kỹ Sư AI', role: 'Systems', avatar: '🚀', tag: 'Gotcha kinh điển', tagType: 'gotcha',
+        content: 'TODO: một cái bẫy thực tế. tagType: math | gotcha | systems.'
+      }]
+    };
+
+    const logic = new LessonLogic();
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
+    });
+
+    createStepWizard(document.getElementById('mount-step-wizard'), {
       steps: STEPS,
-      lessonId: '{{SLUG}}',
-      onStepChange: (step) => {
-        renderMath();
+      initialStep: 1,
+      onStepChange: (n) => {
+        comments.setStep(n, STEP_COMMENTS[n] || []);
+        if (n === STEPS.length) markCompleted(LESSON_ID, true);
       }
     });
 
-    renderMath();
+    const sX = createLiveSlider(document.getElementById('mount-x-slider'), {
+      label: 'x', min: 0, max: 5, step: 1, initial: logic.state.x,
+      onChange: (v) => { logic.onUserUpdate({ x: v }); presets.setActive(null); render(); }
+    });
+
+    function syncControls() {
+      sX.setValue(logic.state.x);
+    }
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      initialActiveId: 'default',
+      onPick: (p) => {
+        logic.applyPreset(p.state);
+        syncControls();
+        render();
+      }
+    });
+
+    // TODO: gắn thêm các nút phân đoạn (seg) nếu cần, giống các bài mẫu.
+
+    function render() {
+      const r = logic.calculate();
+      const s = logic.state;
+      document.getElementById('txt-x').textContent = `x = ${s.x}`;
+      renderMath(document.getElementById('katex-main'), r.formulaKaTeX, { displayMode: true });
+      document.getElementById('stats-table').innerHTML = `<tr><td>x</td><td>${r.x}</td></tr><tr><td>y</td><td>${r.y}</td></tr>`;
+      const verdict = document.getElementById('verdict');
+      verdict.className = `tp-verdict ${r.verdict.type}`;
+      verdict.textContent = r.verdict.text;
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      syncControls();
+      presets.setActive('default');
+      render();
+    });
+
+    renderAllInlineMath(document.querySelector('.col-sandbox'));
+    render();
   </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
 </body>
 </html>

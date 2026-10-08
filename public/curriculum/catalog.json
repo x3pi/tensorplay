@@ -324,6 +324,32 @@
       ],
       "path": "lessons/cuda_threads/index.html"
     },
+    "data_parallel_allreduce": {
+      "id": "data_parallel_allreduce",
+      "title": "Data Parallel & All-Reduce — Chia Batch Cho Nhiều GPU, Cộng Gradient Bằng Vòng Tròn",
+      "summary": "Gradient trung bình của các shard bằng gradient cả batch ($-5.25$) nếu gộp có trọng số; quên chia cho số GPU làm bước học gấp $N$ lần. Ring all-reduce mỗi GPU gửi $2(N-1)S/N \\to 2S$, gần như không đổi theo $N$.",
+      "topic": "gpu",
+      "tags": [
+        "data-parallel",
+        "all-reduce",
+        "distributed-training",
+        "gradient"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 14,
+      "status": "ready",
+      "prerequisites": [
+        "minibatch_sgd",
+        "broadcast_grad"
+      ],
+      "related": [
+        "activation_checkpointing",
+        "mixed_precision"
+      ],
+      "sources": [],
+      "aliases": [],
+      "path": "lessons/data_parallel_allreduce/index.html"
+    },
     "dropout": {
       "id": "dropout",
       "title": "Dropout — Phá Vỡ Co-Adaptation & Kỹ Thuật Inverted Scaling",
@@ -349,6 +375,32 @@
         "dropout"
       ],
       "path": "lessons/dropout/index.html"
+    },
+    "embedding_tokenization": {
+      "id": "embedding_tokenization",
+      "title": "Tokenization (BPE) & Embedding — Chuỗi Ngắn Hơn Đổi Lấy Bảng Từ Vựng Lớn Hơn",
+      "summary": "BPE biến \"aaabdaaabac\" từ 11 ký tự còn 5 token (attention $N^2$: $121 \\to 25$) nhưng từ vựng tăng $4 \\to 7$. Tra embedding là đọc hàng ở offset $\\text{id} \\times d$ trong bộ nhớ 1D.",
+      "topic": "transformer",
+      "tags": [
+        "tokenization",
+        "bpe",
+        "embedding",
+        "vocabulary"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 10,
+      "status": "ready",
+      "prerequisites": [
+        "self_attention",
+        "strides_views"
+      ],
+      "related": [
+        "kv_cache_anatomy",
+        "positional_encoding"
+      ],
+      "sources": [],
+      "aliases": [],
+      "path": "lessons/embedding_tokenization/index.html"
     },
     "flash_attention": {
       "id": "flash_attention",
@@ -484,6 +536,31 @@
         "layernorm_residual"
       ],
       "path": "lessons/layernorm_residual/index.html"
+    },
+    "lr_schedule_warmup": {
+      "id": "lr_schedule_warmup",
+      "title": "LR Schedule — Warmup Giữ Khởi Đầu Êm, Cosine Decay Dọn Nhiễu Cuối",
+      "summary": "Ở vùng dốc ($a = 4$) lr $0.6$ vượt ngưỡng ổn định $2/a = 0.5$ nên $|w|$ bị phóng lên $3.27$. Warmup giữ $|w| \\le 1$, cosine decay đưa dao động cuối về $\\approx 0$.",
+      "topic": "training-stability",
+      "tags": [
+        "learning-rate",
+        "warmup",
+        "cosine-decay",
+        "stability"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 12,
+      "status": "ready",
+      "prerequisites": [
+        "optimizers",
+        "adamw_weight_decay"
+      ],
+      "related": [
+        "kaiming_init"
+      ],
+      "sources": [],
+      "aliases": [],
+      "path": "lessons/lr_schedule_warmup/index.html"
     },
     "memory_leak": {
       "id": "memory_leak",
@@ -648,6 +725,31 @@
       ],
       "path": "lessons/optimizers/index.html"
     },
+    "overfitting_validation": {
+      "id": "overfitting_validation",
+      "title": "Overfitting & Validation — Tập Train Nói Dối, Tập Val Nói Thật",
+      "summary": "Đa thức bậc 3 đi qua cả 4 điểm train (lỗi $0$) nhưng lỗi val vọt lên $2.375$; bậc 1 lỗi train $0.2$ mà val chỉ $0.06$. Chọn mô hình bằng tập validation, không phải bằng loss train.",
+      "topic": "training-stability",
+      "tags": [
+        "overfitting",
+        "validation",
+        "generalization",
+        "early-stopping"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 10,
+      "status": "ready",
+      "prerequisites": [
+        "softmax_regression"
+      ],
+      "related": [
+        "dropout",
+        "adamw_weight_decay"
+      ],
+      "sources": [],
+      "aliases": [],
+      "path": "lessons/overfitting_validation/index.html"
+    },
     "positional_encoding": {
       "id": "positional_encoding",
       "title": "Positional Encoding — Attention Không Biết Thứ Tự",
@@ -673,6 +775,33 @@
         "positional_encoding"
       ],
       "path": "lessons/positional_encoding/index.html"
+    },
+    "quantization_int8": {
+      "id": "quantization_int8",
+      "title": "Quantization INT8/INT4 — Nén Trọng Số Để Đọc Ít Byte Hơn",
+      "summary": "Một ngoại lai $20$ kéo hệ số $s$ lên $0.157$ khiến sai số INT8 tăng $0.0005 \\to 0.0421$ (INT4: mọi trọng số nhỏ về 0); chia nhóm giảm lại $\\approx 17$ lần. Mô hình 7B: $14 \\to 7 \\to 3.5$ GB, giải mã $143 \\to 286 \\to 571$ token/s.",
+      "topic": "llm-serving",
+      "tags": [
+        "quantization",
+        "int8",
+        "int4",
+        "outliers",
+        "memory-bound"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 13,
+      "status": "ready",
+      "prerequisites": [
+        "mixed_precision",
+        "roofline_arithmetic_intensity"
+      ],
+      "related": [
+        "kv_cache_anatomy",
+        "transformer_block_params"
+      ],
+      "sources": [],
+      "aliases": [],
+      "path": "lessons/quantization_int8/index.html"
     },
     "reverse_vs_forward_ad": {
       "id": "reverse_vs_forward_ad",
@@ -753,6 +882,60 @@
         "robot_vision"
       ],
       "path": "lessons/robot_vision/index.html"
+    },
+    "roofline_arithmetic_intensity": {
+      "id": "roofline_arithmetic_intensity",
+      "title": "Roofline — Chậm Vì Tính Toán Hay Vì Chờ Dữ Liệu?",
+      "summary": "Điểm gấp $P/B = 100$ FLOP/byte: giải mã batch 1 có $\\text{AI} \\approx 1$ chỉ dùng 1% sức GPU (7B: 7 ms/token), gom batch $\\ge 128$ mới chạm trần tính toán.",
+      "topic": "gpu",
+      "tags": [
+        "roofline",
+        "arithmetic-intensity",
+        "memory-bound",
+        "batching"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 12,
+      "status": "ready",
+      "prerequisites": [
+        "shared_memory_tiling",
+        "coalescing_and_banks"
+      ],
+      "related": [
+        "kv_cache_anatomy",
+        "flash_attention",
+        "mixed_precision"
+      ],
+      "sources": [],
+      "aliases": [],
+      "path": "lessons/roofline_arithmetic_intensity/index.html"
+    },
+    "sampling_decoding": {
+      "id": "sampling_decoding",
+      "title": "Sampling & Decoding — Từ Logits Đến Token Được Chọn",
+      "summary": "Ở $T = 2$ hai token vô nghĩa chiếm $15.4\\%$ mỗi bước nên sinh 50 token gần như chắc chắn dính lỗi; top-k $= 2$ cắt sạch đuôi, top-p $= 0.9$ tự co giãn. Bốc token bằng nghịch đảo CDF.",
+      "topic": "llm-serving",
+      "tags": [
+        "sampling",
+        "temperature",
+        "top-k",
+        "top-p",
+        "decoding"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 12,
+      "status": "ready",
+      "prerequisites": [
+        "softmax_stability",
+        "kv_cache_anatomy"
+      ],
+      "related": [
+        "softmax_regression",
+        "embedding_tokenization"
+      ],
+      "sources": [],
+      "aliases": [],
+      "path": "lessons/sampling_decoding/index.html"
     },
     "self_attention": {
       "id": "self_attention",
@@ -894,6 +1077,33 @@
       ],
       "path": "lessons/strides_views/index.html"
     },
+    "transformer_block_params": {
+      "id": "transformer_block_params",
+      "title": "Khối Transformer Hoàn Chỉnh — Tham Số Nằm Ở Đâu?",
+      "summary": "Mỗi khối Pre-LN có $4d^2 + 2md^2 = 12d^2$ tham số (FFN chiếm $2/3$); tổng $\\approx 12Ld^2 + Vd$ cho ra $123.5$ triệu (GPT-2 small) và $6.57$ tỉ (cỡ 7B), từ đó suy ra RAM và FLOPs trên giấy.",
+      "topic": "transformer",
+      "tags": [
+        "transformer-block",
+        "ffn",
+        "parameter-count",
+        "scaling"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 12,
+      "status": "ready",
+      "prerequisites": [
+        "multi_head_attention",
+        "layernorm_residual"
+      ],
+      "related": [
+        "mixed_precision",
+        "roofline_arithmetic_intensity",
+        "embedding_tokenization"
+      ],
+      "sources": [],
+      "aliases": [],
+      "path": "lessons/transformer_block_params/index.html"
+    },
     "twolayer_relu_backprop": {
       "id": "twolayer_relu_backprop",
       "title": "Mạng Nơ-ron 2 Tầng & Lan Truyền Ngược ReLU",
@@ -998,7 +1208,9 @@
             "cuda_threads",
             "shared_memory_tiling",
             "coalescing_and_banks",
-            "activation_checkpointing"
+            "roofline_arithmetic_intensity",
+            "activation_checkpointing",
+            "data_parallel_allreduce"
           ]
         }
       ],
@@ -1006,52 +1218,62 @@
         "robot_vision": {
           "index": 1,
           "sectionTitle": "Chặng 1 — Bố Cục Bộ Nhớ C++ & CPU Cache",
-          "total": 10
+          "total": 12
         },
         "cpp_matmul_loops": {
           "index": 2,
           "sectionTitle": "Chặng 1 — Bố Cục Bộ Nhớ C++ & CPU Cache",
-          "total": 10
+          "total": 12
         },
         "memory_leak": {
           "index": 3,
           "sectionTitle": "Chặng 1 — Bố Cục Bộ Nhớ C++ & CPU Cache",
-          "total": 10
+          "total": 12
         },
         "cache_locality": {
           "index": 4,
           "sectionTitle": "Chặng 1 — Bố Cục Bộ Nhớ C++ & CPU Cache",
-          "total": 10
+          "total": 12
         },
         "strides_views": {
           "index": 5,
           "sectionTitle": "Chặng 1 — Bố Cục Bộ Nhớ C++ & CPU Cache",
-          "total": 10
+          "total": 12
         },
         "minibatch_assembly": {
           "index": 6,
           "sectionTitle": "Chặng 1 — Bố Cục Bộ Nhớ C++ & CPU Cache",
-          "total": 10
+          "total": 12
         },
         "cuda_threads": {
           "index": 7,
           "sectionTitle": "Chặng 2 — Tăng Tốc Phần Cứng GPU & Tiết Kiệm VRAM",
-          "total": 10
+          "total": 12
         },
         "shared_memory_tiling": {
           "index": 8,
           "sectionTitle": "Chặng 2 — Tăng Tốc Phần Cứng GPU & Tiết Kiệm VRAM",
-          "total": 10
+          "total": 12
         },
         "coalescing_and_banks": {
           "index": 9,
           "sectionTitle": "Chặng 2 — Tăng Tốc Phần Cứng GPU & Tiết Kiệm VRAM",
-          "total": 10
+          "total": 12
         },
-        "activation_checkpointing": {
+        "roofline_arithmetic_intensity": {
           "index": 10,
           "sectionTitle": "Chặng 2 — Tăng Tốc Phần Cứng GPU & Tiết Kiệm VRAM",
-          "total": 10
+          "total": 12
+        },
+        "activation_checkpointing": {
+          "index": 11,
+          "sectionTitle": "Chặng 2 — Tăng Tốc Phần Cứng GPU & Tiết Kiệm VRAM",
+          "total": 12
+        },
+        "data_parallel_allreduce": {
+          "index": 12,
+          "sectionTitle": "Chặng 2 — Tăng Tốc Phần Cứng GPU & Tiết Kiệm VRAM",
+          "total": 12
         }
       }
     },
@@ -1077,16 +1299,21 @@
             "layernorm_residual",
             "rnn_bptt",
             "self_attention",
+            "embedding_tokenization",
             "positional_encoding",
-            "multi_head_attention"
+            "multi_head_attention",
+            "transformer_block_params"
           ]
         },
         {
           "title": "Chặng 3 — Tối Ưu Hệ Thống & LLM Serving",
           "lessons": [
             "mixed_precision",
+            "roofline_arithmetic_intensity",
             "kv_cache_anatomy",
-            "flash_attention"
+            "sampling_decoding",
+            "flash_attention",
+            "quantization_int8"
           ]
         }
       ],
@@ -1094,67 +1321,92 @@
         "robot_vision": {
           "index": 1,
           "sectionTitle": "Chặng 1 — Nền tảng Toán & Gradient",
-          "total": 13
+          "total": 18
         },
         "softmax_stability": {
           "index": 2,
           "sectionTitle": "Chặng 1 — Nền tảng Toán & Gradient",
-          "total": 13
+          "total": 18
         },
         "cross_entropy_logsumexp": {
           "index": 3,
           "sectionTitle": "Chặng 1 — Nền tảng Toán & Gradient",
-          "total": 13
+          "total": 18
         },
         "softmax_regression": {
           "index": 4,
           "sectionTitle": "Chặng 1 — Nền tảng Toán & Gradient",
-          "total": 13
+          "total": 18
         },
         "autograd_graph": {
           "index": 5,
           "sectionTitle": "Chặng 1 — Nền tảng Toán & Gradient",
-          "total": 13
+          "total": 18
         },
         "layernorm_residual": {
           "index": 6,
           "sectionTitle": "Chặng 2 — Khối Kiến Trúc Transformer",
-          "total": 13
+          "total": 18
         },
         "rnn_bptt": {
           "index": 7,
           "sectionTitle": "Chặng 2 — Khối Kiến Trúc Transformer",
-          "total": 13
+          "total": 18
         },
         "self_attention": {
           "index": 8,
           "sectionTitle": "Chặng 2 — Khối Kiến Trúc Transformer",
-          "total": 13
+          "total": 18
         },
-        "positional_encoding": {
+        "embedding_tokenization": {
           "index": 9,
           "sectionTitle": "Chặng 2 — Khối Kiến Trúc Transformer",
-          "total": 13
+          "total": 18
         },
-        "multi_head_attention": {
+        "positional_encoding": {
           "index": 10,
           "sectionTitle": "Chặng 2 — Khối Kiến Trúc Transformer",
-          "total": 13
+          "total": 18
+        },
+        "multi_head_attention": {
+          "index": 11,
+          "sectionTitle": "Chặng 2 — Khối Kiến Trúc Transformer",
+          "total": 18
+        },
+        "transformer_block_params": {
+          "index": 12,
+          "sectionTitle": "Chặng 2 — Khối Kiến Trúc Transformer",
+          "total": 18
         },
         "mixed_precision": {
-          "index": 11,
-          "sectionTitle": "Chặng 3 — Tối Ưu Hệ Thống & LLM Serving",
-          "total": 13
-        },
-        "kv_cache_anatomy": {
-          "index": 12,
-          "sectionTitle": "Chặng 3 — Tối Ưu Hệ Thống & LLM Serving",
-          "total": 13
-        },
-        "flash_attention": {
           "index": 13,
           "sectionTitle": "Chặng 3 — Tối Ưu Hệ Thống & LLM Serving",
-          "total": 13
+          "total": 18
+        },
+        "roofline_arithmetic_intensity": {
+          "index": 14,
+          "sectionTitle": "Chặng 3 — Tối Ưu Hệ Thống & LLM Serving",
+          "total": 18
+        },
+        "kv_cache_anatomy": {
+          "index": 15,
+          "sectionTitle": "Chặng 3 — Tối Ưu Hệ Thống & LLM Serving",
+          "total": 18
+        },
+        "sampling_decoding": {
+          "index": 16,
+          "sectionTitle": "Chặng 3 — Tối Ưu Hệ Thống & LLM Serving",
+          "total": 18
+        },
+        "flash_attention": {
+          "index": 17,
+          "sectionTitle": "Chặng 3 — Tối Ưu Hệ Thống & LLM Serving",
+          "total": 18
+        },
+        "quantization_int8": {
+          "index": 18,
+          "sectionTitle": "Chặng 3 — Tối Ưu Hệ Thống & LLM Serving",
+          "total": 18
         }
       }
     },
@@ -1200,7 +1452,9 @@
             "kaiming_init",
             "optimizers",
             "adamw_weight_decay",
+            "lr_schedule_warmup",
             "batch_norm_dynamics",
+            "overfitting_validation",
             "dropout",
             "layernorm_residual"
           ]
@@ -1218,8 +1472,10 @@
             "cuda_threads",
             "shared_memory_tiling",
             "coalescing_and_banks",
+            "roofline_arithmetic_intensity",
             "mixed_precision",
-            "activation_checkpointing"
+            "activation_checkpointing",
+            "data_parallel_allreduce"
           ]
         },
         {
@@ -1227,10 +1483,14 @@
           "lessons": [
             "rnn_bptt",
             "self_attention",
+            "embedding_tokenization",
             "positional_encoding",
             "multi_head_attention",
+            "transformer_block_params",
             "kv_cache_anatomy",
-            "flash_attention"
+            "sampling_decoding",
+            "flash_attention",
+            "quantization_int8"
           ]
         }
       ],
@@ -1238,176 +1498,216 @@
         "robot_vision": {
           "index": 1,
           "sectionTitle": "Chặng 1 — Nền tảng Tensor & Softmax",
-          "total": 34
+          "total": 42
         },
         "softmax_stability": {
           "index": 2,
           "sectionTitle": "Chặng 1 — Nền tảng Tensor & Softmax",
-          "total": 34
+          "total": 42
         },
         "softmax_regression": {
           "index": 3,
           "sectionTitle": "Chặng 1 — Nền tảng Tensor & Softmax",
-          "total": 34
+          "total": 42
         },
         "cross_entropy_logsumexp": {
           "index": 4,
           "sectionTitle": "Chặng 1 — Nền tảng Tensor & Softmax",
-          "total": 34
+          "total": 42
         },
         "twolayer_relu_backprop": {
           "index": 5,
           "sectionTitle": "Chặng 1 — Nền tảng Tensor & Softmax",
-          "total": 34
+          "total": 42
         },
         "minibatch_sgd": {
           "index": 6,
           "sectionTitle": "Chặng 1 — Nền tảng Tensor & Softmax",
-          "total": 34
+          "total": 42
         },
         "cpp_matmul_loops": {
           "index": 7,
           "sectionTitle": "Chặng 2 — Kỹ nghệ Bộ nhớ C++ & Strides",
-          "total": 34
+          "total": 42
         },
         "memory_leak": {
           "index": 8,
           "sectionTitle": "Chặng 2 — Kỹ nghệ Bộ nhớ C++ & Strides",
-          "total": 34
+          "total": 42
         },
         "cache_locality": {
           "index": 9,
           "sectionTitle": "Chặng 2 — Kỹ nghệ Bộ nhớ C++ & Strides",
-          "total": 34
+          "total": 42
         },
         "strides_views": {
           "index": 10,
           "sectionTitle": "Chặng 2 — Kỹ nghệ Bộ nhớ C++ & Strides",
-          "total": 34
+          "total": 42
         },
         "autograd_graph": {
           "index": 11,
           "sectionTitle": "Chặng 3 — Động cơ Autograd & Gradient",
-          "total": 34
+          "total": 42
         },
         "reverse_vs_forward_ad": {
           "index": 12,
           "sectionTitle": "Chặng 3 — Động cơ Autograd & Gradient",
-          "total": 34
+          "total": 42
         },
         "broadcast_grad": {
           "index": 13,
           "sectionTitle": "Chặng 3 — Động cơ Autograd & Gradient",
-          "total": 34
+          "total": 42
         },
         "gradient_check": {
           "index": 14,
           "sectionTitle": "Chặng 3 — Động cơ Autograd & Gradient",
-          "total": 34
+          "total": 42
         },
         "activation_valves": {
           "index": 15,
           "sectionTitle": "Chặng 4 — Huấn luyện Ổn định & Tối ưu hóa",
-          "total": 34
+          "total": 42
         },
         "kaiming_init": {
           "index": 16,
           "sectionTitle": "Chặng 4 — Huấn luyện Ổn định & Tối ưu hóa",
-          "total": 34
+          "total": 42
         },
         "optimizers": {
           "index": 17,
           "sectionTitle": "Chặng 4 — Huấn luyện Ổn định & Tối ưu hóa",
-          "total": 34
+          "total": 42
         },
         "adamw_weight_decay": {
           "index": 18,
           "sectionTitle": "Chặng 4 — Huấn luyện Ổn định & Tối ưu hóa",
-          "total": 34
+          "total": 42
         },
-        "batch_norm_dynamics": {
+        "lr_schedule_warmup": {
           "index": 19,
           "sectionTitle": "Chặng 4 — Huấn luyện Ổn định & Tối ưu hóa",
-          "total": 34
+          "total": 42
         },
-        "dropout": {
+        "batch_norm_dynamics": {
           "index": 20,
           "sectionTitle": "Chặng 4 — Huấn luyện Ổn định & Tối ưu hóa",
-          "total": 34
+          "total": 42
         },
-        "layernorm_residual": {
+        "overfitting_validation": {
           "index": 21,
           "sectionTitle": "Chặng 4 — Huấn luyện Ổn định & Tối ưu hóa",
-          "total": 34
+          "total": 42
+        },
+        "dropout": {
+          "index": 22,
+          "sectionTitle": "Chặng 4 — Huấn luyện Ổn định & Tối ưu hóa",
+          "total": 42
+        },
+        "layernorm_residual": {
+          "index": 23,
+          "sectionTitle": "Chặng 4 — Huấn luyện Ổn định & Tối ưu hóa",
+          "total": 42
         },
         "conv2d_im2col": {
-          "index": 22,
+          "index": 24,
           "sectionTitle": "Chặng 5 — Mạng Tích chập & Dataloader",
-          "total": 34
+          "total": 42
         },
         "minibatch_assembly": {
-          "index": 23,
+          "index": 25,
           "sectionTitle": "Chặng 5 — Mạng Tích chập & Dataloader",
-          "total": 34
+          "total": 42
         },
         "cuda_threads": {
-          "index": 24,
-          "sectionTitle": "Chặng 6 — Tăng tốc GPU & CUDA",
-          "total": 34
-        },
-        "shared_memory_tiling": {
-          "index": 25,
-          "sectionTitle": "Chặng 6 — Tăng tốc GPU & CUDA",
-          "total": 34
-        },
-        "coalescing_and_banks": {
           "index": 26,
           "sectionTitle": "Chặng 6 — Tăng tốc GPU & CUDA",
-          "total": 34
+          "total": 42
         },
-        "mixed_precision": {
+        "shared_memory_tiling": {
           "index": 27,
           "sectionTitle": "Chặng 6 — Tăng tốc GPU & CUDA",
-          "total": 34
+          "total": 42
         },
-        "activation_checkpointing": {
+        "coalescing_and_banks": {
           "index": 28,
           "sectionTitle": "Chặng 6 — Tăng tốc GPU & CUDA",
-          "total": 34
+          "total": 42
+        },
+        "roofline_arithmetic_intensity": {
+          "index": 29,
+          "sectionTitle": "Chặng 6 — Tăng tốc GPU & CUDA",
+          "total": 42
+        },
+        "mixed_precision": {
+          "index": 30,
+          "sectionTitle": "Chặng 6 — Tăng tốc GPU & CUDA",
+          "total": 42
+        },
+        "activation_checkpointing": {
+          "index": 31,
+          "sectionTitle": "Chặng 6 — Tăng tốc GPU & CUDA",
+          "total": 42
+        },
+        "data_parallel_allreduce": {
+          "index": 32,
+          "sectionTitle": "Chặng 6 — Tăng tốc GPU & CUDA",
+          "total": 42
         },
         "rnn_bptt": {
-          "index": 29,
-          "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
-          "total": 34
-        },
-        "self_attention": {
-          "index": 30,
-          "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
-          "total": 34
-        },
-        "positional_encoding": {
-          "index": 31,
-          "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
-          "total": 34
-        },
-        "multi_head_attention": {
-          "index": 32,
-          "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
-          "total": 34
-        },
-        "kv_cache_anatomy": {
           "index": 33,
           "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
-          "total": 34
+          "total": 42
         },
-        "flash_attention": {
+        "self_attention": {
           "index": 34,
           "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
-          "total": 34
+          "total": 42
+        },
+        "embedding_tokenization": {
+          "index": 35,
+          "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
+          "total": 42
+        },
+        "positional_encoding": {
+          "index": 36,
+          "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
+          "total": 42
+        },
+        "multi_head_attention": {
+          "index": 37,
+          "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
+          "total": 42
+        },
+        "transformer_block_params": {
+          "index": 38,
+          "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
+          "total": 42
+        },
+        "kv_cache_anatomy": {
+          "index": 39,
+          "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
+          "total": 42
+        },
+        "sampling_decoding": {
+          "index": 40,
+          "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
+          "total": 42
+        },
+        "flash_attention": {
+          "index": 41,
+          "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
+          "total": 42
+        },
+        "quantization_int8": {
+          "index": 42,
+          "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
+          "total": 42
         }
       }
     }
   ],
-  "generatedAt": "2026-10-08T07:55:01.922Z",
-  "totalLessons": 34
+  "generatedAt": "2026-10-08T09:20:29.552Z",
+  "totalLessons": 42
 }

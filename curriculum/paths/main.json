@@ -40,7 +40,9 @@
         "kaiming_init",
         "optimizers",
         "adamw_weight_decay",
+        "lr_schedule_warmup",
         "batch_norm_dynamics",
+        "overfitting_validation",
         "dropout",
         "layernorm_residual"
       ]
@@ -58,8 +60,10 @@
         "cuda_threads",
         "shared_memory_tiling",
         "coalescing_and_banks",
+        "roofline_arithmetic_intensity",
         "mixed_precision",
-        "activation_checkpointing"
+        "activation_checkpointing",
+        "data_parallel_allreduce"
       ]
     },
     {
@@ -67,10 +71,14 @@
       "lessons": [
         "rnn_bptt",
         "self_attention",
+        "embedding_tokenization",
         "positional_encoding",
         "multi_head_attention",
+        "transformer_block_params",
         "kv_cache_anatomy",
-        "flash_attention"
+        "sampling_decoding",
+        "flash_attention",
+        "quantization_int8"
       ]
     }
   ]

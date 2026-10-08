@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta name="tp-lesson" content="quantization_int8">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quantization INT8/INT4 — Nén Trọng Số Để Đọc Ít Byte Hơn - TensorPlay</title>
+  <meta name="description" content="Lượng tử hóa INT8/INT4: vì sao một trọng số ngoại lai phá hỏng độ phân giải, chia nhóm cứu thế nào, và vì sao nén trọng số tăng tốc giải mã LLM.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">← Về Danh Mục</a>
+      </div>
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step" data-topic-badge></span>
+      </div>
+    </header>
+
+    <main class="lab-grid">
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt &amp; Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Bàn Thí Nghiệm Lượng Tử Hóa</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Đặt Lại</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🔢 Độ rộng bit</div>
+            <div class="tp-seg" id="seg-bits">
+              <button data-v="8">INT8 (−127…127)</button>
+              <button data-v="4">INT4 (−7…7)</button>
+            </div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">📏 Một hệ số scale cho…</div>
+            <div class="tp-seg" id="seg-scheme">
+              <button data-v="tensor">Cả tensor (per-tensor)</button>
+              <button data-v="group">Từng nhóm 2 trọng số (per-group)</button>
+            </div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🐘 Trọng số cuối</div>
+            <div class="tp-seg" id="seg-outlier">
+              <button data-v="off">Bình thường (0.28)</button>
+              <button data-v="on">Ngoại lai (20)</button>
+            </div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">📜 Quy tắc</div>
+            <div class="tp-math-box" id="katex-q"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math &amp; Telemetry</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div class="tp-panel">
+            <div class="tp-panel-title">🔬 Từng trọng số</div>
+            <table class="tp-kv-table" id="w-table"></table>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">📊 Chất lượng</div>
+            <table class="tp-kv-table" id="quality-table"></table>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">💾 Mô hình 7B (14 GB FP16), băng thông 2 TB/s</div>
+            <table class="tp-kv-table" id="sys-table"></table>
+          </div>
+          <div class="tp-verdict" id="verdict"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createLiveSlider } from '../../shared/components/LiveSlider.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
+    import { markCompleted } from '../../shared/progress.js';
+    import { LessonLogic, PRESETS } from './logic.js';
+
+    const LESSON_ID = 'quantization_int8';
+
+    const STEPS = [
+      {
+        step: 1, badge: 'Bước 1 / 4',
+        heading: 'Cùng tính chất, ít byte hơn',
+        problem: 'Giải mã LLM bị nghẽn băng thông ([[lesson:roofline_arithmetic_intensity]]): thời gian mỗi token $\approx$ số byte trọng số $/$ băng thông. Vậy chỉ cần lưu trọng số bằng ít byte hơn là nhanh hơn?',
+        mechanism: 'Lượng tử hóa đối xứng INT8: $s = \max|w| / 127$, $q = \text{round}(w / s)$, khôi phục $\hat{w} = q s$. Với 8 trọng số bình thường $\max|w| = 0.3$, $s = 0.00236$ và sai số trung bình chỉ $0.0005$. Mô hình 7B từ $14$ GB còn $7$ GB, thông lượng giải mã gấp đôi: $143 \to 286$ token/s.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "INT8, trọng số bình thường ✅".\n👁️ Quan sát (Cột 3): $q = [42, -85, 127, 85, -42, 106, -127, 119]$, sai số $0.0005$, bảng 7B báo 7 GB và 285.7 token/s.',
+        takeaway: 'Nén trọng số gần như miễn phí về chất lượng khi các trọng số cùng cỡ.'
+      },
+      {
+        step: 2, badge: 'Bước 2 / 4',
+        heading: 'Một ngoại lai phá hỏng tất cả',
+        problem: 'Nếu một trọng số bất thường có giá trị 20 trong khi phần còn lại cỡ 0.1–0.3 thì sao?',
+        mechanism: 'Hệ số $s = 20 / 127 = 0.157$ giờ bị ngoại lai quyết định. Các trọng số nhỏ chỉ còn vài mức: $0.1 / 0.157 = 0.64 \to 1$, $0.2 \to 1$, $0.3 \to 2$. Sai số trung bình tăng $0.0005 \to 0.0421$ (gấp 83 lần), trọng số $0.1$ bị khôi phục thành $0.157$ (lệch $57.5\%$).',
+        action: '👉 Thao tác (Cột 2): Bấm preset "INT8 + 1 ngoại lai (per-tensor) ❌".\n👁️ Quan sát (Cột 3): $q = [1, -1, 2, 1, -1, 2, -2, 127]$, kết luận đỏ.',
+        takeaway: 'Độ phân giải của lượng tử hóa do giá trị lớn nhất quyết định, không phải giá trị điển hình.'
+      },
+      {
+        step: 3, badge: 'Bước 3 / 4',
+        heading: 'Chia nhóm: mỗi nhóm một thước đo',
+        problem: 'Làm sao để ngoại lai chỉ ảnh hưởng đến hàng xóm gần nhất của nó?',
+        mechanism: 'Mỗi nhóm 2 trọng số có hệ số $s$ riêng. Ngoại lai chỉ kéo $s$ của nhóm cuối $[-0.3, 20]$; ba nhóm còn lại giữ độ phân giải $0.2/127$. Sai số trung bình giảm $0.0421 \to 0.0024$ (khoảng 17 lần), chỉ $-0.3$ bị lệch $5\%$. Giá phải trả: thêm 1 hệ số FP16 mỗi nhóm; ở nhóm thực tế 128 trọng số là $2/128 = 1.6\%$ bộ nhớ.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "INT8 + ngoại lai, chia nhóm ✅".\n👁️ Quan sát (Cột 3): $q = [63, -127, 127, 85, -51, 127, -2, 127]$, sai số $0.0024$.',
+        takeaway: 'Chia nhóm (group-wise) là kỹ thuật chuẩn của các bộ lượng tử hóa LLM như GPTQ và AWQ.'
+      },
+      {
+        step: 4, badge: 'Bước 4 / 4',
+        heading: 'INT4: ranh giới của sự đánh đổi',
+        problem: 'Đi tiếp xuống 4 bit thì được gì, mất gì?',
+        mechanism: 'INT4 chỉ có 15 mức ($-7\ldots7$): mô hình 7B còn $3.5$ GB và đạt $571$ token/s. Nhưng với ngoại lai và một scale chung, $s = 20 / 7 = 2.86$ nên cả 7 trọng số bình thường về 0: $q = [0, 0, 0, 0, 0, 0, 0, 7]$. Chia nhóm cứu được phần lớn. Bài học: giảm bit luôn đi kèm xử lý ngoại lai.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "INT4 + ngoại lai (per-tensor) ❌", rồi "INT4, chia nhóm, không ngoại lai".\n👁️ Quan sát (Cột 3): Trường hợp đầu toàn số 0, trường hợp sau sai số $0.0051$ (lệch tối đa $14.3\%$).',
+        takeaway: 'Lượng tử hóa đổi chất lượng lấy băng thông: nhanh hơn 2–4 lần ở vùng nghẽn băng thông.'
+      }
+    ];
+
+    const STEP_COMMENTS = {
+      2: [{
+        id: 'qt2', author: 'Chuyên Gia LLM', role: 'LLM', avatar: '🧠', tag: 'Ngoại lai trong LLM thật', tagType: 'systems',
+        content: 'Các LLM lớn có một vài chiều kích hoạt/trọng số lớn gấp hàng chục đến hàng trăm lần phần còn lại. Đó là lý do LLM.int8() tách các ngoại lai ra tính bằng FP16, SmoothQuant dời độ khó từ kích hoạt sang trọng số, và AWQ bảo vệ các kênh quan trọng.'
+      }],
+      3: [{
+        id: 'qt3', author: 'Kỹ Sư Backend', role: 'Systems', avatar: '⚙️', tag: 'Gotcha kinh điển', tagType: 'gotcha',
+        content: 'Lượng tử hóa trọng số (weight-only) chỉ giảm byte đọc, phép nhân vẫn chạy ở FP16 sau khi giải nén ngay trong kernel. Nó tăng tốc ở vùng nghẽn băng thông (giải mã batch nhỏ) nhưng gần như không giúp ở vùng nghẽn tính toán (huấn luyện, prefill, batch lớn).'
+      }],
+      4: [{
+        id: 'qt4', author: 'Nhà Toán Học AI', role: 'Math', avatar: '📐', tag: 'Sai số tối đa', tagType: 'math',
+        content: 'Với làm tròn tới số nguyên gần nhất, $|\hat{w} - w| \le s/2$. Do đó sai số tuyệt đối tối đa tỉ lệ với $\max|w|$, và sai số tương đối của một trọng số nhỏ $w$ là $\le s / (2|w|)$: vô hạn khi $w \to 0$. Đây là lý do một trọng số nhỏ nằm cạnh ngoại lai bị hỏng nặng nhất.'
+      }]
+    };
+
+    const logic = new LessonLogic();
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
+    });
+
+    createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 1,
+      onStepChange: (n) => {
+        comments.setStep(n, STEP_COMMENTS[n] || []);
+        if (n === STEPS.length) markCompleted(LESSON_ID, true);
+      }
+    });
+
+
+
+    function syncControls() {
+      void 0;
+    }
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      initialActiveId: 'int8_clean',
+      onPick: (p) => {
+        logic.applyPreset(p.state);
+        syncControls();
+        render();
+      }
+    });
+
+    function segBind(id, apply) {
+      document.querySelectorAll(`#${id} button`).forEach(btn => btn.addEventListener('click', () => {
+        logic.onUserUpdate(apply(btn.dataset.v));
+        presets.setActive(null);
+        render();
+      }));
+    }
+    segBind('seg-bits', v => ({ bits: Number(v) }));
+    segBind('seg-scheme', v => ({ scheme: v }));
+    segBind('seg-outlier', v => ({ outlier: v === 'on' }));
+
+    function render() {
+      const r = logic.calculate();
+      const s = logic.state;
+      document.querySelectorAll('#seg-bits button').forEach(b => b.classList.toggle('active', Number(b.dataset.v) === s.bits));
+      document.querySelectorAll('#seg-scheme button').forEach(b => b.classList.toggle('active', b.dataset.v === s.scheme));
+      document.querySelectorAll('#seg-outlier button').forEach(b => b.classList.toggle('active', (b.dataset.v === 'on') === s.outlier));
+
+      renderMath(document.getElementById('katex-q'), r.formulaKaTeX, { displayMode: true });
+      document.getElementById('w-table').innerHTML =
+        `<tr><td><em>w → q → ŵ</em></td><td><em>s · sai số</em></td></tr>` +
+        r.w.map((v, i) => `<tr><td>w${i} = ${v} → q = ${r.q[i]} → ŵ = ${r.dq[i]}</td><td>s = ${r.scales[i]} · lỗi ${r.err[i]}</td></tr>`).join('');
+      document.getElementById('quality-table').innerHTML = `
+        <tr><td>Sai số tuyệt đối TB (7 trọng số bình thường)</td><td>${r.mae}</td></tr>
+        <tr><td>Sai số tương đối lớn nhất</td><td>${(r.maxRel * 100).toFixed(1)}%</td></tr>
+        <tr><td>Số trọng số bị làm tròn về 0 (trên 7)</td><td>${r.zeros}</td></tr>`;
+      document.getElementById('sys-table').innerHTML = `
+        <tr><td>Byte mỗi tham số</td><td>${r.bytesPerParam} (nhóm thật 128)</td></tr>
+        <tr><td>Dung lượng trọng số</td><td>${r.gb} GB (FP16: ${r.fp16GB} GB)</td></tr>
+        <tr><td>Thông lượng giải mã (nghẽn băng thông)</td><td>${r.tokensPerSec} token/s (FP16: ${r.fp16Tokens})</td></tr>
+        <tr><td>Tăng tốc so với FP16</td><td>×${r.speedup}</td></tr>`;
+      const verdict = document.getElementById('verdict');
+      verdict.className = `tp-verdict ${r.verdict.type}`;
+      verdict.textContent = r.verdict.text;
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      syncControls();
+      presets.setActive('int8_clean');
+      render();
+    });
+
+    renderAllInlineMath(document.querySelector('.col-sandbox'));
+    render();
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

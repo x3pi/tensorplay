@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta name="tp-lesson" content="embedding_tokenization">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tokenization (BPE) &amp; Embedding — Chuỗi Ngắn Hơn Đổi Lấy Bảng Từ Vựng Lớn Hơn - TensorPlay</title>
+  <meta name="description" content="BPE gộp cặp token phổ biến để rút ngắn chuỗi (attention rẻ hơn) nhưng làm bảng embedding lớn hơn; tra embedding là đọc một hàng ở offset id × d.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">← Về Danh Mục</a>
+      </div>
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step" data-topic-badge></span>
+      </div>
+    </header>
+
+    <main class="lab-grid">
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt &amp; Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Bàn Thí Nghiệm Tokenizer</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Đặt Lại</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">✂️ Số lần gộp BPE</div>
+            <div class="tp-seg" id="seg-merges">
+              <button data-v="0">0 (ký tự)</button>
+              <button data-v="1">1</button>
+              <button data-v="2">2</button>
+              <button data-v="3">3</button>
+            </div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🔦 Token để tra bảng embedding</div>
+            <div id="chips-pick" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">📜 Lịch sử gộp</div>
+            <table class="tp-kv-table" id="merge-table"></table>
+          </div>
+        </div>
+      </section>
+
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math &amp; Telemetry</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div class="tp-panel">
+            <div class="tp-panel-title">🔤 Chuỗi token hiện tại</div>
+            <div id="chips" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:0.5rem;"></div>
+            <div class="tp-matrix-caption" id="txt-ids"></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">⚖️ Đánh đổi</div>
+            <table class="tp-kv-table" id="trade-table"></table>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🧮 Tra bảng embedding = đọc 1 hàng trong bộ nhớ 1D</div>
+            <div class="tp-math-box" id="katex-offset"></div>
+            <div class="tp-matrix-caption" id="txt-row"></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🌍 Con số thật (V = 50 000, d = 4096, FP16)</div>
+            <table class="tp-kv-table" id="real-table"></table>
+          </div>
+          <div class="tp-verdict" id="verdict"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createLiveSlider } from '../../shared/components/LiveSlider.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
+    import { markCompleted } from '../../shared/progress.js';
+    import { LessonLogic, PRESETS } from './logic.js';
+
+    const LESSON_ID = 'embedding_tokenization';
+
+    const STEPS = [
+      {
+        step: 1, badge: 'Bước 1 / 4',
+        heading: 'Máy chỉ biết số, không biết chữ',
+        problem: 'Robot đọc biển báo cần biến chữ thành số trước khi đưa vào mạng. Cách đơn giản nhất: mỗi ký tự là một token. Văn bản "aaabdaaabac" có 11 ký tự thì chuỗi dài $N = 11$, từ vựng chỉ $V = 4$ ($a, b, c, d$).',
+        mechanism: 'Self-Attention có chi phí tỉ lệ $N^2$ ([[lesson:self_attention]]): $11^2 = 121$ ô điểm số. Chuỗi càng dài, attention và KV-Cache càng đắt.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Mức ký tự (0 lần gộp)".\n👁️ Quan sát (Cột 3): $N = 11$, chi phí $N^2 = 121$, bảng embedding chỉ có $V \times d = 16$ số.',
+        takeaway: 'Token hóa theo ký tự: từ vựng nhỏ gọn nhưng chuỗi rất dài.'
+      },
+      {
+        step: 2, badge: 'Bước 2 / 4',
+        heading: 'BPE: gộp cặp phổ biến nhất',
+        problem: 'Cặp "aa" xuất hiện 4 lần, rất phổ biến. Nếu coi nó là một token riêng thì sao?',
+        mechanism: 'Byte-Pair Encoding lặp lại: đếm mọi cặp token liền kề, gộp cặp nhiều nhất thành token mới. Gộp "aa" cho chuỗi $a a a b d a a a b a c \to [aa, a, b, d, aa, a, b, a, c]$ ($N = 9$, $V = 5$). Gộp tiếp "aa"+"a" rồi "aaa"+"b" cho $N = 5$: $[aaab, d, aaab, a, c]$.',
+        action: '👉 Thao tác (Cột 2): Bấm số lần gộp 1, 2, 3 lần lượt.\n👁️ Quan sát (Cột 3): Chuỗi ngắn dần $11 \to 9 \to 7 \to 5$, chi phí $N^2$ giảm $121 \to 81 \to 49 \to 25$.',
+        takeaway: 'Mỗi lần gộp rút ngắn chuỗi và làm bảng từ vựng lớn thêm đúng một token.'
+      },
+      {
+        step: 3, badge: 'Bước 3 / 4',
+        heading: 'Không có bữa trưa miễn phí',
+        problem: 'Vậy cứ gộp thật nhiều cho chuỗi ngắn nhất?',
+        mechanism: 'Bảng embedding là ma trận $V \times d$: $V$ tăng thì bảng to ra ($16 \to 28$ số trong ví dụ), và token hiếm được gặp ít nên học kém hơn. Thực tế GPT dùng $V \approx 50\,000$, $d = 4096$: bảng có $204\,800\,000$ tham số, khoảng 410 MB ở FP16. Mức ký tự thì bảng rất nhỏ nhưng một token trung bình dài khoảng 4 ký tự, nên $N$ lớn gấp 4 và attention đắt gấp 16.',
+        action: '👉 Thao tác (Cột 2): Chuyển giữa 0 và 3 lần gộp, nhìn bảng "Đánh đổi" và "Con số thật".\n👁️ Quan sát (Cột 3): Một cột giảm, cột kia tăng.',
+        takeaway: 'Kích thước từ vựng là một siêu tham số hệ thống: cân bằng chiều dài chuỗi với dung lượng bảng embedding.'
+      },
+      {
+        step: 4, badge: 'Bước 4 / 4',
+        heading: 'Tra embedding là đọc một hàng trong bộ nhớ',
+        problem: 'Sau khi có token id, làm sao lấy vector của nó?',
+        mechanism: 'Bảng $E$ lưu hàng-trước-cột trong bộ nhớ 1D ([[lesson:strides_views]]). Token id $i$ chiếm các phần tử từ $\text{offset} = i \times d$. Với "aaab" có id $6$ và $d = 4$: offset $= 24$, đọc 4 phần tử $24, 25, 26, 27$. Không có phép nhân ma trận nào, chỉ là một lần đọc bộ nhớ liền kề.',
+        action: '👉 Thao tác (Cột 2): Chọn token khác ở mục "Token để tra bảng embedding".\n👁️ Quan sát (Cột 3): Offset đổi theo $id \times 4$.',
+        takeaway: 'Embedding lookup là phép gather theo chỉ số: rất rẻ về FLOPs nhưng phụ thuộc băng thông bộ nhớ.'
+      }
+    ];
+
+    const STEP_COMMENTS = {
+      2: [{
+        id: 'tk2', author: 'Kỹ Sư AI', role: 'Systems', avatar: '🚀', tag: 'Gotcha kinh điển', tagType: 'gotcha',
+        content: 'Tokenizer lúc huấn luyện và lúc phục vụ phải GIỐNG HỆT nhau (cùng bảng gộp, cùng quy tắc chuẩn hóa khoảng trắng). Lệch một khoảng trắng đầu từ là token khác hẳn, mô hình nhận đầu vào chưa từng thấy mà không báo lỗi.'
+      }],
+      3: [{
+        id: 'tk3', author: 'Chuyên Gia LLM', role: 'LLM', avatar: '🧠', tag: 'Thực tế', tagType: 'systems',
+        content: 'Các tokenizer hiện đại (GPT, Llama) chạy BPE trên byte nên không bao giờ gặp ký tự lạ. Từ hiếm bị cắt thành nhiều mảnh nhỏ, đó là lý do cùng một nội dung tiếng Việt thường tốn nhiều token hơn tiếng Anh, tức tốn nhiều KV-Cache và tiền hơn.'
+      }],
+      4: [{
+        id: 'tk4', author: 'Nhà Toán Học AI', role: 'Math', avatar: '📐', tag: 'Lookup = one-hot × E', tagType: 'math',
+        content: 'Tra bảng tương đương nhân vector one-hot với $E$: $e_i = \text{onehot}(i)^\top E$. Cài đặt thật không dựng one-hot (rất lãng phí) mà đọc thẳng hàng $i$; trong lan truyền ngược, gradient chỉ cộng dồn vào các hàng đã được tra.'
+      }]
+    };
+
+    const logic = new LessonLogic();
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
+    });
+
+    createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 1,
+      onStepChange: (n) => {
+        comments.setStep(n, STEP_COMMENTS[n] || []);
+        if (n === STEPS.length) markCompleted(LESSON_ID, true);
+      }
+    });
+
+    const CHIP = 'padding:4px 10px; border-radius:6px; border:1px solid var(--border-subtle); font-family:var(--font-mono); font-size:0.8rem; background:var(--bg-card);';
+
+    function syncControls() {
+      document.querySelectorAll('#seg-merges button').forEach(b => b.classList.toggle('active', Number(b.dataset.v) === logic.state.merges));
+    }
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      initialActiveId: 'chars',
+      onPick: (p) => {
+        logic.applyPreset(p.state);
+        syncControls();
+        render();
+      }
+    });
+
+    document.querySelectorAll('#seg-merges button').forEach(btn => btn.addEventListener('click', () => {
+      logic.onUserUpdate({ merges: Number(btn.dataset.v), queryIdx: 0 });
+      presets.setActive(null);
+      render();
+    }));
+
+    function render() {
+      const r = logic.calculate();
+      const s = logic.state;
+      document.querySelectorAll('#seg-merges button').forEach(b => b.classList.toggle('active', Number(b.dataset.v) === s.merges));
+
+      document.getElementById('chips').innerHTML = r.tokens.map((t, i) =>
+        `<span style="${CHIP} ${i === r.lookupIdx ? 'border-color: var(--color-info); color: var(--color-info);' : ''}">${t}</span>`).join('');
+      document.getElementById('txt-ids').textContent = `id: [${r.ids.join(', ')}]  ·  N = ${r.N} token`;
+
+      const pick = document.getElementById('chips-pick');
+      pick.innerHTML = r.tokens.map((t, i) =>
+        `<button class="tp-btn ${i === r.lookupIdx ? 'tp-btn-primary' : 'tp-btn-ghost'}" data-i="${i}" style="padding:2px 10px; font-family:var(--font-mono);">${i}: ${t}</button>`).join('');
+      pick.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+        logic.onUserUpdate({ queryIdx: Number(b.dataset.i) });
+        presets.setActive(null);
+        render();
+      }));
+
+      document.getElementById('merge-table').innerHTML = r.history.map((h, i) =>
+        `<tr><td>${i === 0 ? 'Ban đầu' : `Lần ${i}: ${h.merged.left} + ${h.merged.right} (×${h.merged.count})`}</td><td>N = ${h.tokens.length}, V = ${h.vocabSize}</td></tr>`).join('');
+
+      document.getElementById('trade-table').innerHTML = `
+        <tr><td>Chiều dài chuỗi N</td><td>${r.N} (gốc ${r.baseAttnCost ? Math.sqrt(r.baseAttnCost) : ''})</td></tr>
+        <tr><td>Chi phí attention $N^2$</td><td>${r.attnCost} (gốc ${r.baseAttnCost})</td></tr>
+        <tr><td>Kích thước từ vựng V</td><td>${r.V}</td></tr>
+        <tr><td>Bảng embedding V × d (d = ${r.d})</td><td>${r.embedElems} số</td></tr>`;
+
+      renderMath(document.getElementById('katex-offset'), r.formulaKaTeX, { displayMode: true });
+      document.getElementById('txt-row').textContent = `Token "${r.lookupToken}" (id ${r.lookupId}) đọc các ô nhớ ${r.lookupRow.join(', ')}`;
+
+      document.getElementById('real-table').innerHTML = `
+        <tr><td>Số tham số bảng embedding</td><td>${r.realTableParams.toLocaleString('en-US')}</td></tr>
+        <tr><td>Dung lượng FP16</td><td>${r.realTableMB.toFixed(1)} MB</td></tr>
+        <tr><td>Mức ký tự: attention đắt gấp</td><td>≈ ${r.charLevelAttnFactor} lần</td></tr>`;
+      renderAllInlineMath(document.querySelector('.col-telemetry'));
+      const verdict = document.getElementById('verdict');
+      verdict.className = `tp-verdict ${r.verdict.type}`;
+      verdict.textContent = r.verdict.text;
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      syncControls();
+      presets.setActive('chars');
+      render();
+    });
+
+    renderAllInlineMath(document.querySelector('.col-sandbox'));
+    render();
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

@@ -21,7 +21,9 @@
         "cuda_threads",
         "shared_memory_tiling",
         "coalescing_and_banks",
-        "activation_checkpointing"
+        "roofline_arithmetic_intensity",
+        "activation_checkpointing",
+        "data_parallel_allreduce"
       ]
     }
   ]

@@ -3,6 +3,8 @@
  * Curriculum catalog loader, path navigation, and cross-reference resolver.
  */
 
+import { LESSON_TITLES } from './lesson-titles.js';
+
 let cachedCatalog = null;
 
 export function setCatalog(catalog) {
@@ -141,14 +143,13 @@ export function resolveRefs(text, catalog = cachedCatalog, options = {}) {
   const asLink = options.asLink ?? false;
 
   return text.replace(/\[\[lesson:([a-z0-9_]+)\]\]/g, (match, slug) => {
+    // Ưu tiên catalog đã nạp; nếu chưa có thì dùng bảng tiêu đề sinh sẵn (đồng bộ, không cần fetch)
     const lesson = getLesson(slug, catalog);
-    if (!lesson || !lesson.title) {
-      return asLink ? `<a href="../${slug}/" class="tp-lesson-ref">«${slug}»</a>` : `«${slug}»`;
-    }
-    // Extract short title before " — " or ": "
-    const shortTitle = lesson.title.split(/ — |: /)[0].trim();
+    const fullTitle = (lesson && lesson.title) || LESSON_TITLES[slug] || slug;
+    const shortTitle = fullTitle.split(/ — |: /)[0].trim();
+    const safe = (v) => String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
     if (asLink) {
-      return `<a href="../${slug}/" class="tp-lesson-ref" title="${lesson.title}">«${shortTitle}»</a>`;
+      return `<a href="../${slug}/" class="tp-lesson-ref" title="${safe(fullTitle)}">«${safe(shortTitle)}»</a>`;
     }
     return `«${shortTitle}»`;
   });

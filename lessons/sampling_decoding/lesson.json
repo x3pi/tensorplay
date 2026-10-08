@@ -1,0 +1,26 @@
+{
+  "id": "sampling_decoding",
+  "title": "Sampling & Decoding — Từ Logits Đến Token Được Chọn",
+  "summary": "Ở $T = 2$ hai token vô nghĩa chiếm $15.4\\%$ mỗi bước nên sinh 50 token gần như chắc chắn dính lỗi; top-k $= 2$ cắt sạch đuôi, top-p $= 0.9$ tự co giãn. Bốc token bằng nghịch đảo CDF.",
+  "topic": "llm-serving",
+  "tags": [
+    "sampling",
+    "temperature",
+    "top-k",
+    "top-p",
+    "decoding"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 12,
+  "status": "ready",
+  "prerequisites": [
+    "softmax_stability",
+    "kv_cache_anatomy"
+  ],
+  "related": [
+    "softmax_regression",
+    "embedding_tokenization"
+  ],
+  "sources": [],
+  "aliases": []
+}

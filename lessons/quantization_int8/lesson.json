@@ -1,0 +1,26 @@
+{
+  "id": "quantization_int8",
+  "title": "Quantization INT8/INT4 — Nén Trọng Số Để Đọc Ít Byte Hơn",
+  "summary": "Một ngoại lai $20$ kéo hệ số $s$ lên $0.157$ khiến sai số INT8 tăng $0.0005 \\to 0.0421$ (INT4: mọi trọng số nhỏ về 0); chia nhóm giảm lại $\\approx 17$ lần. Mô hình 7B: $14 \\to 7 \\to 3.5$ GB, giải mã $143 \\to 286 \\to 571$ token/s.",
+  "topic": "llm-serving",
+  "tags": [
+    "quantization",
+    "int8",
+    "int4",
+    "outliers",
+    "memory-bound"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 13,
+  "status": "ready",
+  "prerequisites": [
+    "mixed_precision",
+    "roofline_arithmetic_intensity"
+  ],
+  "related": [
+    "kv_cache_anatomy",
+    "transformer_block_params"
+  ],
+  "sources": [],
+  "aliases": []
+}

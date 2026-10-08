@@ -1,0 +1,26 @@
+{
+  "id": "transformer_block_params",
+  "title": "Khối Transformer Hoàn Chỉnh — Tham Số Nằm Ở Đâu?",
+  "summary": "Mỗi khối Pre-LN có $4d^2 + 2md^2 = 12d^2$ tham số (FFN chiếm $2/3$); tổng $\\approx 12Ld^2 + Vd$ cho ra $123.5$ triệu (GPT-2 small) và $6.57$ tỉ (cỡ 7B), từ đó suy ra RAM và FLOPs trên giấy.",
+  "topic": "transformer",
+  "tags": [
+    "transformer-block",
+    "ffn",
+    "parameter-count",
+    "scaling"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 12,
+  "status": "ready",
+  "prerequisites": [
+    "multi_head_attention",
+    "layernorm_residual"
+  ],
+  "related": [
+    "mixed_precision",
+    "roofline_arithmetic_intensity",
+    "embedding_tokenization"
+  ],
+  "sources": [],
+  "aliases": []
+}

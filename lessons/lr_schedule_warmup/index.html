@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta name="tp-lesson" content="lr_schedule_warmup">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LR Schedule — Warmup Giữ Khởi Đầu Êm, Cosine Decay Dọn Nhiễu Cuối - TensorPlay</title>
+  <meta name="description" content="Vì sao huấn luyện cần lịch learning rate: warmup tránh bùng nổ ở vùng dốc đầu, cosine decay làm sạch dao động nhiễu ở cuối.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">← Về Danh Mục</a>
+      </div>
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step" data-topic-badge></span>
+      </div>
+    </header>
+
+    <main class="lab-grid">
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt &amp; Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Bàn Thí Nghiệm Lịch Learning Rate</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Đặt Lại</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🌅 Warmup (tăng lr dần 4 bước đầu)</div>
+            <div class="tp-seg" id="seg-warmup">
+              <button data-v="off">Tắt</button>
+              <button data-v="on">Bật ✅</button>
+            </div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🌙 Cosine decay (giảm lr dần về 0)</div>
+            <div class="tp-seg" id="seg-decay">
+              <button data-v="off">Tắt</button>
+              <button data-v="on">Bật ✅</button>
+            </div>
+          </div>
+          <div class="tp-panel">
+            <div id="mount-lr-slider"></div>
+            <div class="tp-matrix-caption" id="txt-limit"></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🏔️ Địa hình giả lập</div>
+            <div class="tp-matrix-caption">3 bước đầu độ cong $a = 4$ (dốc đứng), sau đó $a = 1$ (thoải). GD chỉ ổn định khi $\eta \lt 2 / a$, tức $\eta \lt 0.5$ ở vùng dốc. Mỗi bước có thêm nhiễu gradient $\pm 0.2$.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math &amp; Telemetry</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div class="tp-panel">
+            <div class="tp-panel-title">📈 Quỹ đạo của $w$ (bắt đầu từ 1.0)</div>
+            <svg id="plot" viewBox="0 0 320 180" style="width:100%; background:#090d15; border-radius:8px;"></svg>
+            <div class="tp-matrix-caption">đường xanh = w · đường cam = lr (nhân 5 cho dễ nhìn) · vạch xám = 0</div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">📐 Quy tắc cập nhật</div>
+            <div class="tp-math-box" id="katex-rule"></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">📊 Số liệu</div>
+            <table class="tp-kv-table" id="stats-table"></table>
+          </div>
+          <div class="tp-verdict" id="verdict"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createLiveSlider } from '../../shared/components/LiveSlider.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
+    import { markCompleted } from '../../shared/progress.js';
+    import { LessonLogic, PRESETS } from './logic.js';
+
+    const LESSON_ID = 'lr_schedule_warmup';
+
+    const STEPS = [
+      {
+        step: 1, badge: 'Bước 1 / 4',
+        heading: 'Bài toán: địa hình dốc lúc khởi đầu',
+        problem: 'Đầu huấn luyện, mạng khởi tạo ngẫu nhiên nên loss thường rất "dốc": một bước nhảy vừa phải đã vọt qua đáy. Một mô hình giả lập 1 chiều có độ cong $a = 4$ trong 3 bước đầu rồi thoải dần xuống $a = 1$. Dùng lr cố định $0.6$ thì sao?',
+        mechanism: 'Với hàm bậc hai, mỗi bước nhân $w$ với $(1 - \eta a)$. Ở vùng dốc $1 - 0.6 \times 4 = -1.4$, độ lớn $1.4 > 1$ nên $|w|$ tăng thay vì giảm: $1.0 \to -1.52 \to 2.25 \to -3.27$. Chỉ khi lr $< 2/a = 0.5$ mới ổn định.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "lr hằng 0.6, không warmup ❌".\n👁️ Quan sát (Cột 3): Đường w dao động mạnh, đỉnh $|w| = 3.267$ và kết luận đỏ.',
+        takeaway: 'lr "an toàn" phụ thuộc độ cong của địa hình, mà độ cong lúc đầu thường lớn nhất.'
+      },
+      {
+        step: 2, badge: 'Bước 2 / 4',
+        heading: 'Warmup: tăng lr từ từ',
+        problem: 'Ta muốn lr lớn ($0.6$) cho các bước sau (địa hình thoải, học nhanh) nhưng không phá hỏng khởi đầu. Có cách nào?',
+        mechanism: 'Warmup tăng tuyến tính lr qua $W = 4$ bước: $0.15, 0.3, 0.45, 0.6$. Ở các bước dốc, $|1 - \eta a| = 0.4, 0.2, 0.8 < 1$ đều ổn định, nên $|w|$ không bao giờ vượt $1.0$.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Thêm warmup 4 bước".\n👁️ Quan sát (Cột 3): Đỉnh $|w|$ chỉ còn $1.0$, nhưng cuối đường cong vẫn dao động quanh 0.',
+        takeaway: 'Warmup cho mô hình thời gian "làm quen địa hình" trước khi tăng tốc hết cỡ.'
+      },
+      {
+        step: 3, badge: 'Bước 3 / 4',
+        heading: 'Cosine decay: dọn nhiễu ở cuối',
+        problem: 'Sau warmup, $w$ không về hẳn 0 mà dao động $\pm 0.086$ mãi mãi. Vì sao?',
+        mechanism: 'Nhiễu gradient $\pm 0.2$ nhân với lr cố định $0.6$ luôn đẩy $w$ đi một đoạn cỡ $\eta n / (1 + \eta a)$. Muốn đáy sạch thì phải giảm lr. Cosine decay đưa lr về $0$ theo đường cong mượt: $\eta_t = \eta_{max} \cdot \frac{1}{2}(1 + \cos \pi s)$.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Warmup + cosine decay ✅".\n👁️ Quan sát (Cột 3): $|w|$ cuối chỉ còn $\approx 0.000$, đường lr cam đi xuống như nửa sóng cosine.',
+        takeaway: 'Lịch lr chuẩn của LLM: warmup rồi cosine decay. Đầu êm, cuối sạch.'
+      },
+      {
+        step: 4, badge: 'Bước 4 / 4',
+        heading: 'Không phải lúc nào cũng cần warmup',
+        problem: 'Vậy cứ luôn bật warmup? Hãy so với việc chọn lr nhỏ hơn.',
+        mechanism: 'Với lr tối đa $0.4 < 0.5$ thì ngay cả vùng dốc cũng ổn định: không cần warmup, nhưng sau này vùng thoải ($a = 1$) lr $0.4$ hội tụ chậm hơn lr $0.6$. Warmup cho phép dùng lr lớn nhất có thể ở giai đoạn sau. Với Adam ([[lesson:adamw_weight_decay]]) bước nhảy mỗi lần xấp xỉ lr bất kể độ lớn gradient nên warmup càng quan trọng ở các bước đầu.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "lr nhỏ 0.4: an toàn nhưng chậm", rồi kéo thanh lr lên 0.6.\n👁️ Quan sát (Cột 3): Kết luận đổi từ xanh sang đỏ ngay khi lr vượt $0.5$.',
+        takeaway: 'Warmup là cách "mua" lr lớn mà không trả giá bằng khởi đầu bùng nổ.'
+      }
+    ];
+
+    const STEP_COMMENTS = {
+      1: [{
+        id: 'lr1', author: 'Nhà Toán Học AI', role: 'Math', avatar: '📐', tag: 'Điều kiện ổn định', tagType: 'math',
+        content: 'Với $L = \tfrac{1}{2} a w^2$ gradient descent cho $w_{t+1} = (1 - \eta a) w_t$, hội tụ khi $|1 - \eta a| < 1$, tức $\eta < 2/a$. Với hàm nhiều chiều, $a$ là trị riêng lớn nhất của Hessian (độ cong lớn nhất), nên lr phải nhỏ hơn $2 / \lambda_{max}$.'
+      }],
+      3: [{
+        id: 'lr3', author: 'Chuyên Gia LLM', role: 'LLM', avatar: '🧠', tag: 'Thực tế huấn luyện LLM', tagType: 'systems',
+        content: 'Thường dùng warmup vài nghìn bước (khoảng 0.1–2% tổng số bước) rồi cosine decay xuống 10% lr đỉnh, không về hẳn 0. Với Post-LN Transformer, thiếu warmup gần như chắc chắn gây phân kỳ.'
+      }],
+      4: [{
+        id: 'lr4', author: 'Kỹ Sư AI', role: 'Systems', avatar: '🚀', tag: 'Gotcha kinh điển', tagType: 'gotcha',
+        content: 'Khi huấn luyện lại từ checkpoint, nhớ khôi phục cả bước (step) của scheduler. Nếu scheduler bắt đầu lại từ 0 bạn vô tình warmup lần nữa, còn nếu quên warmup khi đổi batch size lớn thì loss có thể nhảy vọt.'
+      }]
+    };
+
+    const logic = new LessonLogic();
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
+    });
+
+    createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 1,
+      onStepChange: (n) => {
+        comments.setStep(n, STEP_COMMENTS[n] || []);
+        if (n === STEPS.length) markCompleted(LESSON_ID, true);
+      }
+    });
+
+    const W = 320, H = 180, T = 12;
+    const px = t => 12 + (t / T) * (W - 24);
+    const py = v => H / 2 - v * 28;
+    const sLr = createLiveSlider(document.getElementById('mount-lr-slider'), {
+      label: 'lr tối đa $\\eta_{max}$', min: 0.2, max: 0.8, step: 0.1, initial: logic.state.lrMax,
+      onChange: (v) => { logic.onUserUpdate({ lrMax: Math.round(v * 10) / 10 }); presets.setActive(null); render(); }
+    });
+
+    function syncControls() {
+      sLr.setValue(logic.state.lrMax);
+    }
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      initialActiveId: 'constant',
+      onPick: (p) => {
+        logic.applyPreset(p.state);
+        syncControls();
+        render();
+      }
+    });
+
+    document.querySelectorAll('#seg-warmup button').forEach(btn => btn.addEventListener('click', () => {
+      logic.onUserUpdate({ warmup: btn.dataset.v === 'on' });
+      presets.setActive(null);
+      render();
+    }));
+    document.querySelectorAll('#seg-decay button').forEach(btn => btn.addEventListener('click', () => {
+      logic.onUserUpdate({ decay: btn.dataset.v === 'on' });
+      presets.setActive(null);
+      render();
+    }));
+
+    function render() {
+      const r = logic.calculate();
+      const s = logic.state;
+      document.querySelectorAll('#seg-warmup button').forEach(b => b.classList.toggle('active', (b.dataset.v === 'on') === s.warmup));
+      document.querySelectorAll('#seg-decay button').forEach(b => b.classList.toggle('active', (b.dataset.v === 'on') === s.decay));
+      document.getElementById('txt-limit').textContent = `Giới hạn ổn định ở vùng dốc: lr < 2/a = ${r.stableLimit}`;
+
+      const wPath = r.ws.map((v, t) => `${t === 0 ? 'M' : 'L'}${px(t).toFixed(1)},${Math.max(4, Math.min(H - 4, py(v))).toFixed(1)}`).join(' ');
+      const lrPath = r.lrs.map((v, t) => `${t === 0 ? 'M' : 'L'}${px(t).toFixed(1)},${(H - 8 - v * 5 * 28).toFixed(1)}`).join(' ');
+      const dots = r.ws.map((v, t) => `<circle cx="${px(t).toFixed(1)}" cy="${Math.max(4, Math.min(H - 4, py(v))).toFixed(1)}" r="3" fill="#38bdf8"/>`).join('');
+      document.getElementById('plot').innerHTML =
+        `<line x1="12" y1="${py(0)}" x2="${W - 12}" y2="${py(0)}" stroke="#64748b" stroke-dasharray="3 3"/>` +
+        `<path d="${lrPath}" fill="none" stroke="#f59e0b" stroke-width="2"/><path d="${wPath}" fill="none" stroke="#38bdf8" stroke-width="2.5"/>${dots}`;
+
+      renderMath(document.getElementById('katex-rule'), r.formulaKaTeX, { displayMode: true });
+      document.getElementById('stats-table').innerHTML = `
+        <tr><td>lr từng bước (12 bước)</td><td>${r.lrs.map(v => v.toFixed(2)).join(', ')}</td></tr>
+        <tr><td>w từng bước</td><td>${r.ws.map(v => v.toFixed(2)).join(', ')}</td></tr>
+        <tr><td>Đỉnh |w|</td><td>${r.peak}</td></tr>
+        <tr><td>|w| cuối</td><td>${r.finalAbs}</td></tr>`;
+      const verdict = document.getElementById('verdict');
+      verdict.className = `tp-verdict ${r.verdict.type}`;
+      verdict.textContent = r.verdict.text;
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      syncControls();
+      presets.setActive('constant');
+      render();
+    });
+
+    renderAllInlineMath(document.querySelector('.col-sandbox'));
+    render();
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

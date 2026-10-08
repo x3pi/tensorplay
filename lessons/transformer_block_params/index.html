@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta name="tp-lesson" content="transformer_block_params">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Khối Transformer Hoàn Chỉnh — Tham Số Nằm Ở Đâu? - TensorPlay</title>
+  <meta name="description" content="Ráp attention, LayerNorm, residual và FFN thành khối Transformer: FFN chiếm 2/3 tham số, tổng tham số ≈ 12·L·d², từ đó ước lượng RAM và FLOPs của LLM.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">← Về Danh Mục</a>
+      </div>
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step" data-topic-badge></span>
+      </div>
+    </header>
+
+    <main class="lab-grid">
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt &amp; Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Bàn Thí Nghiệm Kích Thước Mô Hình</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Đặt Lại</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🧱 Chiều ẩn $d$ (số mũ: $d = 2^k$ cho slider; preset có thể là 768)</div>
+            <div id="mount-d-slider"></div>
+            <div class="tp-matrix-caption" id="txt-d"></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🥞 Số khối xếp chồng $L$</div>
+            <div id="mount-l-slider"></div>
+            <div class="tp-matrix-caption" id="txt-l"></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">📏 Hệ số mở rộng FFN $m$</div>
+            <div class="tp-seg" id="seg-m">
+              <button data-v="2">m = 2</button>
+              <button data-v="4">m = 4 (chuẩn)</button>
+              <button data-v="8">m = 8</button>
+            </div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🧩 Cấu trúc một khối (Pre-LN)</div>
+            <div class="tp-matrix-caption">$x \leftarrow x + \text{MHA}(\text{LN}(x))$<br>$x \leftarrow x + \text{FFN}(\text{LN}(x))$, với $\text{FFN}(h) = \text{act}(h W_1) W_2$, $W_1: d \times md$, $W_2: md \times d$</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math &amp; Telemetry</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div class="tp-panel">
+            <div class="tp-panel-title">📐 Số tham số một khối</div>
+            <div class="tp-math-box" id="katex-block"></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">📊 Tham số nằm ở đâu?</div>
+            <table class="tp-kv-table" id="param-table"></table>
+            <div id="bars" style="margin-top:0.6rem;"></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🧮 Chi phí hệ thống</div>
+            <table class="tp-kv-table" id="cost-table"></table>
+          </div>
+          <div class="tp-verdict" id="verdict"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createLiveSlider } from '../../shared/components/LiveSlider.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
+    import { markCompleted } from '../../shared/progress.js';
+    import { LessonLogic, PRESETS } from './logic.js';
+
+    const LESSON_ID = 'transformer_block_params';
+
+    const STEPS = [
+      {
+        step: 1, badge: 'Bước 1 / 4',
+        heading: 'Hai nửa của một khối',
+        problem: 'Từ các bài trước ta đã có Self-Attention, Multi-Head, LayerNorm và Residual. Ráp chúng lại thành một khối Transformer hoàn chỉnh thì mỗi khối có bao nhiêu tham số?',
+        mechanism: 'Một khối Pre-LN gồm hai nửa: $x \leftarrow x + \text{MHA}(\text{LN}(x))$ ([[lesson:multi_head_attention]], [[lesson:layernorm_residual]]) rồi $x \leftarrow x + \text{FFN}(\text{LN}(x))$. Attention có bốn ma trận $d \times d$: $4d^2$. FFN có hai ma trận $d \times md$ và $md \times d$: $2md^2$. Với $d = 4$, $m = 4$: attention $64$, FFN $128$.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Đồ chơi: d=4, 2 tầng".\n👁️ Quan sát (Cột 3): Attention 64, FFN 128, mỗi khối 192 tham số.',
+        takeaway: 'Số tham số của khối không phụ thuộc số đầu attention, chỉ phụ thuộc $d$ và $m$.'
+      },
+      {
+        step: 2, badge: 'Bước 2 / 4',
+        heading: 'FFN mới là phần nặng',
+        problem: 'Attention nổi tiếng nhưng tham số chủ yếu nằm ở đâu?',
+        mechanism: 'Với $m = 4$: $4d^2 + 8d^2 = 12d^2$, FFN chiếm $8/12 = 2/3$ tham số. Đổi $m = 2$ thì còn $4d^2 + 4d^2 = 8d^2$ và FFN chiếm 50%. Hệ số $m$ là núm vặn chính để đánh đổi dung lượng mô hình và chi phí.',
+        action: '👉 Thao tác (Cột 2): Chuyển hệ số mở rộng giữa $m = 2$, $4$, $8$ hoặc bấm preset "FFN hẹp m=2".\n👁️ Quan sát (Cột 3): Thanh tỉ lệ FFN/attention đổi từ 50% sang 66.7% rồi 80%.',
+        takeaway: 'Khi nói "mô hình 7B", phần lớn 7 tỉ đó là các ma trận FFN.'
+      },
+      {
+        step: 3, badge: 'Bước 3 / 4',
+        heading: 'Xếp chồng L khối và thêm bảng embedding',
+        problem: 'Mô hình thật có bao nhiêu tham số?',
+        mechanism: 'Tổng $= L \times 12d^2 + V d$ (khối + bảng embedding, xem [[lesson:embedding_tokenization]]). GPT-2 small: $d = 768$, $L = 12$, $V = 50257$ cho $84\,934\,656 + 38\,597\,376 \approx 123.5$ triệu. Cỡ "7B": $d = 4096$, $L = 32$ cho $6\,442\,450\,944 + 131\,072\,000 \approx 6.57$ tỉ. Khi $d$ lớn, embedding chỉ còn vài phần trăm.',
+        action: '👉 Thao tác (Cột 2): Bấm lần lượt preset "GPT-2 small", rồi "Cỡ \'7B\'", rồi "Cỡ \'70B\'".\n👁️ Quan sát (Cột 3): Tổng tham số $123.5$ triệu, $6.57$ tỉ, $64.7$ tỉ; công thức đoán trước được kích thước.',
+        takeaway: 'Tham số tăng theo $L d^2$: nhân đôi chiều ẩn là gấp 4 tham số.'
+      },
+      {
+        step: 4, badge: 'Bước 4 / 4',
+        heading: 'Từ tham số sang RAM và FLOPs',
+        problem: 'Biết số tham số, ta suy ra được gì về phần cứng cần dùng?',
+        mechanism: 'Suy diễn FP16 tốn $2$ byte/tham số: 6.57 tỉ cho $13.1$ GB. Huấn luyện bằng Adam mixed precision tốn $16$ byte/tham số ([[lesson:mixed_precision]]): $105$ GB chưa tính activation. Mỗi token cần khoảng $2 \times$ tham số FLOPs: $13.1$ GFLOPs. Giải mã phải đọc cả 13.1 GB mỗi bước nên bị nghẽn băng thông ([[lesson:roofline_arithmetic_intensity]]).',
+        action: '👉 Thao tác (Cột 2): Giữ preset "Cỡ \'7B\'" và xem bảng chi phí.\n👁️ Quan sát (Cột 3): FP16 $13.147$ GB, huấn luyện $105.176$ GB, $13.147$ GFLOPs/token.',
+        takeaway: 'Chỉ cần $d$, $L$, $m$, $V$ là ước lượng được RAM và FLOPs của một LLM trên giấy.'
+      }
+    ];
+
+    const STEP_COMMENTS = {
+      2: [{
+        id: 'tb2', author: 'Chuyên Gia LLM', role: 'LLM', avatar: '🧠', tag: 'SwiGLU và GQA', tagType: 'systems',
+        content: 'Llama thay FFN hai ma trận bằng SwiGLU ba ma trận với chiều giữa khoảng $\frac{8}{3}d$ để giữ số tham số xấp xỉ $8d^2$ cho FFN. Grouped-Query Attention giảm $W_K, W_V$ nên attention còn dưới $4d^2$. Các biến thể đổi hằng số nhưng cấu trúc "attention + FFN" vẫn y nguyên.'
+      }],
+      3: [{
+        id: 'tb3', author: 'Nhà Toán Học AI', role: 'Math', avatar: '📐', tag: 'Quy luật Chinchilla', tagType: 'math',
+        content: 'Số tham số $N \approx 12 L d^2$ và lượng dữ liệu huấn luyện tối ưu cỡ $20N$ token (Chinchilla). Tổng FLOPs huấn luyện xấp xỉ $6ND$ với $D$ là số token: hệ số 6 gồm 2 cho lượt thuận và 4 cho lượt ngược.'
+      }],
+      4: [{
+        id: 'tb4', author: 'Kỹ Sư Backend', role: 'Systems', avatar: '⚙️', tag: 'Gotcha kinh điển', tagType: 'gotcha',
+        content: 'Ước lượng bằng tham số bỏ sót KV-Cache ([[lesson:kv_cache_anatomy]]) và activation. Mô hình 7B FP16 chiếm 13 GB trọng số nhưng khi phục vụ nhiều chuỗi dài, KV-Cache có thể vượt cả trọng số. Hãy cộng thêm chúng trước khi chọn GPU.'
+      }]
+    };
+
+    const logic = new LessonLogic();
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
+    });
+
+    createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 1,
+      onStepChange: (n) => {
+        comments.setStep(n, STEP_COMMENTS[n] || []);
+        if (n === STEPS.length) markCompleted(LESSON_ID, true);
+      }
+    });
+
+    const sD = createLiveSlider(document.getElementById('mount-d-slider'), {
+      label: 'Số mũ $k$ của $d = 2^k$', min: 2, max: 13, step: 1, initial: Math.round(Math.log2(logic.state.d)),
+      onChange: (v) => { logic.onUserUpdate({ d: Math.pow(2, v) }); presets.setActive(null); render(); }
+    });
+    const sL = createLiveSlider(document.getElementById('mount-l-slider'), {
+      label: 'Số khối $L$', min: 1, max: 96, step: 1, initial: logic.state.L,
+      onChange: (v) => { logic.onUserUpdate({ L: v }); presets.setActive(null); render(); }
+    });
+
+    function syncControls() {
+      sD.setValue(Math.max(2, Math.min(13, Math.round(Math.log2(logic.state.d)))));
+      sL.setValue(logic.state.L);
+    }
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      initialActiveId: 'toy',
+      onPick: (p) => {
+        logic.applyPreset(p.state);
+        syncControls();
+        render();
+      }
+    });
+
+    document.querySelectorAll('#seg-m button').forEach(btn => btn.addEventListener('click', () => {
+      logic.onUserUpdate({ m: Number(btn.dataset.v) });
+      presets.setActive(null);
+      render();
+    }));
+
+    function render() {
+      const r = logic.calculate();
+      const s = logic.state;
+      document.querySelectorAll('#seg-m button').forEach(b => b.classList.toggle('active', Number(b.dataset.v) === s.m));
+      document.getElementById('txt-d').textContent = `d = ${s.d.toLocaleString('en-US')}, V = ${s.V.toLocaleString('en-US')}`;
+      document.getElementById('txt-l').textContent = `L = ${s.L} khối`;
+
+      renderMath(document.getElementById('katex-block'), r.formulaKaTeX, { displayMode: true });
+      const pct = v => (v * 100).toFixed(1) + '%';
+      document.getElementById('param-table').innerHTML = `
+        <tr><td>Attention mỗi khối $4d^2$</td><td>${r.attn.toLocaleString('en-US')} (${pct(1 - r.ffnShare)})</td></tr>
+        <tr><td>FFN mỗi khối $2md^2$</td><td>${r.ffn.toLocaleString('en-US')} (${pct(r.ffnShare)})</td></tr>
+        <tr><td>${r.L} khối</td><td>${r.body.toLocaleString('en-US')} (≈ ${r.human.body})</td></tr>
+        <tr><td>Bảng embedding $Vd$</td><td>${r.embed.toLocaleString('en-US')} (≈ ${r.human.embed})</td></tr>
+        <tr><td><strong>Tổng</strong></td><td><strong>${r.total.toLocaleString('en-US')} (≈ ${r.human.total})</strong></td></tr>`;
+      document.getElementById('bars').innerHTML =
+        `<div style="display:flex; height:14px; border-radius:7px; overflow:hidden; border:1px solid var(--border-subtle);">` +
+        `<div style="width:${(1 - r.ffnShare) * 100}%; background:#38bdf8;" title="attention"></div>` +
+        `<div style="width:${r.ffnShare * 100}%; background:#a78bfa;" title="FFN"></div></div>` +
+        `<div class="tp-matrix-caption">xanh = attention · tím = FFN (trong mỗi khối)</div>`;
+      document.getElementById('cost-table').innerHTML = `
+        <tr><td>RAM suy diễn FP16 (2 byte/tham số)</td><td>${r.inferGB.toLocaleString('en-US')} GB</td></tr>
+        <tr><td>RAM huấn luyện Adam mixed (16 byte/tham số)</td><td>${r.trainGB.toLocaleString('en-US')} GB</td></tr>
+        <tr><td>FLOPs mỗi token ≈ 2 × tham số</td><td>${r.gflopsPerToken.toLocaleString('en-US')} GFLOPs</td></tr>`;
+      renderAllInlineMath(document.querySelector('.col-telemetry'));
+      const verdict = document.getElementById('verdict');
+      verdict.className = `tp-verdict ${r.verdict.type}`;
+      verdict.textContent = r.verdict.text;
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      syncControls();
+      presets.setActive('toy');
+      render();
+    });
+
+    renderAllInlineMath(document.querySelector('.col-sandbox'));
+    render();
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

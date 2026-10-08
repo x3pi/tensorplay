@@ -22,11 +22,11 @@ tensorplay/
 │   ├── topics.json              # 8 chủ đề chính & mã màu
 │   ├── legacy-map.json          # Ánh xạ URL cũ để chuyển hướng tự động
 │   └── paths/                   # Các lộ trình học (JSON)
-│       ├── main.json            # "Lộ trình đầy đủ" (34 bài học)
+│       ├── main.json            # "Lộ trình đầy đủ" (42 bài học)
 │       ├── llm-systems.json     # "Chuyên sâu LLM & Transformers" (10 bài)
 │       ├── cpp-memory.json      # "Kỹ nghệ Bộ nhớ & Hiệu năng C++" (7 bài)
 │       └── cmu-10414.json       # "Khung đối chiếu CMU 10-414/714"
-├── lessons/                     # Thư viện bài học tự quản (34 bài)
+├── lessons/                     # Thư viện bài học tự quản (42 bài)
 │   └── <slug>/                  # Định danh bằng slug ngữ nghĩa (ví dụ: robot_vision)
 │       ├── index.html           # Giao diện Sandbox tương tác 3 cột
 │       ├── logic.js             # Logic toán học thuần (ES Module)

@@ -1,0 +1,25 @@
+{
+  "id": "embedding_tokenization",
+  "title": "Tokenization (BPE) & Embedding — Chuỗi Ngắn Hơn Đổi Lấy Bảng Từ Vựng Lớn Hơn",
+  "summary": "BPE biến \"aaabdaaabac\" từ 11 ký tự còn 5 token (attention $N^2$: $121 \\to 25$) nhưng từ vựng tăng $4 \\to 7$. Tra embedding là đọc hàng ở offset $\\text{id} \\times d$ trong bộ nhớ 1D.",
+  "topic": "transformer",
+  "tags": [
+    "tokenization",
+    "bpe",
+    "embedding",
+    "vocabulary"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 10,
+  "status": "ready",
+  "prerequisites": [
+    "self_attention",
+    "strides_views"
+  ],
+  "related": [
+    "kv_cache_anatomy",
+    "positional_encoding"
+  ],
+  "sources": [],
+  "aliases": []
+}

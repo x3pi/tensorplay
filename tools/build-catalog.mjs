@@ -15,6 +15,7 @@ const TOPICS_FILE = join(CURRICULUM_DIR, 'topics.json');
 const PATHS_DIR = join(CURRICULUM_DIR, 'paths');
 const OUT_DIR = join(ROOT, 'public', 'curriculum');
 const OUT_FILE = join(OUT_DIR, 'catalog.json');
+const TITLES_FILE = join(ROOT, 'shared', 'lesson-titles.js');
 
 const isCheckOnly = process.argv.includes('--check');
 
@@ -221,8 +222,19 @@ export function buildCatalog() {
   return catalog;
 }
 
+function buildTitlesModule(catalog) {
+  const map = {};
+  for (const [slug, l] of Object.entries(catalog.lessons)) {
+    map[slug] = String(l.title).split(/ — |: /)[0].trim();
+  }
+  return `// FILE SINH TỰ ĐỘNG bởi tools/build-catalog.mjs — KHÔNG sửa tay.\n` +
+    `// Bảng tiêu đề ngắn của bài để resolveRefs() thay [[lesson:slug]] đồng bộ (không cần fetch).\n` +
+    `export const LESSON_TITLES = ${JSON.stringify(map, null, 2)};\n`;
+}
+
 function main() {
   const catalog = buildCatalog();
+  const titlesModule = buildTitlesModule(catalog);
   const formatted = JSON.stringify(catalog, null, 2) + '\n';
 
   if (!existsSync(OUT_DIR)) {
@@ -240,11 +252,15 @@ function main() {
     if (cleanExisting !== cleanNew) {
       fail(`public/curriculum/catalog.json không khớp với dữ liệu nguồn. Hãy chạy 'npm run catalog' và commit file.`);
     }
-    console.log('✓ catalog.json khớp 100% với dữ liệu nguồn.');
+    if (!existsSync(TITLES_FILE) || readFileSync(TITLES_FILE, 'utf-8') !== titlesModule) {
+      fail(`shared/lesson-titles.js không khớp với dữ liệu nguồn. Hãy chạy 'npm run catalog' và commit file.`);
+    }
+    console.log('✓ catalog.json và lesson-titles.js khớp 100% với dữ liệu nguồn.');
     return;
   }
 
   writeFileSync(OUT_FILE, formatted, 'utf-8');
+  writeFileSync(TITLES_FILE, titlesModule, 'utf-8');
   console.log(`✓ Đã sinh ${OUT_FILE} (${catalog.totalLessons} bài học, ${catalog.paths.length} lộ trình)`);
 }
 

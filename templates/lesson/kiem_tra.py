@@ -1,28 +1,19 @@
 #!/usr/bin/env python3
 """
-Kiểm chứng toán học cho {{SLUG}}
-Tuân thủ AGENTS.md: số nhỏ, tròn trị, tự động kiểm tra từ đầu đến cuối.
+lessons/{{SLUG}}/kiem_tra.py
+Kiểm chứng số học độc lập bằng NumPy (AGENTS.md mục 5). Mọi assertion trong logic.test.js
+phải có đối chứng ở đây. tools/run_checks.py chạy file này và yêu cầu mã thoát 0.
 """
+import numpy as np
 
-import sys
 
-
-def kiem_tra_{{SLUG}}():
-    print("--- KIỂM CHỨNG: {{TITLE}} ---")
-    x = 2
-    y = x * 2
-    expected = 4
-    assert y == expected, f"Lỗi tính toán: nhận {y}, kỳ vọng {expected}"
-    print(f"  ✓ Tính toán kiểm chứng đạt yêu cầu (x={x}, y={y})")
-    return True
+def main() -> None:
+    x = 2.0
+    y = 2 * x  # TODO: thay bằng đối chứng độc lập của bài
+    assert np.isclose(y, 4.0), f"y phải bằng 4, nhận {y}"
+    assert 2 * 0.0 == 0.0
 
 
 if __name__ == "__main__":
-    try:
-        ok = kiem_tra_{{SLUG}}()
-        if ok:
-            print("Toàn bộ bài test {{SLUG}} thành công! 🎉")
-            sys.exit(0)
-    except AssertionError as e:
-        print(f"✗ Thất bại: {e}")
-        sys.exit(1)
+    main()
+    print("✓ ĐẠT CHUẨN")

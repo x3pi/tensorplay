@@ -20,16 +20,21 @@
         "layernorm_residual",
         "rnn_bptt",
         "self_attention",
+        "embedding_tokenization",
         "positional_encoding",
-        "multi_head_attention"
+        "multi_head_attention",
+        "transformer_block_params"
       ]
     },
     {
       "title": "Chặng 3 — Tối Ưu Hệ Thống & LLM Serving",
       "lessons": [
         "mixed_precision",
+        "roofline_arithmetic_intensity",
         "kv_cache_anatomy",
-        "flash_attention"
+        "sampling_decoding",
+        "flash_attention",
+        "quantization_int8"
       ]
     }
   ]

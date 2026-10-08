@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta name="tp-lesson" content="roofline_arithmetic_intensity">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roofline — Chậm Vì Tính Toán Hay Vì Chờ Dữ Liệu? - TensorPlay</title>
+  <meta name="description" content="Cường độ số học và mô hình Roofline: vì sao giải mã LLM từng token chỉ dùng 1% sức GPU và gom batch giải quyết thế nào.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">← Về Danh Mục</a>
+      </div>
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step" data-topic-badge></span>
+      </div>
+    </header>
+
+    <main class="lab-grid">
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt &amp; Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Bàn Thí Nghiệm Roofline</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Đặt Lại</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">⚙️ Phép tính cần chạy</div>
+            <div class="tp-seg" id="seg-op">
+              <button data-v="elementwise">Elementwise (ReLU, residual)</button>
+              <button data-v="gemm">GEMM (nhân ma trận trọng số $4096 \times 4096$)</button>
+            </div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">📦 Số chuỗi xử lý cùng lúc (batch $b = 2^k$)</div>
+            <div id="mount-b-slider"></div>
+            <div class="tp-matrix-caption" id="txt-b"></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🖥️ GPU giả lập</div>
+            <table class="tp-kv-table">
+              <tr><td>Đỉnh tính toán P</td><td>200 TFLOP/s (FP16)</td></tr>
+              <tr><td>Băng thông bộ nhớ B</td><td>2 TB/s</td></tr>
+              <tr><td>Điểm gấp P / B</td><td>100 FLOP/byte</td></tr>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math &amp; Telemetry</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div class="tp-panel">
+            <div class="tp-panel-title">📈 Đồ thị Roofline (log-log)</div>
+            <svg id="plot" viewBox="0 0 320 200" style="width:100%; background:#090d15; border-radius:8px;"></svg>
+            <div class="tp-matrix-caption">trục ngang: AI (FLOP/byte) · trục dọc: TFLOP/s đạt được · chấm vàng = phép tính hiện tại</div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">📐 Công thức</div>
+            <div class="tp-math-box" id="katex-ai"></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">📊 Hiệu năng</div>
+            <table class="tp-kv-table" id="perf-table"></table>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🧠 Giải mã mô hình 7B (14 GB trọng số FP16)</div>
+            <table class="tp-kv-table" id="decode-table"></table>
+          </div>
+          <div class="tp-verdict" id="verdict"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createLiveSlider } from '../../shared/components/LiveSlider.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
+    import { markCompleted } from '../../shared/progress.js';
+    import { LessonLogic, PRESETS } from './logic.js';
+
+    const LESSON_ID = 'roofline_arithmetic_intensity';
+
+    const STEPS = [
+      {
+        step: 1, badge: 'Bước 1 / 4',
+        heading: 'Hai giới hạn: tính toán và băng thông',
+        problem: 'Một GPU có đỉnh $P = 200$ TFLOP/s nhưng chỉ đọc được $B = 2$ TB/s từ bộ nhớ. Để làm 1 phép nhân-cộng cần đọc vài byte. Phép tính nào sẽ chạy gần đỉnh $P$, phép nào bị kẹt ở $B$?',
+        mechanism: 'Cường độ số học $\text{AI} = \text{FLOPs} / \text{byte truyền}$. Hiệu năng đạt được $= \min(P,\ \text{AI} \times B)$. Điểm gấp ở $\text{AI} = P / B = 100$ FLOP/byte: bên trái là "chờ dữ liệu" (memory-bound), bên phải là "chờ tính toán" (compute-bound).',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Elementwise (ReLU, residual) ❌".\n👁️ Quan sát (Cột 3): Chấm vàng nằm sát gốc trái, hiệu năng chỉ $0.333$ TFLOP/s (khoảng 0.17% đỉnh).',
+        takeaway: 'Cộng, nhân từng phần tử gần như không có gì để "tái sử dụng" dữ liệu, nên luôn bị kẹt băng thông.'
+      },
+      {
+        step: 2, badge: 'Bước 2 / 4',
+        heading: 'Giải mã từng token: 1% sức GPU',
+        problem: 'Khi LLM sinh từng token, mỗi lần chỉ có 1 vector kích hoạt nhân với toàn bộ ma trận trọng số $4096 \times 4096$. GPU dùng được bao nhiêu phần sức?',
+        mechanism: 'Với batch $b = 1$: FLOPs $= 2n^2$, byte $\approx 2n^2$ (phải đọc cả ma trận) nên $\text{AI} \approx 1$. Hiệu năng đạt được $\approx 2$ TFLOP/s, chỉ 1% đỉnh. Mô hình 7B phải đọc 14 GB trọng số mỗi bước: $14\ \text{GB} / 2\ \text{TB/s} = 7$ ms, tức khoảng 143 token/s dù GPU còn gần như rảnh.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Giải mã từng token (batch 1) ❌".\n👁️ Quan sát (Cột 3): AI $\approx 1.0$, bảng 7B báo 7 ms/bước và 142.9 token/s.',
+        takeaway: 'Giải mã LLM là bài toán băng thông bộ nhớ, không phải bài toán tính toán.'
+      },
+      {
+        step: 3, badge: 'Bước 3 / 4',
+        heading: 'Gom batch: dùng lại trọng số đã đọc',
+        problem: 'Đọc trọng số là chi phí cố định cho mỗi bước. Làm sao chia chi phí đó cho nhiều người dùng?',
+        mechanism: 'Với batch $b$ chuỗi, cùng một lần đọc trọng số phục vụ $b$ vector: $\text{AI} \approx b / (1 + 2b/n)$. Batch 64 cho $\text{AI} \approx 62$ và thời gian bước vẫn 7 ms nên thông lượng nhảy lên $9143$ token/s. Batch 128 vượt điểm gấp ($\text{AI} \approx 120$), từ đó bước dài ra theo $b$ và hiệu năng chạm trần 200 TFLOP/s.',
+        action: '👉 Thao tác (Cột 2): Kéo thanh batch từ $k = 0$ đến $k = 8$ hoặc bấm các preset "Gom batch 64" và "Batch 128".\n👁️ Quan sát (Cột 3): Chấm vàng leo dọc đường chéo rồi dừng ở trần ngang; thông lượng token/s tăng gần tuyến tính cho tới $b \approx 100$.',
+        takeaway: 'Continuous batching trong LLM serving là cách đưa phép tính qua điểm gấp.'
+      },
+      {
+        step: 4, badge: 'Bước 4 / 4',
+        heading: 'Tiling và FlashAttention là cách nâng AI',
+        problem: 'Nếu không thể tăng batch (ví dụ attention của một chuỗi), còn cách nào nâng AI?',
+        mechanism: 'Giảm số byte phải di chuyển cho cùng lượng FLOPs: tiling với shared memory ([[lesson:shared_memory_tiling]]) dùng lại mỗi dữ liệu nhiều lần trong SRAM, còn [[lesson:flash_attention]] tránh ghi ma trận $N \times N$ ra HBM. Lượng tử hóa trọng số xuống INT8 hay INT4 cũng giảm byte nên đẩy AI lên và tăng token/s ở vùng nghẽn băng thông.',
+        action: '👉 Thao tác: Quan sát lại preset "Huấn luyện (batch 4096) ✅" so với "Elementwise".\n👁️ Quan sát: Cùng một GPU nhưng hiệu năng đạt được chênh nhau hơn 500 lần chỉ vì AI khác nhau.',
+        takeaway: 'Trước khi tối ưu, hãy hỏi: phép tính này đang nằm bên trái hay bên phải điểm gấp?'
+      }
+    ];
+
+    const STEP_COMMENTS = {
+      2: [{
+        id: 'rf2', author: 'Chuyên Gia GPU', role: 'GPU', avatar: '⚡', tag: 'Số liệu thật', tagType: 'systems',
+        content: 'Con số trong bài là đồ chơi để dễ nhẩm. GPU H100 có khoảng 1000 TFLOP/s FP16 (tensor core) và khoảng 3.35 TB/s băng thông HBM nên điểm gấp cỡ vài trăm FLOP/byte. Nên giải mã batch nhỏ gần như luôn bị kẹt băng thông.'
+      }],
+      3: [{
+        id: 'rf3', author: 'Kỹ Sư Backend', role: 'Systems', avatar: '⚙️', tag: 'Gotcha kinh điển', tagType: 'gotcha',
+        content: 'Thông lượng tăng theo batch chỉ đúng khi trọng số là phần đọc chính. KV-Cache ([[lesson:kv_cache_anatomy]]) lại tăng theo $b$: mỗi chuỗi có KV-Cache riêng phải đọc, nên ở batch lớn và ngữ cảnh dài băng thông KV-Cache trở thành nút cổ chai mới.'
+      }],
+      4: [{
+        id: 'rf4', author: 'Nhà Toán Học AI', role: 'Math', avatar: '📐', tag: 'Cách đọc đồ thị', tagType: 'math',
+        content: 'Trên log-log, đoạn dốc là đường thẳng $y = B \cdot x$ (đi qua gốc) và đoạn ngang là $y = P$. Điểm gặp nhau tại $x = P / B$. Mọi phép tính nằm dưới mái nhà; tối ưu tốt là kéo điểm của bạn sát lên mái.'
+      }]
+    };
+
+    const logic = new LessonLogic();
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
+    });
+
+    createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 1,
+      onStepChange: (n) => {
+        comments.setStep(n, STEP_COMMENTS[n] || []);
+        if (n === STEPS.length) markCompleted(LESSON_ID, true);
+      }
+    });
+
+    const W = 320, H = 200;
+    const px = ai => 16 + ((Math.log10(ai) + 1) / 5) * (W - 32);          // AI từ 0.1 đến 10^4
+    const py = t => H - 16 - ((Math.log10(t) + 1) / 3.5) * (H - 32);      // TFLOP/s từ 0.1 đến ~316
+    const sB = createLiveSlider(document.getElementById('mount-b-slider'), {
+      label: 'Số mũ batch $k$ ($b = 2^k$)', min: 0, max: 12, step: 1, initial: logic.state.logB,
+      onChange: (v) => { logic.onUserUpdate({ logB: v }); presets.setActive(null); render(); }
+    });
+
+    function syncControls() {
+      sB.setValue(logic.state.logB);
+    }
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      initialActiveId: 'decode_b1',
+      onPick: (p) => {
+        logic.applyPreset(p.state);
+        syncControls();
+        render();
+      }
+    });
+
+    document.querySelectorAll('#seg-op button').forEach(btn => btn.addEventListener('click', () => {
+      logic.onUserUpdate({ op: btn.dataset.v });
+      presets.setActive(null);
+      render();
+    }));
+
+    function render() {
+      const r = logic.calculate();
+      const s = logic.state;
+      document.querySelectorAll('#seg-op button').forEach(b => b.classList.toggle('active', b.dataset.v === s.op));
+      document.getElementById('txt-b').textContent = s.op === 'gemm' ? `b = ${r.b}` : 'Không dùng cho elementwise';
+
+      const roofSlope = `M${px(0.1)},${py(0.1 * r.bandwidth)} L${px(r.ridge)},${py(r.peak)}`;
+      const roofFlat = `M${px(r.ridge)},${py(r.peak)} L${px(10000)},${py(r.peak)}`;
+      const ridgeLine = `<line x1="${px(r.ridge)}" y1="${py(r.peak)}" x2="${px(r.ridge)}" y2="${H - 16}" stroke="#64748b" stroke-dasharray="3 3"/>`;
+      document.getElementById('plot').innerHTML =
+        `<path d="${roofSlope}" stroke="#38bdf8" stroke-width="2.5" fill="none"/><path d="${roofFlat}" stroke="#10b981" stroke-width="2.5" fill="none"/>${ridgeLine}` +
+        `<circle cx="${px(r.ai)}" cy="${py(r.attain)}" r="6" fill="#f59e0b"/>` +
+        `<text x="${px(r.ridge) + 4}" y="${H - 20}" fill="#94a3b8" font-size="9">100</text>`;
+
+      renderMath(document.getElementById('katex-ai'), r.formulaKaTeX, { displayMode: true });
+      document.getElementById('perf-table').innerHTML = `
+        <tr><td>Cường độ số học AI</td><td>${r.ai} FLOP/byte</td></tr>
+        <tr><td>Hiệu năng đạt được</td><td>${r.attain} TFLOP/s</td></tr>
+        <tr><td>Tỉ lệ so với đỉnh</td><td>${(r.efficiency * 100).toFixed(2)}%</td></tr>
+        <tr><td>Giới hạn bởi</td><td>${r.memoryBound ? 'băng thông bộ nhớ ❌' : 'tính toán ✅'}</td></tr>`;
+      document.getElementById('decode-table').innerHTML = `
+        <tr><td>Thời gian đọc trọng số</td><td>${r.decode.memoryMs} ms</td></tr>
+        <tr><td>Thời gian tính toán (batch ${r.b})</td><td>${r.decode.computeMs} ms</td></tr>
+        <tr><td>Thời gian 1 bước</td><td>${r.decode.timeMs} ms (${r.decode.bound === 'memory' ? 'chờ bộ nhớ' : 'chờ tính toán'})</td></tr>
+        <tr><td>Thông lượng</td><td>${r.decode.tokensPerSec.toLocaleString('en-US')} token/s</td></tr>`;
+      renderAllInlineMath(document.querySelector('.col-telemetry'));
+      const verdict = document.getElementById('verdict');
+      verdict.className = `tp-verdict ${r.verdict.type}`;
+      verdict.textContent = r.verdict.text;
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      syncControls();
+      presets.setActive('decode_b1');
+      render();
+    });
+
+    renderAllInlineMath(document.querySelector('.col-sandbox'));
+    render();
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

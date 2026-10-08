@@ -1,0 +1,24 @@
+{
+  "id": "lr_schedule_warmup",
+  "title": "LR Schedule — Warmup Giữ Khởi Đầu Êm, Cosine Decay Dọn Nhiễu Cuối",
+  "summary": "Ở vùng dốc ($a = 4$) lr $0.6$ vượt ngưỡng ổn định $2/a = 0.5$ nên $|w|$ bị phóng lên $3.27$. Warmup giữ $|w| \\le 1$, cosine decay đưa dao động cuối về $\\approx 0$.",
+  "topic": "training-stability",
+  "tags": [
+    "learning-rate",
+    "warmup",
+    "cosine-decay",
+    "stability"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 12,
+  "status": "ready",
+  "prerequisites": [
+    "optimizers",
+    "adamw_weight_decay"
+  ],
+  "related": [
+    "kaiming_init"
+  ],
+  "sources": [],
+  "aliases": []
+}

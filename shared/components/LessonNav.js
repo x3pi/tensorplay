@@ -237,7 +237,18 @@ async function initLessonNav() {
       });
     }
 
+    function fillTopicBadge() {
+      if (typeof document === 'undefined') return;
+      const lesson = catalog.lessons && catalog.lessons[slug];
+      const topic = lesson && (catalog.topics || []).find(t => t.id === lesson.topic);
+      document.querySelectorAll('[data-topic-badge]').forEach(el => {
+        el.textContent = topic ? topic.label : (lesson ? lesson.topic : '');
+        if (topic && topic.color) el.style.borderColor = topic.color;
+      });
+    }
+
     renderAndMount(activePathId);
+    fillTopicBadge();
     resolveDocumentRefs();
     // Re-resolve if content updates dynamically
     setTimeout(resolveDocumentRefs, 300);

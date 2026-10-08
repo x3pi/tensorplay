@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bài 04: Mạng Nơ-ron 2 Tầng & Lan Truyền Ngược ReLU - TensorPlay</title>
+  <title>Bài 05: Mạng Nơ-ron 2 Tầng & Lan Truyền Ngược ReLU - TensorPlay</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -119,6 +119,14 @@
         </div>
         <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
           
+          <!-- Thẻ 0: Dự đoán & Loss -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
+              0. Dự Đoán & Loss: $L = -\ln P_y$ (nhãn thật $y = 1$)
+            </div>
+            <div id="loss-panel" style="font-family: var(--font-mono); font-size: var(--text-xs); line-height: 1.7; color: var(--text-bright);"></div>
+          </div>
+
           <!-- Thẻ 1: Forward Tầng 1 & Van ReLU -->
           <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
             <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
@@ -162,54 +170,64 @@
     const STEPS = [
       {
         step: 1,
-        badge: 'Bước 1 / 5',
+        badge: 'Bước 1 / 6',
         heading: 'Mạng Sâu: Cần Tầng Ẩn Phi Tuyến',
         problem: 'Nếu không có hàm phi tuyến như ReLU, việc nhân 2 tầng ma trận $X W_1 W_2$ chỉ tương đương 1 tầng ma trận duy nhất $X W_{tổng}$. Mạng không thể học được các mối quan hệ phức tạp!',
-        mechanism: 'Hàm kích hoạt phi tuyến $A_1 = \\max(0, Z_1)$ đóng vai trò chiếc van một chiều: chỉ cho nơ-ron có tiềm năng dương đi qua, chặn đứng số âm về $0$.\nVí dụ nhẩm: Với $Z_1 = [1.0, 0.5]$, qua van ReLU ta được $A_1 = [\\max(0, 1.0), \\max(0, 0.5)] = [1.0, 0.5]$. Cả 2 nơ-ron đều mở thông suốt.',
-        action: '👉 Thao tác (Cột 2): Bấm nút "Mạng Chuẩn (Cả 2 nơ-ron sống)" ở Cột 2.\n👁️ Quan sát (Cột 3): Xem giá trị kích hoạt $A_1 = [1.0, 0.5]$ hiển thị màu xanh lá: van mở, tín hiệu truyền trơn tru sang tầng 2!',
-        takeaway: 'Phi tuyến tính là chiếc chìa khóa vạn năng cho phép mạng nơ-ron xấp xỉ bất kỳ hàm số toán học nào (Universal Approximation Theorem).'
+        mechanism: 'Hàm kích hoạt phi tuyến $A_1 = \\max(0, Z_1)$ đóng vai trò chiếc van một chiều: chỉ cho nơ-ron có tiềm năng dương đi qua, chặn đứng số âm về $0$.\nVí dụ nhẩm: Với $Z_1 = [1.0, 0.5]$, qua van ReLU ta được $A_1 = [1.0, 0.5]$. Cả 2 nơ-ron đều mở thông suốt, mạng dự đoán $P = [0.62, 0.38]$ và loss $L = -\\ln P_1 \\approx 0.97$.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Mạng chuẩn (cả 2 nơ-ron sống)".\n👁️ Quan sát (Cột 2 và 3): Hai ô van đều xanh "MỞ", thẻ 0 ở Cột 3 báo $L \\approx 0.974$.',
+        takeaway: 'Phi tuyến tính là chiếc chìa khóa cho phép mạng nơ-ron xấp xỉ các hàm phức tạp (Universal Approximation Theorem).'
       },
       {
         step: 2,
-        badge: 'Bước 2 / 5',
+        badge: 'Bước 2 / 6',
         heading: 'Hiện Tượng Nơ-ron Chết (Dead ReLU)',
         problem: 'Điều gì xảy ra nếu điểm số trước kích hoạt $Z_{1,1} < 0$ rơi vào miền âm?',
-        mechanism: 'Chiếc van ReLU lập tức đóng sập lại: $A_{1,1} = \\max(0, -1.0) = 0$.\nVí dụ nhẩm: Khi $Z_1 = [1.0, -1.0]$, sau van ReLU ta có $A_1 = [1.0, 0.0]$. Nơ-ron số 2 bị biến thành số 0 tuyệt đối và chặn đứng mọi thông tin truyền sang tầng kế tiếp.',
-        action: '👉 Thao tác (Cột 2): Bấm nút "Tình huống Nơ-ron 2 Chết (Z1_1 < 0)" ở Cột 2.\n👁️ Quan sát (Cột 3): Xem biểu tượng chiếc van đóng sập và nơ-ron 2 bị tắt tối ($A_{1,1} = 0.0$), mất hoàn toàn khả năng đóng góp dữ liệu!',
+        mechanism: 'Chiếc van ReLU lập tức đóng sập lại: $A_{1,1} = \\max(0, -1.0) = 0$.\nVí dụ nhẩm: Khi $Z_1 = [1.0, -1.0]$, sau van ReLU ta có $A_1 = [1.0, 0.0]$. Nơ-ron số 2 trở thành số 0 tuyệt đối và không truyền thông tin gì sang tầng kế tiếp.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Nơ-ron 2 chết (Z₁₁ < 0)".\n👁️ Quan sát (Cột 2 và 3): Ô van 2 chuyển đỏ "ĐÓNG (CHẾT)", $A_{1,1} = 0.0$, loss tăng lên $\\approx 1.313$.',
         takeaway: 'Nơ-ron rơi vào miền âm bị triệt tiêu đầu ra về 0, làm lãng phí năng lực tính toán của mô hình.'
       },
       {
         step: 3,
-        badge: 'Bước 3 / 5',
+        badge: 'Bước 3 / 6',
         heading: 'Lan Truyền Ngược Tầng 2: $\\nabla_{W_2} = A_1^T \\cdot G_2$',
         problem: 'Khi nơ-ron tầng ẩn bị chết ($A_{1,1} = 0$), đạo hàm của tầng 2 $\\nabla_{W_2}$ sẽ bị ảnh hưởng như thế nào?',
-        mechanism: 'Công thức đạo hàm ma trận: $\\nabla_{W_2} = A_1^T \\cdot G_2$.\nVí dụ nhẩm: Với $A_1 = [1.0, 0.0]$ và sai số $G_2 = [-0.2, +0.2]$:\n$$\\nabla_{W_2} = \\begin{bmatrix} 1.0 \\\\ 0.0 \\end{bmatrix} \\begin{bmatrix} -0.2 & 0.2 \\end{bmatrix} = \\begin{bmatrix} -0.2 & 0.2 \\\\ 0.0 & 0.0 \\end{bmatrix}$$\nHàng thứ 2 của $\\nabla_{W_2}$ nhân với $0.0$ nên bị triệt tiêu toàn bộ về $0$!',
-        action: '👉 Thao tác (Cột 2): Xem bảng ma trận đạo hàm $\\nabla_{W_2}$ ở Cột 2.\n👁️ Quan sát (Cột 3): Nhìn vào hàng thứ 2 của ma trận $\\nabla_{W_2}$: giá trị bằng $0.0$ tuyệt đối!',
-        takeaway: 'Vì $A_{1,1} = 0$, toàn bộ các trọng số nối từ nơ-ron 2 sang tầng kế tiếp không nhận được bất kỳ lực học tập nào trong lượt này.'
+        mechanism: 'Với nhãn $y = 1$: $G_2 = P - \\text{onehot}(y) = [0.731, -0.731]$. Công thức đạo hàm ma trận: $\\nabla_{W_2} = A_1^T \\cdot G_2$.\n$$\\nabla_{W_2} = \\begin{bmatrix} 1.0 \\\\ 0.0 \\end{bmatrix} \\begin{bmatrix} 0.731 & -0.731 \\end{bmatrix} = \\begin{bmatrix} 0.731 & -0.731 \\\\ 0.0 & 0.0 \\end{bmatrix}$$\nHàng thứ 2 của $\\nabla_{W_2}$ nhân với $A_{1,1} = 0$ nên bị triệt tiêu toàn bộ về $0$!',
+        action: '👉 Thao tác: Giữ preset "Nơ-ron 2 chết".\n👁️ Quan sát (Cột 3, thẻ 2): Hàng thứ 2 của ma trận $\\nabla_{W_2}$ bằng $0.000$ tuyệt đối.',
+        takeaway: 'Vì $A_{1,1} = 0$, các trọng số nối từ nơ-ron 2 sang đầu ra không nhận được lực học nào trong lượt này.'
       },
       {
         step: 4,
-        badge: 'Bước 4 / 5',
+        badge: 'Bước 4 / 6',
         heading: 'Sóng Đạo Hàm Dội Ngược Bị Chém Đứt',
         problem: 'Làm sao truyền sai số dội ngược từ đầu ra về tầng 1? Sóng dội ngược: $G_{hidden} = G_2 \\cdot W_2^T$.',
-        mechanism: 'Khi sóng dội ngược đi qua van ReLU, nó bị nhân với đạo hàm cục bộ: $G_1 = G_{hidden} \\odot \\mathbb{I}(Z_1 > 0)$.\nTại nơ-ron âm ($Z_{1,1} < 0$), đạo hàm ReLU bằng 0, chém đứt hoàn toàn dòng gradient dội về:\n$$G_{1,1} = G_{hidden,1} \\times 0 = 0$$\nKéo theo cột thứ 2 của $\\nabla_{W_1} = X^T \\cdot G_1$ cũng bị liệt về 0!',
-        action: '👉 Thao tác (Cột 2): Xem vector sai số $G_1$ và ma trận $\\nabla_{W_1}$ ở Cột 2.\n👁️ Quan sát (Cột 3): Cột thứ 2 của ma trận $\\nabla_{W_1}$ bị đóng băng bằng $0.0$, nơ-ron không thể tự cứu mình!',
-        takeaway: 'Van ReLU triệt tiêu hoàn toàn gradient của nơ-ron âm! Nếu liên tục bị âm qua nhiều lượt, nơ-ron sẽ chết vĩnh viễn (Dying ReLU).'
+        mechanism: 'Với $W_2 = I$: $G_{hidden} = [0.731, -0.731]$. Khi sóng đi qua van ReLU nó bị nhân với đạo hàm cục bộ $G_1 = G_{hidden} \\odot \\mathbb{I}(Z_1 > 0) = [0.731, -0.731] \\odot [1, 0] = [0.731, 0]$.\nTại nơ-ron âm, đạo hàm ReLU bằng 0 (quy ước cả tại $Z = 0$), nên cột thứ 2 của $\\nabla_{W_1} = X^T \\cdot G_1 = \\begin{bmatrix} 0.731 & 0 \\\\ 0.731 & 0 \\end{bmatrix}$ cũng bị liệt về 0.',
+        action: '👉 Thao tác: Giữ preset "Nơ-ron 2 chết".\n👁️ Quan sát (Cột 3, thẻ 3): $G_1 = [0.731, 0.000]$ và cột 2 của $\\nabla_{W_1}$ bằng $0.000$.',
+        takeaway: 'Van ReLU triệt tiêu hoàn toàn gradient của nơ-ron âm: không có gradient thì trọng số của nó không bao giờ đổi.'
       },
       {
         step: 5,
-        badge: 'Bước 5 / 5',
+        badge: 'Bước 5 / 6',
+        heading: 'SGD Không Cứu Được Nơ-ron Chết',
+        problem: 'Mạng cứ huấn luyện tiếp, liệu nơ-ron chết có tự hồi sinh? Mạng chỉ còn một nơ-ron sống thì học được đến đâu?',
+        mechanism: 'Cột 2 của $W_1$ không đổi vì gradient của nó luôn bằng 0, nên $Z_{1,1} = -1.0$ mãi mãi. Chạy SGD với $\\alpha = 0.5$:\n- Mạng chuẩn: loss $0.974 \\to 0.235 \\to 0.119 \\to 0.072$, sau 50 bước còn $0.002$.\n- Nơ-ron 2 chết: loss $1.313 \\to 0.730 \\to 0.702 \\to 0.695$, sau 50 bước đứng yên ở $0.693 = \\ln 2$: mạng chỉ biết đoán mò 50/50.',
+        action: '👉 Thao tác (Cột 2): Bấm "Chạy SGD ▶" khoảng 5 lần ở preset "Mạng chuẩn", rồi làm lại ở preset "Nơ-ron 2 chết".\n👁️ Quan sát (Cột 3, thẻ 0): Dòng "Thay đổi loss" sau mỗi bước, và $Z_{1,1}$ vẫn bằng $-1.00$.',
+        takeaway: 'Loss không giảm xuống thấp dù huấn luyện bao lâu thì hãy kiểm tra nơ-ron chết (Dying ReLU) trước khi đổ lỗi cho tốc độ học.'
+      },
+      {
+        step: 6,
+        badge: 'Bước 6 / 6',
         heading: 'Lời Nguyền Khởi Tạo Trọng Số Bằng 0',
-        problem: 'Nếu ta khởi tạo toàn bộ trọng số $W_1 = 0, W_2 = 0$ như biến số thông thường trong lập trình thì sao?',
-        mechanism: 'Thảm họa đối xứng: Với $W_1 = 0 \\implies Z_1 = 0 \\implies A_1 = 0$. Đồng thời $W_2 = 0 \\implies G_{hidden} = 0$. Cả dòng tiến và dòng lùi đều bằng 0 tuyệt đối:\n$$\\nabla_{W_1} = 0, \\quad \\nabla_{W_2} = 0$$\nToàn bộ mạng nơ-ron bị đóng băng đối xứng, vĩnh viễn không thể học được bất cứ điều gì!',
-        action: '👉 Thao tác (Cột 2): Bấm nút "Lời Nguyền Toàn 0" ở Cột 2.\n👁️ Quan sát (Cột 3): Toàn bộ mạng nơ-ron bị tê liệt, mọi dòng gradient bị đóng băng bằng 0.0, mô hình hoàn toàn mất khả năng học!',
-        takeaway: 'Khởi tạo bằng 0 sẽ giết chết mạng sâu ngay từ vạch xuất phát! Bắt buộc phải khởi tạo ngẫu nhiên có kiểm soát (He / Kaiming / Xavier).'
+        problem: 'Nếu khởi tạo trọng số bằng 0 như biến thông thường trong lập trình thì mạng 2 tầng có học được không?',
+        mechanism: 'Nếu chỉ $W_2 = 0$: bước đầu $\\nabla_{W_1} = 0$ (vì $G_{hidden} = G_2 W_2^T = 0$) nhưng $\\nabla_{W_2} \\ne 0$ (vì $A_1 \\ne 0$) nên loss giảm $0.693 \\to 0.429$, và sang bước sau $W_1$ bắt đầu nhận gradient.\nNếu cả $W_1 = W_2 = 0$: $Z_1 = 0 \\Rightarrow A_1 = 0 \\Rightarrow \\nabla_{W_2} = 0$; và đạo hàm ReLU tại $0$ bằng $0$ nên $\\nabla_{W_1} = 0$. Cả hai bị đóng băng, loss kẹt ở $0.693$ vĩnh viễn.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Chỉ W₂ = 0 (W₁ khác 0)" rồi chạy SGD 2 lần. Sau đó bấm preset "Lời nguyền: W₁ = W₂ = 0" và chạy SGD.\n👁️ Quan sát (Cột 3): Trường hợp đầu loss giảm, trường hợp sau mọi gradient bằng $0.000$ và loss đứng yên.',
+        takeaway: 'Khởi tạo toàn 0 giết chết mạng sâu ngay từ vạch xuất phát. Bắt buộc khởi tạo ngẫu nhiên có kiểm soát (He / Kaiming / Xavier).'
       }
     ];
 
     const COMMENTS = {
       1: [
         {
+          id: 'b4c1',
           author: 'Nhà Toán Học',
           avatar: '📐',
           tag: 'math',
@@ -218,14 +236,16 @@
       ],
       2: [
         {
+          id: 'b4c2',
           author: 'Kỹ Sư AI',
           avatar: '🚀',
           tag: 'gotcha',
-          content: 'Nơ-ron chết (Dying ReLU) là một trong những căn bệnh phổ biến nhất khi huấn luyện mạng sâu với tốc độ học (lr) quá lớn.'
+          content: 'Nơ-ron chết (Dying ReLU) là một trong những căn bệnh phổ biến nhất khi huấn luyện mạng sâu với tốc độ học (lr) quá lớn: một bước cập nhật lớn có thể đẩy cả $Z_1$ về miền âm với mọi đầu vào.'
         }
       ],
       3: [
         {
+          id: 'b4c3',
           author: 'Nhà Toán Học',
           avatar: '📐',
           tag: 'math',
@@ -234,6 +254,7 @@
       ],
       4: [
         {
+          id: 'b4c4',
           author: 'Kỹ Sư Hệ Thống',
           avatar: '⚙️',
           tag: 'system',
@@ -242,10 +263,20 @@
       ],
       5: [
         {
+          id: 'b4c5',
+          author: 'Kỹ Sư AI',
+          avatar: '🚀',
+          tag: 'gotcha',
+          content: 'Dấu hiệu nhận biết trong thực tế: tỉ lệ nơ-ron có kích hoạt bằng 0 với mọi mẫu trong batch tiến gần 100% ở một tầng. Cách chữa thường gặp: giảm lr, khởi tạo Kaiming, hoặc dùng Leaky ReLU/GELU có đạo hàm khác 0 ở miền âm.'
+        }
+      ],
+      6: [
+        {
+          id: 'b4c6',
           author: 'Chuyên Gia Tối Ưu',
           avatar: '💡',
           tag: 'gotcha',
-          content: 'Ở Bài 3 mạng 1 tầng, $W=0$ vẫn học được vì gradient phụ thuộc trực tiếp $X \\ne 0$. Nhưng ở Bài 4 mạng 2 tầng, $W_2=0$ làm triệt tiêu sóng dội ngược về $W_1$!'
+          content: 'Ở Bài 3 mạng 1 tầng, $W=0$ vẫn học được vì gradient phụ thuộc trực tiếp $X \\ne 0$. Ở mạng 2 tầng, mỗi tầng cần tầng kia khác 0 để nhận gradient; riêng $W_1 = W_2 = 0$ thì cả hai cùng bị khóa.'
         }
       ]
     };
@@ -277,6 +308,7 @@
     const presetPicker = createPresetPicker(presetMount, {
       title: 'Tình Huống:',
       presets: PRESETS,
+      initialActiveId: 'dead_neuron',
       onPick: (preset) => {
         state = logic.applyPreset(preset.state);
         syncSliders();
@@ -350,6 +382,7 @@
 
     document.getElementById('btn-reset').addEventListener('click', () => {
       state = logic.reset();
+      presetPicker.setActive('dead_neuron');
       syncSliders();
       renderAll();
     });
@@ -382,6 +415,14 @@
         valve1.style.color = 'var(--color-negative)';
         valve1.style.border = '1px solid var(--color-negative)';
       }
+
+      // Loss panel
+      const delta = state.lossDelta === null ? '—' : `${state.lossDelta > 0 ? '+' : ''}${state.lossDelta.toFixed(4)}`;
+      const deltaColor = state.lossDelta === null ? 'var(--text-dim)' : state.lossDelta < -1e-9 ? 'var(--color-positive)' : 'var(--color-warning)';
+      document.getElementById('loss-panel').innerHTML = `
+        P = [${state.p0.toFixed(3)}, ${state.p1.toFixed(3)}] &nbsp;|&nbsp; Loss = <strong>${state.loss.toFixed(4)}</strong><br>
+        Số bước SGD: ${state.steps} &nbsp;|&nbsp; Thay đổi loss: <span style="color: ${deltaColor};">${delta}</span><br>
+        <span style="color: var(--text-dim);">Đoán mò 50/50 có loss = ln 2 ≈ 0.6931</span>`;
 
       // KaTeX formulas
       renderMath(document.getElementById('katex-z1-mount'), state.formulaZ1KaTeX);

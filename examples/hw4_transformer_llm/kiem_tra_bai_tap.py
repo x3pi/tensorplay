@@ -65,7 +65,7 @@ def _softmax(s):
 
 
 def kiem_tra_positional_encoding():
-    print("=== [Kiểm tra Bài 28: Positional Encoding & Hoán Vị Bất Biến] ===")
+    print("=== [Kiểm tra Bài 31: Positional Encoding & Hoán Vị Bất Biến] ===")
     E = {"chó": [1, 0], "cắn": [0, 1], "người": [1, 1]}
 
     def attend(tokens, use_pe, query):
@@ -99,7 +99,7 @@ def kiem_tra_positional_encoding():
 
 
 def kiem_tra_multi_head_attention():
-    print("=== [Kiểm tra Bài 29: Multi-Head Attention] ===")
+    print("=== [Kiểm tra Bài 32: Multi-Head Attention] ===")
     X = np.array([[1, 0, 1, 0], [0, 1, 0, 1], [1, 0, 0, 1]], dtype=float)
     q_idx = 2  # token "pin"
 

@@ -1,5 +1,9 @@
 /**
- * Bài 04: Mạng Nơ-ron 2 Tầng & Cơ Chế Đóng/Mở Van ReLU (Matrix Backprop)
+ * Bài 05: Mạng Nơ-ron 2 Tầng & Cơ Chế Đóng/Mở Van ReLU (Matrix Backprop)
+ *
+ * Forward : Z1 = X W1 -> A1 = ReLU(Z1) -> Z2 = A1 W2 -> P = softmax(Z2) -> L = -log P[y]
+ * Backward: G2 = P - onehot(y); grad W2 = A1^T G2; G1 = (G2 W2^T) ⊙ [Z1 > 0]; grad W1 = X^T G1
+ * Quy ước: đạo hàm ReLU tại Z = 0 bằng 0 (giống PyTorch).
  */
 
 export class LessonLogic {
@@ -13,23 +17,27 @@ export class LessonLogic {
       w1_00: 1.0, w1_01: -2.0, w1_10: 0.0, w1_11: 1.0,
       w2_00: 1.0, w2_01: 0.0, w2_10: 0.0, w2_11: 1.0,
       y: 1,
-      lr: 0.5
+      lr: 0.5,
+      steps: 0,        // số bước SGD đã chạy kể từ lần đặt trạng thái gần nhất
+      lossPrev: null   // loss ngay trước bước SGD gần nhất
     };
     return this.calculate();
   }
 
   applyPreset(presetState) {
-    this.state = { ...this.state, ...presetState };
+    this.state = { ...this.state, ...presetState, steps: 0, lossPrev: null };
     return this.calculate();
   }
 
   onUserUpdate(partialState) {
-    this.state = { ...this.state, ...partialState };
+    this.state = { ...this.state, ...partialState, steps: 0, lossPrev: null };
     return this.calculate();
   }
 
   stepSGD() {
     const c = this.calculate();
+    this.state.lossPrev = c.loss;
+    this.state.steps += 1;
     // Update W2
     this.state.w2_00 -= this.state.lr * c.gw2_00;
     this.state.w2_01 -= this.state.lr * c.gw2_01;
@@ -67,6 +75,8 @@ export class LessonLogic {
     const sumE = e0 + e1;
     const p0 = e0 / sumE;
     const p1 = e1 / sumE;
+    // Loss = -log P[y] (P không bao giờ bằng 0 nhờ Safe Softmax ở trên với logit hữu hạn)
+    const loss = -Math.log(s.y === 0 ? p0 : p1);
     
     // BACKWARD
     // G2 = P - I_y (B=1)
@@ -105,7 +115,8 @@ export class LessonLogic {
 
     return {
       ...s,
-      z1_0, z1_1, a1_0, a1_1, z2_0, z2_1, p0, p1,
+      z1_0, z1_1, a1_0, a1_1, z2_0, z2_1, p0, p1, loss,
+      lossDelta: s.lossPrev === null ? null : loss - s.lossPrev,
       g2_0, g2_1, gw2_00, gw2_01, gw2_10, gw2_11,
       gh_0, gh_1, m0, m1, g1_0, g1_1,
       gw1_00, gw1_01, gw1_10, gw1_11,
@@ -119,12 +130,42 @@ export class LessonLogic {
 
 export const PRESETS = [
   {
-    id: "bai4_1",
-    label: "Tình huống Bài 4.1 (Dập tắt Nơ-ron)",
+    id: "healthy",
+    label: "Mạng chuẩn (cả 2 nơ-ron sống)",
+    state: {
+      x1: 1.0, x2: 1.0,
+      w1_00: 1.0, w1_01: 0.0, w1_10: 0.0, w1_11: 0.5,
+      w2_00: 1.0, w2_01: 0.0, w2_10: 0.0, w2_11: 1.0,
+      y: 1, lr: 0.5
+    }
+  },
+  {
+    id: "dead_neuron",
+    label: "Nơ-ron 2 chết (Z₁₁ < 0)",
     state: {
       x1: 1.0, x2: 1.0,
       w1_00: 1.0, w1_01: -2.0, w1_10: 0.0, w1_11: 1.0,
       w2_00: 1.0, w2_01: 0.0, w2_10: 0.0, w2_11: 1.0,
+      y: 1, lr: 0.5
+    }
+  },
+  {
+    id: "w2_zero_only",
+    label: "Chỉ W₂ = 0 (W₁ khác 0)",
+    state: {
+      x1: 1.0, x2: 1.0,
+      w1_00: 1.0, w1_01: 0.0, w1_10: 0.0, w1_11: 0.5,
+      w2_00: 0.0, w2_01: 0.0, w2_10: 0.0, w2_11: 0.0,
+      y: 1, lr: 0.5
+    }
+  },
+  {
+    id: "all_zero",
+    label: "Lời nguyền: W₁ = W₂ = 0",
+    state: {
+      x1: 1.0, x2: 1.0,
+      w1_00: 0.0, w1_01: 0.0, w1_10: 0.0, w1_11: 0.0,
+      w2_00: 0.0, w2_01: 0.0, w2_10: 0.0, w2_11: 0.0,
       y: 1, lr: 0.5
     }
   }

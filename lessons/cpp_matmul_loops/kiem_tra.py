@@ -1,42 +1,59 @@
 #!/usr/bin/env python3
 """
 lessons/cpp_matmul_loops/kiem_tra.py
-Kiểm chứng số học độc lập bằng NumPy theo quy chuẩn AGENTS.md.
-(Khôi phục đầy đủ các assertion gốc từ bộ kiểm chứng theo track cũ.)
+Ba vòng lặp for với chỉ số 1D (i*K+l, l*N+j, i*N+j) trùng matmul của numpy ở mọi bước và mọi kích thước.
+Mỗi mục gồm: (1) phép tính độc lập bằng numpy, (2) đối chiếu trực tiếp với logic.js qua tools/checks_common.js_calc.
 """
-import math
+import pathlib
+import sys
 
 import numpy as np
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "tools"))
+from checks_common import js_calc  # noqa: E402
 
-def kiem_tra_bai_06a():
-    print("=== [Kiểm tra Bài 06a: C++ Matmul Loops & 1D Indexing] ===")
-    M, K, N = 2, 3, 2
-    A = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.float32)
-    B_mat = np.array([[7, 8], [9, 1], [2, 3]], dtype=np.float32)
 
-    # Trải phẳng 1D
-    A_1D = A.flatten()
-    B_1D = B_mat.flatten()
-    C_1D = np.zeros(M * N, dtype=np.float32)
 
-    # 3 vòng lặp C++ lồng nhau
-    total_steps = 0
+def loops(A, B, M, K, N):
+    """Trả (C cuối, danh sách các (idxA, idxB, idxC) theo từng bước)."""
+    C = [0] * (M * N)
+    trace = []
     for i in range(M):
         for j in range(N):
             for l in range(K):
-                C_1D[i * N + j] += A_1D[i * K + l] * B_1D[l * N + j]
-                total_steps += 1
-
-    expected_C = np.dot(A, B_mat).flatten()
-    assert np.allclose(C_1D, expected_C), "Phép nhân 1D C++ phải cho kết quả chính xác 100%"
-    assert total_steps == M * N * K, f"Số bước lặp phải là {M*N*K}, nhận được {total_steps}"
-    print(f"-> Tổng bước lặp: {total_steps} khớp chuẩn $M \\times N \\times K$")
-    print("-> Bài 06a: ĐẠT CHUẨN 100%\n")
+                ia, ib, ic = i * K + l, l * N + j, i * N + j
+                C[ic] += A[ia] * B[ib]
+                trace.append((ia, ib, ic, list(C)))
+    return C, trace
 
 
 def main() -> None:
-    kiem_tra_bai_06a()
+    M, K, N = 2, 3, 2
+    A = [1, 2, 0, 0, 1, -1]
+    B = [1, 0, 0, 1, 1, 1]
+    C, trace = loops(A, B, M, K, N)
+    ref = (np.array(A).reshape(M, K) @ np.array(B).reshape(K, N)).reshape(-1)
+    assert C == ref.tolist() == [1, 2, -1, 0], C
+    assert len(trace) == M * N * K == 12
+
+    # --- đối chiếu JS từng bước một ---
+    for step in range(12):
+        js = js_calc("cpp_matmul_loops", update={"A": A, "B": B, "M": M, "K": K, "N": N, "currentStep": step})
+        ia, ib, ic, c_so_far = trace[step]
+        assert (js["idxA"], js["idxB"], js["idxC"]) == (ia, ib, ic), step
+        assert js["C"] == c_so_far, step
+        assert js["totalSteps"] == 12
+
+    # --- mọi kích thước ngẫu nhiên: vòng lặp 1D == matmul ---
+    rng = np.random.default_rng(5)
+    for (m, k, n) in ((1, 1, 1), (2, 3, 4), (5, 2, 3), (4, 4, 4)):
+        a = rng.integers(-3, 4, size=m * k)
+        b = rng.integers(-3, 4, size=k * n)
+        c, tr = loops(a.tolist(), b.tolist(), m, k, n)
+        assert c == (a.reshape(m, k) @ b.reshape(k, n)).reshape(-1).tolist()
+        assert len(tr) == m * n * k
+        # Mảng C mặc định của numpy là C-contiguous (hàng trước): r*N + c
+        assert np.arange(m * n).reshape(m, n)[m - 1, n - 1] == (m - 1) * n + (n - 1)
 
 
 if __name__ == "__main__":

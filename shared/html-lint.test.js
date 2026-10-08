@@ -19,4 +19,20 @@ describe('HTML của bài học phải parse được bởi Vite (parse5)', () =
     }
     expect(offenders, offenders.join('\n')).toEqual([]);
   });
+
+  it('trang chuyển hướng URL cũ dùng đường dẫn tương đối và trỏ tới bài tồn tại (chạy được dưới thư mục con)', () => {
+    const root = path.resolve(__dirname, '..', 'public', 'examples');
+    const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]);
+    const stubs = walk(root).filter(f => f.endsWith('.html'));
+    expect(stubs.length).toBeGreaterThan(0);
+    for (const f of stubs) {
+      const html = fs.readFileSync(f, 'utf-8');
+      const url = html.match(/url=([^"]+)"/)[1];
+      expect(url.startsWith('/'), `${f}: chuyển hướng tuyệt đối`).toBe(false);
+      expect(url.endsWith('/'), `${f}: thiếu dấu / cuối`).toBe(true);
+      // Trang nằm ở public/examples/... sẽ được phục vụ ở /examples/..., nên phân giải đích từ gốc dự án
+      const served = path.resolve(path.resolve(__dirname, '..'), path.relative(path.resolve(__dirname, '..', 'public'), path.dirname(f)));
+      expect(fs.existsSync(path.join(served, url, 'index.html')), `${f}: đích không tồn tại`).toBe(true);
+    }
+  });
 });

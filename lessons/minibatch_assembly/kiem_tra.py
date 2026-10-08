@@ -44,6 +44,13 @@ def main() -> None:
     assert big["isOOM"] is True, "Preset B = 16 nói về nguy cơ OOM nên phải vượt ngưỡng VRAM"
     assert js_calc("minibatch_assembly", preset="batch_sweet_spot")["isOOM"] is False
 
+    # --- Mô hình lane: GPU xử lý `lanes` mẫu mỗi bước ---
+    for B, lanes in ((1, 4), (2, 4), (4, 4), (8, 4), (16, 4), (3, 8)):
+        util = round(100 * min(B, lanes) / lanes)
+        js = js_calc("minibatch_assembly", update={"batchSize": B, "lanes": lanes})
+        assert js["gpuUtilization"] == util and js["stepsPerBatch"] == -(-B // lanes) and js["idleLanes"] == lanes - min(B, lanes)
+    assert [js_calc("minibatch_assembly", update={"batchSize": b})["gpuUtilization"] for b in (1, 2, 4, 16)] == [25, 50, 100, 100]
+
     # --- Dataloader: CPU tiền xử lý song song vs GPU tiêu thụ ---
     t_cpu_per_sample, workers, t_gpu_batch = 2.0, 4, 10.0
     assert (16 * t_cpu_per_sample) / workers == 8.0 < t_gpu_batch, "B=16, 4 worker: CPU kịp GPU"

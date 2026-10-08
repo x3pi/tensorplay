@@ -13,6 +13,7 @@ function findHtmlFiles(dir, out = []) {
 }
 
 export default defineConfig({
+  base: './', // đường dẫn tương đối: chạy được ở gốc domain lẫn thư mục con (GitHub Pages)
   build: {
     rollupOptions: {
       input: Object.fromEntries(

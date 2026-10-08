@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cài phụ thuộc
+        run: |
+          npm ci
+          python -m pip install --upgrade pip numpy
+
+      # Kiểm tra catalog khớp nguồn + toàn bộ Vitest + kiểm chứng Python từng bài (strict)
+      - name: Verify (catalog, test, kiểm chứng toán học)
+        run: npm run verify
+
+      - name: Build tĩnh
+        run: npm run build
+
+      # Trang chuyển hướng URL cũ phải dùng đường dẫn tương đối để chạy được khi deploy dưới thư mục con
+      - name: Kiểm tra chuyển hướng tương đối
+        run: |
+          ! grep -R "url=/" dist/examples | head -1 | grep . || (echo "Có chuyển hướng dùng đường dẫn tuyệt đối" && exit 1)

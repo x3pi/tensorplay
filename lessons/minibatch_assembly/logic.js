@@ -2,7 +2,7 @@
  * Mini-Batching Assembly Line (Needle HW2)
  * Băng chuyền xử lý lô mini-batch B = 1, 2, 4, 8.
  * Vector hóa X (B x D) * W (D x H) -> Z (B x H).
- * Tính toán hiệu suất tận dụng GPU Cores và dung lượng Activation Buffer trong VRAM.
+ * Hiệu suất tận dụng GPU theo mô hình lane (tính ra, không phải bảng số cố định) và dung lượng Activation Buffer trong VRAM.
  */
 
 export class LessonLogic {
@@ -16,7 +16,8 @@ export class LessonLogic {
       featureDim: 4,      // D (số chiều đặc trưng)
       hiddenDim: 4,       // H (số nơ-ron ẩn)
       numLayers: 3,       // Số tầng mạng
-      gpuMaxVramKb: 16    // Ngưỡng cảnh báo VRAM cho demo
+      gpuMaxVramKb: 16,   // Ngưỡng cảnh báo VRAM cho demo
+      lanes: 4            // Số lane song song của GPU đồ chơi
     };
     return this.calculate();
   }
@@ -32,7 +33,7 @@ export class LessonLogic {
   }
 
   calculate() {
-    const { batchSize, featureDim, hiddenDim, numLayers, gpuMaxVramKb } = this.state;
+    const { batchSize, featureDim, hiddenDim, numLayers, gpuMaxVramKb, lanes } = this.state;
 
     // Kích thước ma trận
     // X: B x D, W: D x H, Z: B x H
@@ -52,10 +53,12 @@ export class LessonLogic {
 
     // Giả lập tỉ lệ tận dụng nhân GPU (GPU Core Utilization %)
     // B=1: lãng phí phần lớn nhân; B càng lớn càng bão hòa GPU
-    let gpuUtilization = 15;
-    if (batchSize === 2) gpuUtilization = 45;
-    else if (batchSize === 4) gpuUtilization = 80;
-    else if (batchSize >= 8) gpuUtilization = 95;
+    // Mô hình "lane": GPU đồ chơi xử lý đồng thời `lanes` mẫu mỗi bước.
+    // B < lanes thì còn lane rảnh; B >= lanes thì kín (các mẫu dư xếp hàng sang bước kế).
+    const busyLanes = Math.min(batchSize, lanes);
+    const gpuUtilization = Math.round((busyLanes / lanes) * 100);
+    const stepsPerBatch = Math.ceil(batchSize / lanes);
+    const idleLanes = lanes - busyLanes;
 
     const isOOM = totalActivationKb > gpuMaxVramKb;
 
@@ -72,6 +75,9 @@ export class LessonLogic {
       totalActivationBytes,
       totalActivationKb: Number(totalActivationKb.toFixed(2)),
       gpuUtilization,
+      lanes,
+      idleLanes,
+      stepsPerBatch,
       isOOM,
       formulaGemmKaTeX: `X_{(${batchSize} \\times ${featureDim})} \\cdot W_{(${featureDim} \\times ${hiddenDim})} = Z_{(${batchSize} \\times ${hiddenDim})}`,
       formulaMemoryKaTeX: `\\text{RAM Buffer} = ${batchSize} \\times ${hiddenDim} \\times ${numLayers} \\times 4\\text{B} = ${totalActivationBytes}\\text{ Bytes}`

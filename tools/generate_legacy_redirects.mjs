@@ -23,7 +23,8 @@ for (const [legacyUrl, target] of Object.entries(legacyMap)) {
   const destHtmlPath = path.join(publicDir, legacyUrl);
   fs.mkdirSync(path.dirname(destHtmlPath), { recursive: true });
 
-  const targetRel = '/' + target.replace(/^\//, '');
+  // Đường dẫn TƯƠNG ĐỐI từ vị trí trang chuyển hướng, để chạy được cả khi deploy dưới thư mục con (vd /tensorplay/)
+  const targetRel = path.posix.relative(path.posix.dirname(legacyUrl), target.replace(/^\//, '')).replace(/\/?$/, '/');
   const htmlContent = `<!DOCTYPE html>
 <html lang="vi">
 <head>

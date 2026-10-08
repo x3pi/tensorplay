@@ -39,4 +39,14 @@ describe('minibatch_assembly logic', () => {
     const ok = logic.applyPreset(PRESETS.find(p => p.id === 'batch_sweet_spot').state);
     expect(ok.isOOM).toBe(false);
   });
+
+  it("hiệu suất GPU theo mô hình lane tính ra: B = 1,2,4,8,16 -> 25%,50%,100%,100%,100%", () => {
+    const logic = new LessonLogic();
+    const util = [1, 2, 4, 8, 16].map(b => logic.onUserUpdate({ batchSize: b }).gpuUtilization);
+    expect(util).toEqual([25, 50, 100, 100, 100]);
+    const r = logic.onUserUpdate({ batchSize: 16 });
+    expect(r.stepsPerBatch).toBe(4);
+    expect(r.idleLanes).toBe(0);
+    expect(logic.onUserUpdate({ batchSize: 1 }).idleLanes).toBe(3);
+  });
 });

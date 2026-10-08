@@ -26,6 +26,9 @@ import(url).then(m => {
     const p = m.PRESETS.find(p => p.id === spec.preset);
     if (!p) throw new Error('Không có preset ' + spec.preset);
     r = l.applyPreset(p.state);
+    if (spec.update) r = l.onUserUpdate(spec.update);
+  } else if (spec.update) {
+    r = l.onUserUpdate(spec.update);
   } else if (spec.state) {
     r = l.applyPreset(spec.state);
   } else {
@@ -37,10 +40,11 @@ import(url).then(m => {
 """
 
 
-def js_calc(slug, preset=None, state=None, calls=None):
-    """Áp dụng preset/state rồi (tùy chọn) gọi các phương thức như stepScan; trả về kết quả calculate()."""
+def js_calc(slug, preset=None, state=None, calls=None, update=None):
+    """Áp dụng preset/state (applyPreset) rồi, nếu có, `update` (onUserUpdate: KHÔNG reset các trường như currentStep)
+    và các phương thức như stepScan; trả về kết quả calculate()."""
     logic = ROOT / "lessons" / slug / "logic.js"
-    spec = json.dumps({"preset": preset, "state": state, "calls": calls or []})
+    spec = json.dumps({"preset": preset, "state": state, "calls": calls or [], "update": update})
     out = subprocess.run(
         ["node", "--input-type=module", "-e", _NODE_SNIPPET, logic.as_uri(), spec],
         capture_output=True, text=True, check=True, cwd=str(ROOT),

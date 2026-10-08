@@ -266,14 +266,13 @@ Thứ tự bài **không còn nằm trong tên file hay tiêu đề**. Nó đư�
 - **Số hiển thị** ("Bài 7/34") được tính lúc chạy theo lộ trình đang chọn.
 
 ### Backlog ý tưởng bài mới (chưa làm)
-Các chủ đề quan trọng đã có bài: overfitting & validation, LR schedule, tokenization & embedding, roofline, data parallel & all-reduce, khối Transformer (đếm tham số), sampling/decoding, quantization. Còn thiếu (theo mức ưu tiên):
-- Tensor/Pipeline Parallelism và ZeRO/FSDP (chia nhỏ trạng thái mô hình, nối tiếp bài data parallel).
-- Mixture-of-Experts (định tuyến token, cân bằng tải).
-- Fine-tuning hiệu quả tham số: LoRA ($W + BA$, đếm tham số cần học).
-- Speculative decoding và continuous batching (tăng thông lượng phục vụ).
-- Grouped-Query Attention / MQA (giảm KV-Cache), RoPE đầy đủ.
-- Gradient accumulation & gradient clipping.
-- Bài ôn tập tổng hợp "mini-GPT một khối" chạy forward thật từ token đến logits.
+Đã có bài cho: overfitting & validation, LR schedule, tokenization & embedding, roofline, data parallel & all-reduce, ZeRO/FSDP, khối Transformer (đếm tham số), sampling/decoding, quantization, gradient accumulation & clipping, GQA/MQA, RoPE, LoRA, Mixture-of-Experts, và bài tổng hợp mini-GPT. Còn thiếu (theo mức ưu tiên):
+- Tensor Parallelism và Pipeline Parallelism (cắt ma trận và cắt theo tầng, bong bóng pipeline).
+- Continuous batching và PagedAttention (quản lý KV-Cache như bộ nhớ ảo).
+- Speculative decoding (mô hình nháp + mô hình kiểm).
+- Kernel fusion (gộp phép tính để giảm băng thông, nối tiếp bài Roofline).
+- RLHF / DPO ở mức toán tối thiểu (hàm mất mát so sánh ưa thích).
+- Đánh giá mô hình: perplexity và cách đo (nối tiếp cross-entropy).
 
 Thêm/sửa/đổi thứ tự/đổi tên/xóa bài: xem Mục XII.
 

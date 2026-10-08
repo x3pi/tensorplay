@@ -22,11 +22,11 @@ tensorplay/
 │   ├── topics.json              # 8 chủ đề chính & mã màu
 │   ├── legacy-map.json          # Ánh xạ URL cũ để chuyển hướng tự động
 │   └── paths/                   # Các lộ trình học (JSON)
-│       ├── main.json            # "Lộ trình đầy đủ" (42 bài học)
+│       ├── main.json            # "Lộ trình đầy đủ" (49 bài học)
 │       ├── llm-systems.json     # "Chuyên sâu LLM & Transformers" (10 bài)
 │       ├── cpp-memory.json      # "Kỹ nghệ Bộ nhớ & Hiệu năng C++" (7 bài)
 │       └── cmu-10414.json       # "Khung đối chiếu CMU 10-414/714"
-├── lessons/                     # Thư viện bài học tự quản (42 bài)
+├── lessons/                     # Thư viện bài học tự quản (49 bài)
 │   └── <slug>/                  # Định danh bằng slug ngữ nghĩa (ví dụ: robot_vision)
 │       ├── index.html           # Giao diện Sandbox tương tác 3 cột
 │       ├── logic.js             # Logic toán học thuần (ES Module)
@@ -66,3 +66,8 @@ npm run new-lesson <slug> --title "Tên Bài Học" --topic <topic_id>
 # 6. Đóng gói sản phẩm tĩnh
 npm run build
 ```
+
+## 🚀 Triển khai & CI
+- `vite.config.js` dùng `base: './'` và các trang chuyển hướng URL cũ dùng đường dẫn tương đối, nên bản `dist/` chạy được cả ở gốc domain lẫn dưới thư mục con (ví dụ GitHub Pages `/tensorplay/`).
+- `.github/workflows/ci.yml` chạy `npm run verify` (catalog khớp nguồn + toàn bộ Vitest + kiểm chứng toán học Python từng bài ở chế độ strict) rồi `npm run build`.
+- Kiểm chứng từng bài: `lessons/<slug>/kiem_tra.py` tính độc lập bằng numpy và đối chiếu trực tiếp với `logic.js` qua `tools/checks_common.py` (`js_calc`).

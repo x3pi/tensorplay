@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta name="tp-lesson" content="gradient_accumulation_clipping">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gradient Accumulation &amp; Clipping — Batch Lớn Trong RAM Nhỏ, Chặn Cú Nhảy Bất Thường - TensorPlay</title>
+  <meta name="description" content="Tích lũy gradient qua nhiều micro-batch (và lỗi quên chia), cắt gradient theo giá trị so với theo chuẩn toàn cục: vì sao giữ hướng quan trọng.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">← Về Danh Mục</a>
+      </div>
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step" data-topic-badge></span>
+      </div>
+    </header>
+
+    <main class="lab-grid">
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt &amp; Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Bàn Thí Nghiệm Tích Lũy & Cắt Gradient</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Đặt Lại</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">⚡ Dữ liệu 4 micro-batch</div>
+            <div class="tp-seg" id="seg-spike">
+              <button data-v="off">Bình thường</button>
+              <button data-v="on">Có 1 micro-batch đột biến</button>
+            </div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">➕ Cách gộp 4 gradient</div>
+            <div class="tp-seg" id="seg-divide">
+              <button data-v="on">Chia cho 4 (trung bình) ✅</button>
+              <button data-v="off">Cộng thẳng (quên chia)</button>
+            </div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">✂️ Cắt gradient (ngưỡng $c = 1$)</div>
+            <div class="tp-seg" id="seg-clip">
+              <button data-v="none">Không cắt</button>
+              <button data-v="value">Theo giá trị</button>
+              <button data-v="norm">Theo chuẩn toàn cục</button>
+            </div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🧮 Bộ nhớ activation (1 GB / mẫu)</div>
+            <table class="tp-kv-table" id="mem-table"></table>
+          </div>
+        </div>
+      </section>
+
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math &amp; Telemetry</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div class="tp-panel">
+            <div class="tp-panel-title">📐 Công thức</div>
+            <div class="tp-math-box" id="katex-g"></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">📊 Gradient từng bước</div>
+            <table class="tp-kv-table" id="grad-table"></table>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🧭 Hướng của gradient</div>
+            <svg id="plot" viewBox="0 0 220 220" style="width:100%; max-width:240px; background:#090d15; border-radius:8px; display:block; margin:0 auto;"></svg>
+            <div class="tp-matrix-caption">đường xám = gradient gốc · xanh = sau khi cắt (cùng hệ trục, tỉ lệ rút gọn)</div>
+          </div>
+          <div class="tp-verdict" id="verdict"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createLiveSlider } from '../../shared/components/LiveSlider.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
+    import { markCompleted } from '../../shared/progress.js';
+    import { LessonLogic, PRESETS } from './logic.js';
+
+    const LESSON_ID = 'gradient_accumulation_clipping';
+
+    const STEPS = [
+      {
+        step: 1, badge: 'Bước 1 / 4',
+        heading: 'Batch lớn mà RAM nhỏ',
+        problem: 'Muốn huấn luyện với batch 8 mẫu nhưng activation của mỗi mẫu chiếm 1 GB, GPU chỉ chứa nổi 2 mẫu cùng lúc. Có cách nào có hiệu quả của batch 8 không?',
+        mechanism: 'Chạy 4 micro-batch, mỗi lần 2 mẫu, cộng dồn gradient vào cùng một bộ đệm, chỉ cập nhật trọng số sau micro-batch thứ 4. Bộ nhớ activation chỉ còn 2 GB thay vì 8 GB. Vì mất mát là trung bình theo mẫu, trung bình 4 gradient của micro-batch bằng đúng gradient của batch 8 (bài [[lesson:minibatch_sgd]]).',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Tích lũy 4 micro-batch, chia đúng ✅".\n👁️ Quan sát (Cột 3): Gradient $[0.25, 0.25]$; bảng bộ nhớ báo 2 GB so với 8 GB.',
+        takeaway: 'Gradient accumulation đổi thời gian lấy bộ nhớ: cùng kết quả toán học, chậm hơn một chút.'
+      },
+      {
+        step: 2, badge: 'Bước 2 / 4',
+        heading: 'Lỗi kinh điển: quên chia',
+        problem: 'Mỗi lần `backward()` cộng thêm vào bộ đệm gradient. Nếu cứ cộng 4 lần rồi cập nhật thì sao?',
+        mechanism: 'Tổng 4 gradient là $[1.0, 1.0]$, gấp đúng 4 lần trung bình $[0.25, 0.25]$. Bước học thực tế gấp 4 lần. Cách sửa: chia mất mát của mỗi micro-batch cho số bước tích lũy ngay từ đầu (hoặc chia gradient trước khi cập nhật). Giống lỗi quên chia $N$ ở [[lesson:data_parallel_allreduce]].',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Quên chia cho 4 ❌".\n👁️ Quan sát (Cột 3): Gradient gấp 4, thanh kết luận đỏ.',
+        takeaway: 'Tích lũy luôn đi kèm hệ số $1/k$; không có nó, thêm bước tích lũy là tăng ngầm tốc độ học.'
+      },
+      {
+        step: 3, badge: 'Bước 3 / 4',
+        heading: 'Cú nhảy đột biến',
+        problem: 'Một micro-batch chứa mẫu hỏng cho gradient $[11.8, 3.6]$. Ba micro-batch còn lại bình thường. Chuyện gì xảy ra nếu cứ cập nhật?',
+        mechanism: 'Trung bình thành $[3.15, 1.125]$, chuẩn $3.34$ so với $0.35$ bình thường. Bước nhảy $\\eta \\lVert g \\rVert = 0.334$ gấp khoảng 9.5 lần bước thường lệ (0.035). Một bước như vậy đủ đẩy mô hình khỏi vùng đang học tốt, đặc biệt trong RNN ([[lesson:rnn_bptt]]) hay đầu huấn luyện LLM.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Có đột biến, không cắt ❌".\n👁️ Quan sát (Cột 3): Chuẩn 3.3449 và cảnh báo đỏ về bước nhảy gấp 9.5 lần.',
+        takeaway: 'Một mẫu xấu trong batch có thể phá hỏng cả bước cập nhật.'
+      },
+      {
+        step: 4, badge: 'Bước 4 / 4',
+        heading: 'Cắt theo chuẩn giữ hướng, cắt theo giá trị làm lệch hướng',
+        problem: 'Hai cách phổ biến để chặn đột biến: ép từng thành phần vào $[-1, 1]$, hoặc co cả vector sao cho chuẩn không quá 1. Khác nhau gì?',
+        mechanism: 'Theo giá trị: $[3.15, 1.125] \\to [1, 1]$, hướng đổi từ 19.6° lên 45° (cosine 0.904). Theo chuẩn: nhân cả vector với $1 / 3.34 = 0.299$ thành $[0.942, 0.336]$, hướng giữ nguyên (cosine 1), chuẩn đúng bằng 1. Vì thế LLM dùng cắt theo chuẩn toàn cục (`clip_grad_norm_`). Thứ tự đúng: cộng dồn và chia xong, rồi mới cắt, và với mixed precision phải unscale trước ([[lesson:mixed_precision]]).',
+        action: '👉 Thao tác (Cột 2): Bấm lần lượt "Đột biến + cắt theo giá trị" và "Đột biến + cắt theo chuẩn ✅".\n👁️ Quan sát (Cột 3): Hình hướng: cắt theo chuẩn trùng đường xám, cắt theo giá trị lệch sang 45°.',
+        takeaway: 'Cắt gradient nên thu nhỏ độ dài chứ không bẻ hướng.'
+      }
+    ];
+
+    const STEP_COMMENTS = {
+      2: [{
+        id: 'ga2', author: 'Kỹ Sư AI', role: 'Systems', avatar: '🚀', tag: 'Gotcha kinh điển', tagType: 'gotcha',
+        content: 'Đừng quên `optimizer.zero_grad()` sau mỗi lần cập nhật (không phải sau mỗi micro-batch). Với BatchNorm, tích lũy gradient KHÔNG tương đương batch lớn vì thống kê chuẩn hóa vẫn tính trên micro-batch 2 mẫu, thêm một lý do LLM dùng LayerNorm.'
+      }],
+      3: [{
+        id: 'ga3', author: 'Chuyên Gia LLM', role: 'LLM', avatar: '🧠', tag: 'Thực tế huấn luyện', tagType: 'systems',
+        content: 'Thường đặt ngưỡng cắt theo chuẩn là 1.0 và theo dõi tỉ lệ bước bị cắt: nếu cắt gần như mọi bước thì tốc độ học đang quá cao; nếu không bao giờ cắt thì ngưỡng vô nghĩa. Đột biến chuẩn gradient (loss spike) là tín hiệu cảnh báo sớm.'
+      }],
+      4: [{
+        id: 'ga4', author: 'Nhà Toán Học AI', role: 'Math', avatar: '📐', tag: 'Vì sao giữ hướng', tagType: 'math',
+        content: 'Cắt theo chuẩn là phép chiếu lên hình cầu bán kính $c$ theo tia từ gốc: $g \\mapsto g \\cdot \\min(1, c/\\lVert g \\rVert)$. Hướng giảm dốc nhất của hàm mất mát chính là hướng của $g$, nên giữ hướng nghĩa là vẫn đi theo hướng giảm, chỉ đi ngắn lại.'
+      }]
+    };
+
+    const logic = new LessonLogic();
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
+    });
+
+    createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 1,
+      onStepChange: (n) => {
+        comments.setStep(n, STEP_COMMENTS[n] || []);
+        if (n === STEPS.length) markCompleted(LESSON_ID, true);
+      }
+    });
+
+
+
+    function syncControls() {
+      void 0;
+    }
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      initialActiveId: 'accumulate_ok',
+      onPick: (p) => {
+        logic.applyPreset(p.state);
+        syncControls();
+        render();
+      }
+    });
+
+    function segBind(id, apply) {
+      document.querySelectorAll(`#${id} button`).forEach(btn => btn.addEventListener('click', () => {
+        logic.onUserUpdate(apply(btn.dataset.v));
+        presets.setActive(null);
+        render();
+      }));
+    }
+    segBind('seg-spike', v => ({ spike: v === 'on' }));
+    segBind('seg-divide', v => ({ divide: v === 'on' }));
+    segBind('seg-clip', v => ({ clip: v }));
+
+    function render() {
+      const r = logic.calculate();
+      const s = logic.state;
+      document.querySelectorAll('#seg-spike button').forEach(b => b.classList.toggle('active', (b.dataset.v === 'on') === s.spike));
+      document.querySelectorAll('#seg-divide button').forEach(b => b.classList.toggle('active', (b.dataset.v === 'on') === s.divide));
+      document.querySelectorAll('#seg-clip button').forEach(b => b.classList.toggle('active', b.dataset.v === s.clip));
+
+      document.getElementById('mem-table').innerHTML = `
+        <tr><td>Micro-batch (2 mẫu)</td><td>${r.microGB} GB</td></tr>
+        <tr><td>Nếu chạy thẳng batch 8 mẫu</td><td>${r.effectiveGB} GB</td></tr>`;
+      renderMath(document.getElementById('katex-g'), r.formulaKaTeX, { displayMode: true });
+      document.getElementById('grad-table').innerHTML =
+        r.micro.map((g, i) => `<tr><td>Micro-batch ${i + 1}</td><td>[${g.join(', ')}]</td></tr>`).join('') + `
+        <tr><td>Sau gộp</td><td>[${r.raw.join(', ')}] (chuẩn ${r.rawNorm})</td></tr>
+        <tr><td>Sau khi cắt</td><td>[${r.clipped.join(', ')}] (chuẩn ${r.clippedNorm})</td></tr>
+        <tr><td>Bước cập nhật lr · g</td><td>độ dài ${r.stepNorm} (bình thường ${r.normalStepNorm})</td></tr>
+        <tr><td>w mới (từ [1, 1])</td><td>[${r.wNew.join(', ')}]</td></tr>
+        <tr><td>Cosine hướng gốc và hướng đã cắt</td><td>${r.cosine} (lệch ${r.angleDeg}°)</td></tr>`;
+
+      const cx = 20, cy = 200;
+      const raw = [r.raw[0], r.raw[1]], clp = [r.clipped[0], r.clipped[1]];
+      const sc = 3 / Math.max(3, Math.hypot(...raw));
+      const P = v => [cx + v[0] * sc * 60, cy - v[1] * sc * 60];
+      const a = P(raw), b = P(clp);
+      document.getElementById('plot').innerHTML =
+        `<line x1="${cx}" y1="${cy}" x2="210" y2="${cy}" stroke="#334155"/><line x1="${cx}" y1="${cy}" x2="${cx}" y2="10" stroke="#334155"/>` +
+        `<line x1="${cx}" y1="${cy}" x2="${a[0].toFixed(1)}" y2="${a[1].toFixed(1)}" stroke="#94a3b8" stroke-width="3" stroke-dasharray="5 4"/>` +
+        `<line x1="${cx}" y1="${cy}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}" stroke="#38bdf8" stroke-width="3"/>` +
+        `<circle cx="${a[0].toFixed(1)}" cy="${a[1].toFixed(1)}" r="4" fill="#94a3b8"/><circle cx="${b[0].toFixed(1)}" cy="${b[1].toFixed(1)}" r="4" fill="#38bdf8"/>`;
+      renderAllInlineMath(document.querySelector('.col-telemetry'));
+      const verdict = document.getElementById('verdict');
+      verdict.className = `tp-verdict ${r.verdict.type}`;
+      verdict.textContent = r.verdict.text;
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      syncControls();
+      presets.setActive('accumulate_ok');
+      render();
+    });
+
+    renderAllInlineMath(document.querySelector('.col-sandbox'));
+    render();
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

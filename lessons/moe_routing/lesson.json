@@ -1,0 +1,26 @@
+{
+  "id": "moe_routing",
+  "title": "Mixture-of-Experts — Nhiều Chuyên Gia, Mỗi Token Chỉ Gọi Vài Người",
+  "summary": "4 chuyên gia FFN cho $512$ tham số nhưng mỗi token chỉ dùng $k \\times 128$. Router tự do dồn $5/8$ token vào một chuyên gia (aux $= 1.486$), vượt dung lượng nên bỏ $3$ token; thêm cân bằng tải đưa tải về $[2,2,2,2]$ và aux $= 1$.",
+  "topic": "transformer",
+  "tags": [
+    "moe",
+    "routing",
+    "load-balancing",
+    "sparse",
+    "capacity"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 13,
+  "status": "ready",
+  "prerequisites": [
+    "transformer_block_params"
+  ],
+  "related": [
+    "zero_fsdp",
+    "data_parallel_allreduce",
+    "softmax_stability"
+  ],
+  "sources": [],
+  "aliases": []
+}

@@ -1,0 +1,27 @@
+{
+  "id": "lora_finetuning",
+  "title": "LoRA — Tinh Chỉnh Mô Hình Lớn Bằng Hai Ma Trận Hạng Thấp",
+  "summary": "Đóng băng $W$ và học $\\Delta W = BA$ hạng $r$: với $d = 4096$, $r = 8$ trên $W_q, W_v$ của 32 tầng chỉ có $4\\,194\\,304$ tham số học ($0.064\\%$), RAM huấn luyện $\\approx 13.2$ GB thay vì $105$ GB. Khởi tạo $B = 0$, hợp nhất xong không tốn chi phí suy diễn.",
+  "topic": "training-stability",
+  "tags": [
+    "lora",
+    "fine-tuning",
+    "low-rank",
+    "peft",
+    "memory"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 12,
+  "status": "ready",
+  "prerequisites": [
+    "transformer_block_params",
+    "mixed_precision"
+  ],
+  "related": [
+    "quantization_int8",
+    "zero_fsdp",
+    "adamw_weight_decay"
+  ],
+  "sources": [],
+  "aliases": []
+}

@@ -152,7 +152,7 @@
         step: 5, badge: 'Bước 5 / 5',
         heading: 'BF16: đổi độ chi tiết lấy dải số',
         problem: 'Có cách nào khỏi phải lo scale không?',
-        mechanism: 'BF16 giữ nguyên 8 bit số mũ của FP32 nên dải số y hệt, chỉ cắt mantissa còn 7 bit (sai số tương đối tới khoảng $0.4\%$). Gradient $10^{-8}$ sống khỏe mà không cần scale. Đó là lý do TPU và các GPU đời mới (A100 trở đi) ưa dùng BF16 để huấn luyện LLM.',
+        mechanism: 'BF16 giữ nguyên 8 bit số mũ của FP32 nên dải số y hệt, chỉ cắt mantissa còn 7 bit (sai số tương đối tới khoảng $0.4\\%$). Gradient $10^{-8}$ sống khỏe mà không cần scale. Đó là lý do TPU và các GPU đời mới (A100 trở đi) ưa dùng BF16 để huấn luyện LLM.',
         action: '👉 Thao tác (Cột 2): Bấm preset "BF16, không cần scale ✅".\n👁️ Quan sát (Cột 3): Giá trị lưu khác 0, sai số dưới 0.5%.',
         takeaway: 'FP16 cần Loss Scaling, BF16 thì không. Cả hai đều giữ bản master trọng số ở FP32 để cộng dồn các cập nhật nhỏ.'
       }

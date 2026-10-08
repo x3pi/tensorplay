@@ -1,0 +1,26 @@
+{
+  "id": "rope_rotary",
+  "title": "RoPE — Mã Hóa Vị Trí Bằng Phép Xoay: Điểm Chú Ý Chỉ Phụ Thuộc Khoảng Cách",
+  "summary": "Xoay Query đi $m\\theta$ và Key đi $n\\theta$ cho điểm $\\cos((m-n)\\theta)$: với $\\theta = 90°$, hiệu $0,1,2,3$ cho $1,0,-1,0$ và dịch cả câu không đổi điểm; cộng PE tuyệt đối thì đổi. Nhiều tần số xoay để nhìn gần lẫn xa.",
+  "topic": "transformer",
+  "tags": [
+    "rope",
+    "positional-encoding",
+    "relative-position",
+    "rotation"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 12,
+  "status": "ready",
+  "prerequisites": [
+    "positional_encoding",
+    "self_attention"
+  ],
+  "related": [
+    "gqa_kv_cache",
+    "kv_cache_anatomy",
+    "multi_head_attention"
+  ],
+  "sources": [],
+  "aliases": []
+}

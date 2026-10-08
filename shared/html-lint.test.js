@@ -35,4 +35,27 @@ describe('HTML của bài học phải parse được bởi Vite (parse5)', () =
       expect(fs.existsSync(path.join(served, url, 'index.html')), `${f}: đích không tồn tại`).toBe(true);
     }
   });
+
+  it('chuỗi JS trong STEPS/STEP_COMMENTS không có dấu "\\" đơn trước lệnh LaTeX (phải viết \\\\frac, \\\\times...)', () => {
+    const offenders = [];
+    for (const slug of fs.readdirSync(LESSONS)) {
+      const file = path.join(LESSONS, slug, 'index.html');
+      if (!fs.existsSync(file)) continue;
+      const html = fs.readFileSync(file, 'utf-8');
+      const a = html.indexOf('const STEPS');
+      const b = html.indexOf('const logic = new LessonLogic()');
+      if (a < 0 || b < a) continue;
+      const block = html.slice(a, b);
+      // Duyệt từng cặp "\\x": \\\\ (dấu \ thoát), \\n (xuống dòng), \\' hoặc \\" là hợp lệ; còn lại là LaTeX bị nuốt mất dấu \\
+      const re = /\\(.)/g;
+      let m;
+      while ((m = re.exec(block))) {
+        const c = m[1];
+        if (c === '\\' || c === 'n' || c === "'" || c === '"') continue;
+        offenders.push(`${slug}: ...${block.slice(Math.max(0, m.index - 20), m.index + 25).replace(/\n/g, '⏎')}...`);
+        break;
+      }
+    }
+    expect(offenders, offenders.join('\n')).toEqual([]);
+  });
 });

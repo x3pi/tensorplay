@@ -430,6 +430,60 @@
       ],
       "path": "lessons/flash_attention/index.html"
     },
+    "gqa_kv_cache": {
+      "id": "gqa_kv_cache",
+      "title": "GQA / MQA — Chia Sẻ K, V Giữa Các Đầu Để Thu Nhỏ KV-Cache",
+      "summary": "Mô hình 70B kiểu MHA tốn $2.5$ MiB KV mỗi token (batch 16 × 4096 token = $160$ GiB, hơn cả trọng số). GQA-8 còn $320$ KiB (nhỏ hơn 8 lần), MQA $40$ KiB, với chất lượng gần MHA ở GQA.",
+      "topic": "llm-serving",
+      "tags": [
+        "gqa",
+        "mqa",
+        "kv-cache",
+        "attention",
+        "serving"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 12,
+      "status": "ready",
+      "prerequisites": [
+        "multi_head_attention",
+        "kv_cache_anatomy"
+      ],
+      "related": [
+        "roofline_arithmetic_intensity",
+        "flash_attention",
+        "transformer_block_params"
+      ],
+      "sources": [],
+      "aliases": [],
+      "path": "lessons/gqa_kv_cache/index.html"
+    },
+    "gradient_accumulation_clipping": {
+      "id": "gradient_accumulation_clipping",
+      "title": "Gradient Accumulation & Clipping — Batch Lớn Trong RAM Nhỏ, Chặn Cú Nhảy Bất Thường",
+      "summary": "4 micro-batch 2 mẫu chia đúng cho gradient batch 8 trong 2 GB thay vì 8 GB; quên chia thì gradient gấp 4. Một micro-batch đột biến tạo bước nhảy gấp 9.5 lần; cắt theo chuẩn giữ hướng, cắt theo giá trị lệch 25°.",
+      "topic": "training-stability",
+      "tags": [
+        "gradient-accumulation",
+        "gradient-clipping",
+        "exploding-gradient",
+        "memory"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 11,
+      "status": "ready",
+      "prerequisites": [
+        "minibatch_sgd"
+      ],
+      "related": [
+        "data_parallel_allreduce",
+        "mixed_precision",
+        "rnn_bptt"
+      ],
+      "sources": [],
+      "aliases": [],
+      "path": "lessons/gradient_accumulation_clipping/index.html"
+    },
     "gradient_check": {
       "id": "gradient_check",
       "title": "Kiểm Tra Gradient Bằng Số (Gradient Check)",
@@ -536,6 +590,34 @@
         "layernorm_residual"
       ],
       "path": "lessons/layernorm_residual/index.html"
+    },
+    "lora_finetuning": {
+      "id": "lora_finetuning",
+      "title": "LoRA — Tinh Chỉnh Mô Hình Lớn Bằng Hai Ma Trận Hạng Thấp",
+      "summary": "Đóng băng $W$ và học $\\Delta W = BA$ hạng $r$: với $d = 4096$, $r = 8$ trên $W_q, W_v$ của 32 tầng chỉ có $4\\,194\\,304$ tham số học ($0.064\\%$), RAM huấn luyện $\\approx 13.2$ GB thay vì $105$ GB. Khởi tạo $B = 0$, hợp nhất xong không tốn chi phí suy diễn.",
+      "topic": "training-stability",
+      "tags": [
+        "lora",
+        "fine-tuning",
+        "low-rank",
+        "peft",
+        "memory"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 12,
+      "status": "ready",
+      "prerequisites": [
+        "transformer_block_params",
+        "mixed_precision"
+      ],
+      "related": [
+        "quantization_int8",
+        "zero_fsdp",
+        "adamw_weight_decay"
+      ],
+      "sources": [],
+      "aliases": [],
+      "path": "lessons/lora_finetuning/index.html"
     },
     "lr_schedule_warmup": {
       "id": "lr_schedule_warmup",
@@ -670,6 +752,33 @@
         "mixed_precision"
       ],
       "path": "lessons/mixed_precision/index.html"
+    },
+    "moe_routing": {
+      "id": "moe_routing",
+      "title": "Mixture-of-Experts — Nhiều Chuyên Gia, Mỗi Token Chỉ Gọi Vài Người",
+      "summary": "4 chuyên gia FFN cho $512$ tham số nhưng mỗi token chỉ dùng $k \\times 128$. Router tự do dồn $5/8$ token vào một chuyên gia (aux $= 1.486$), vượt dung lượng nên bỏ $3$ token; thêm cân bằng tải đưa tải về $[2,2,2,2]$ và aux $= 1$.",
+      "topic": "transformer",
+      "tags": [
+        "moe",
+        "routing",
+        "load-balancing",
+        "sparse",
+        "capacity"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 13,
+      "status": "ready",
+      "prerequisites": [
+        "transformer_block_params"
+      ],
+      "related": [
+        "zero_fsdp",
+        "data_parallel_allreduce",
+        "softmax_stability"
+      ],
+      "sources": [],
+      "aliases": [],
+      "path": "lessons/moe_routing/index.html"
     },
     "multi_head_attention": {
       "id": "multi_head_attention",
@@ -910,6 +1019,33 @@
       "aliases": [],
       "path": "lessons/roofline_arithmetic_intensity/index.html"
     },
+    "rope_rotary": {
+      "id": "rope_rotary",
+      "title": "RoPE — Mã Hóa Vị Trí Bằng Phép Xoay: Điểm Chú Ý Chỉ Phụ Thuộc Khoảng Cách",
+      "summary": "Xoay Query đi $m\\theta$ và Key đi $n\\theta$ cho điểm $\\cos((m-n)\\theta)$: với $\\theta = 90°$, hiệu $0,1,2,3$ cho $1,0,-1,0$ và dịch cả câu không đổi điểm; cộng PE tuyệt đối thì đổi. Nhiều tần số xoay để nhìn gần lẫn xa.",
+      "topic": "transformer",
+      "tags": [
+        "rope",
+        "positional-encoding",
+        "relative-position",
+        "rotation"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 12,
+      "status": "ready",
+      "prerequisites": [
+        "positional_encoding",
+        "self_attention"
+      ],
+      "related": [
+        "gqa_kv_cache",
+        "kv_cache_anatomy",
+        "multi_head_attention"
+      ],
+      "sources": [],
+      "aliases": [],
+      "path": "lessons/rope_rotary/index.html"
+    },
     "sampling_decoding": {
       "id": "sampling_decoding",
       "title": "Sampling & Decoding — Từ Logits Đến Token Được Chọn",
@@ -1131,6 +1267,33 @@
         "twolayer_relu_backprop"
       ],
       "path": "lessons/twolayer_relu_backprop/index.html"
+    },
+    "zero_fsdp": {
+      "id": "zero_fsdp",
+      "title": "ZeRO / FSDP — Chia Nhỏ Trạng Thái Huấn Luyện Cho Nhiều GPU",
+      "summary": "Mô hình 7B nhân bản cần $112$ GB mỗi GPU (80 GB không đủ); ZeRO-1 còn $38.5$ GB, ZeRO-2 $26.25$ GB, ZeRO-3 $14$ GB với truyền thông gấp $1.5$ lần. 70B trên 64 GPU chỉ ZeRO-3 ($17.5$ GB) vừa.",
+      "topic": "gpu",
+      "tags": [
+        "zero",
+        "fsdp",
+        "memory",
+        "distributed-training",
+        "optimizer-state"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 13,
+      "status": "ready",
+      "prerequisites": [
+        "data_parallel_allreduce",
+        "mixed_precision"
+      ],
+      "related": [
+        "activation_checkpointing",
+        "gradient_accumulation_clipping"
+      ],
+      "sources": [],
+      "aliases": [],
+      "path": "lessons/zero_fsdp/index.html"
     }
   },
   "topics": [
@@ -1210,7 +1373,8 @@
             "coalescing_and_banks",
             "roofline_arithmetic_intensity",
             "activation_checkpointing",
-            "data_parallel_allreduce"
+            "data_parallel_allreduce",
+            "zero_fsdp"
           ]
         }
       ],
@@ -1218,62 +1382,67 @@
         "robot_vision": {
           "index": 1,
           "sectionTitle": "Chặng 1 — Bố Cục Bộ Nhớ C++ & CPU Cache",
-          "total": 12
+          "total": 13
         },
         "cpp_matmul_loops": {
           "index": 2,
           "sectionTitle": "Chặng 1 — Bố Cục Bộ Nhớ C++ & CPU Cache",
-          "total": 12
+          "total": 13
         },
         "memory_leak": {
           "index": 3,
           "sectionTitle": "Chặng 1 — Bố Cục Bộ Nhớ C++ & CPU Cache",
-          "total": 12
+          "total": 13
         },
         "cache_locality": {
           "index": 4,
           "sectionTitle": "Chặng 1 — Bố Cục Bộ Nhớ C++ & CPU Cache",
-          "total": 12
+          "total": 13
         },
         "strides_views": {
           "index": 5,
           "sectionTitle": "Chặng 1 — Bố Cục Bộ Nhớ C++ & CPU Cache",
-          "total": 12
+          "total": 13
         },
         "minibatch_assembly": {
           "index": 6,
           "sectionTitle": "Chặng 1 — Bố Cục Bộ Nhớ C++ & CPU Cache",
-          "total": 12
+          "total": 13
         },
         "cuda_threads": {
           "index": 7,
           "sectionTitle": "Chặng 2 — Tăng Tốc Phần Cứng GPU & Tiết Kiệm VRAM",
-          "total": 12
+          "total": 13
         },
         "shared_memory_tiling": {
           "index": 8,
           "sectionTitle": "Chặng 2 — Tăng Tốc Phần Cứng GPU & Tiết Kiệm VRAM",
-          "total": 12
+          "total": 13
         },
         "coalescing_and_banks": {
           "index": 9,
           "sectionTitle": "Chặng 2 — Tăng Tốc Phần Cứng GPU & Tiết Kiệm VRAM",
-          "total": 12
+          "total": 13
         },
         "roofline_arithmetic_intensity": {
           "index": 10,
           "sectionTitle": "Chặng 2 — Tăng Tốc Phần Cứng GPU & Tiết Kiệm VRAM",
-          "total": 12
+          "total": 13
         },
         "activation_checkpointing": {
           "index": 11,
           "sectionTitle": "Chặng 2 — Tăng Tốc Phần Cứng GPU & Tiết Kiệm VRAM",
-          "total": 12
+          "total": 13
         },
         "data_parallel_allreduce": {
           "index": 12,
           "sectionTitle": "Chặng 2 — Tăng Tốc Phần Cứng GPU & Tiết Kiệm VRAM",
-          "total": 12
+          "total": 13
+        },
+        "zero_fsdp": {
+          "index": 13,
+          "sectionTitle": "Chặng 2 — Tăng Tốc Phần Cứng GPU & Tiết Kiệm VRAM",
+          "total": 13
         }
       }
     },
@@ -1301,8 +1470,10 @@
             "self_attention",
             "embedding_tokenization",
             "positional_encoding",
+            "rope_rotary",
             "multi_head_attention",
-            "transformer_block_params"
+            "transformer_block_params",
+            "moe_routing"
           ]
         },
         {
@@ -1311,9 +1482,11 @@
             "mixed_precision",
             "roofline_arithmetic_intensity",
             "kv_cache_anatomy",
+            "gqa_kv_cache",
             "sampling_decoding",
             "flash_attention",
-            "quantization_int8"
+            "quantization_int8",
+            "lora_finetuning"
           ]
         }
       ],
@@ -1321,92 +1494,112 @@
         "robot_vision": {
           "index": 1,
           "sectionTitle": "Chặng 1 — Nền tảng Toán & Gradient",
-          "total": 18
+          "total": 22
         },
         "softmax_stability": {
           "index": 2,
           "sectionTitle": "Chặng 1 — Nền tảng Toán & Gradient",
-          "total": 18
+          "total": 22
         },
         "cross_entropy_logsumexp": {
           "index": 3,
           "sectionTitle": "Chặng 1 — Nền tảng Toán & Gradient",
-          "total": 18
+          "total": 22
         },
         "softmax_regression": {
           "index": 4,
           "sectionTitle": "Chặng 1 — Nền tảng Toán & Gradient",
-          "total": 18
+          "total": 22
         },
         "autograd_graph": {
           "index": 5,
           "sectionTitle": "Chặng 1 — Nền tảng Toán & Gradient",
-          "total": 18
+          "total": 22
         },
         "layernorm_residual": {
           "index": 6,
           "sectionTitle": "Chặng 2 — Khối Kiến Trúc Transformer",
-          "total": 18
+          "total": 22
         },
         "rnn_bptt": {
           "index": 7,
           "sectionTitle": "Chặng 2 — Khối Kiến Trúc Transformer",
-          "total": 18
+          "total": 22
         },
         "self_attention": {
           "index": 8,
           "sectionTitle": "Chặng 2 — Khối Kiến Trúc Transformer",
-          "total": 18
+          "total": 22
         },
         "embedding_tokenization": {
           "index": 9,
           "sectionTitle": "Chặng 2 — Khối Kiến Trúc Transformer",
-          "total": 18
+          "total": 22
         },
         "positional_encoding": {
           "index": 10,
           "sectionTitle": "Chặng 2 — Khối Kiến Trúc Transformer",
-          "total": 18
+          "total": 22
         },
-        "multi_head_attention": {
+        "rope_rotary": {
           "index": 11,
           "sectionTitle": "Chặng 2 — Khối Kiến Trúc Transformer",
-          "total": 18
+          "total": 22
         },
-        "transformer_block_params": {
+        "multi_head_attention": {
           "index": 12,
           "sectionTitle": "Chặng 2 — Khối Kiến Trúc Transformer",
-          "total": 18
+          "total": 22
+        },
+        "transformer_block_params": {
+          "index": 13,
+          "sectionTitle": "Chặng 2 — Khối Kiến Trúc Transformer",
+          "total": 22
+        },
+        "moe_routing": {
+          "index": 14,
+          "sectionTitle": "Chặng 2 — Khối Kiến Trúc Transformer",
+          "total": 22
         },
         "mixed_precision": {
-          "index": 13,
-          "sectionTitle": "Chặng 3 — Tối Ưu Hệ Thống & LLM Serving",
-          "total": 18
-        },
-        "roofline_arithmetic_intensity": {
-          "index": 14,
-          "sectionTitle": "Chặng 3 — Tối Ưu Hệ Thống & LLM Serving",
-          "total": 18
-        },
-        "kv_cache_anatomy": {
           "index": 15,
           "sectionTitle": "Chặng 3 — Tối Ưu Hệ Thống & LLM Serving",
-          "total": 18
+          "total": 22
         },
-        "sampling_decoding": {
+        "roofline_arithmetic_intensity": {
           "index": 16,
           "sectionTitle": "Chặng 3 — Tối Ưu Hệ Thống & LLM Serving",
-          "total": 18
+          "total": 22
         },
-        "flash_attention": {
+        "kv_cache_anatomy": {
           "index": 17,
           "sectionTitle": "Chặng 3 — Tối Ưu Hệ Thống & LLM Serving",
-          "total": 18
+          "total": 22
         },
-        "quantization_int8": {
+        "gqa_kv_cache": {
           "index": 18,
           "sectionTitle": "Chặng 3 — Tối Ưu Hệ Thống & LLM Serving",
-          "total": 18
+          "total": 22
+        },
+        "sampling_decoding": {
+          "index": 19,
+          "sectionTitle": "Chặng 3 — Tối Ưu Hệ Thống & LLM Serving",
+          "total": 22
+        },
+        "flash_attention": {
+          "index": 20,
+          "sectionTitle": "Chặng 3 — Tối Ưu Hệ Thống & LLM Serving",
+          "total": 22
+        },
+        "quantization_int8": {
+          "index": 21,
+          "sectionTitle": "Chặng 3 — Tối Ưu Hệ Thống & LLM Serving",
+          "total": 22
+        },
+        "lora_finetuning": {
+          "index": 22,
+          "sectionTitle": "Chặng 3 — Tối Ưu Hệ Thống & LLM Serving",
+          "total": 22
         }
       }
     },
@@ -1453,6 +1646,7 @@
             "optimizers",
             "adamw_weight_decay",
             "lr_schedule_warmup",
+            "gradient_accumulation_clipping",
             "batch_norm_dynamics",
             "overfitting_validation",
             "dropout",
@@ -1475,7 +1669,8 @@
             "roofline_arithmetic_intensity",
             "mixed_precision",
             "activation_checkpointing",
-            "data_parallel_allreduce"
+            "data_parallel_allreduce",
+            "zero_fsdp"
           ]
         },
         {
@@ -1485,12 +1680,16 @@
             "self_attention",
             "embedding_tokenization",
             "positional_encoding",
+            "rope_rotary",
             "multi_head_attention",
             "transformer_block_params",
+            "moe_routing",
             "kv_cache_anatomy",
+            "gqa_kv_cache",
             "sampling_decoding",
             "flash_attention",
-            "quantization_int8"
+            "quantization_int8",
+            "lora_finetuning"
           ]
         }
       ],
@@ -1498,216 +1697,246 @@
         "robot_vision": {
           "index": 1,
           "sectionTitle": "Chặng 1 — Nền tảng Tensor & Softmax",
-          "total": 42
+          "total": 48
         },
         "softmax_stability": {
           "index": 2,
           "sectionTitle": "Chặng 1 — Nền tảng Tensor & Softmax",
-          "total": 42
+          "total": 48
         },
         "softmax_regression": {
           "index": 3,
           "sectionTitle": "Chặng 1 — Nền tảng Tensor & Softmax",
-          "total": 42
+          "total": 48
         },
         "cross_entropy_logsumexp": {
           "index": 4,
           "sectionTitle": "Chặng 1 — Nền tảng Tensor & Softmax",
-          "total": 42
+          "total": 48
         },
         "twolayer_relu_backprop": {
           "index": 5,
           "sectionTitle": "Chặng 1 — Nền tảng Tensor & Softmax",
-          "total": 42
+          "total": 48
         },
         "minibatch_sgd": {
           "index": 6,
           "sectionTitle": "Chặng 1 — Nền tảng Tensor & Softmax",
-          "total": 42
+          "total": 48
         },
         "cpp_matmul_loops": {
           "index": 7,
           "sectionTitle": "Chặng 2 — Kỹ nghệ Bộ nhớ C++ & Strides",
-          "total": 42
+          "total": 48
         },
         "memory_leak": {
           "index": 8,
           "sectionTitle": "Chặng 2 — Kỹ nghệ Bộ nhớ C++ & Strides",
-          "total": 42
+          "total": 48
         },
         "cache_locality": {
           "index": 9,
           "sectionTitle": "Chặng 2 — Kỹ nghệ Bộ nhớ C++ & Strides",
-          "total": 42
+          "total": 48
         },
         "strides_views": {
           "index": 10,
           "sectionTitle": "Chặng 2 — Kỹ nghệ Bộ nhớ C++ & Strides",
-          "total": 42
+          "total": 48
         },
         "autograd_graph": {
           "index": 11,
           "sectionTitle": "Chặng 3 — Động cơ Autograd & Gradient",
-          "total": 42
+          "total": 48
         },
         "reverse_vs_forward_ad": {
           "index": 12,
           "sectionTitle": "Chặng 3 — Động cơ Autograd & Gradient",
-          "total": 42
+          "total": 48
         },
         "broadcast_grad": {
           "index": 13,
           "sectionTitle": "Chặng 3 — Động cơ Autograd & Gradient",
-          "total": 42
+          "total": 48
         },
         "gradient_check": {
           "index": 14,
           "sectionTitle": "Chặng 3 — Động cơ Autograd & Gradient",
-          "total": 42
+          "total": 48
         },
         "activation_valves": {
           "index": 15,
           "sectionTitle": "Chặng 4 — Huấn luyện Ổn định & Tối ưu hóa",
-          "total": 42
+          "total": 48
         },
         "kaiming_init": {
           "index": 16,
           "sectionTitle": "Chặng 4 — Huấn luyện Ổn định & Tối ưu hóa",
-          "total": 42
+          "total": 48
         },
         "optimizers": {
           "index": 17,
           "sectionTitle": "Chặng 4 — Huấn luyện Ổn định & Tối ưu hóa",
-          "total": 42
+          "total": 48
         },
         "adamw_weight_decay": {
           "index": 18,
           "sectionTitle": "Chặng 4 — Huấn luyện Ổn định & Tối ưu hóa",
-          "total": 42
+          "total": 48
         },
         "lr_schedule_warmup": {
           "index": 19,
           "sectionTitle": "Chặng 4 — Huấn luyện Ổn định & Tối ưu hóa",
-          "total": 42
+          "total": 48
         },
-        "batch_norm_dynamics": {
+        "gradient_accumulation_clipping": {
           "index": 20,
           "sectionTitle": "Chặng 4 — Huấn luyện Ổn định & Tối ưu hóa",
-          "total": 42
+          "total": 48
         },
-        "overfitting_validation": {
+        "batch_norm_dynamics": {
           "index": 21,
           "sectionTitle": "Chặng 4 — Huấn luyện Ổn định & Tối ưu hóa",
-          "total": 42
+          "total": 48
         },
-        "dropout": {
+        "overfitting_validation": {
           "index": 22,
           "sectionTitle": "Chặng 4 — Huấn luyện Ổn định & Tối ưu hóa",
-          "total": 42
+          "total": 48
         },
-        "layernorm_residual": {
+        "dropout": {
           "index": 23,
           "sectionTitle": "Chặng 4 — Huấn luyện Ổn định & Tối ưu hóa",
-          "total": 42
+          "total": 48
+        },
+        "layernorm_residual": {
+          "index": 24,
+          "sectionTitle": "Chặng 4 — Huấn luyện Ổn định & Tối ưu hóa",
+          "total": 48
         },
         "conv2d_im2col": {
-          "index": 24,
-          "sectionTitle": "Chặng 5 — Mạng Tích chập & Dataloader",
-          "total": 42
-        },
-        "minibatch_assembly": {
           "index": 25,
           "sectionTitle": "Chặng 5 — Mạng Tích chập & Dataloader",
-          "total": 42
+          "total": 48
+        },
+        "minibatch_assembly": {
+          "index": 26,
+          "sectionTitle": "Chặng 5 — Mạng Tích chập & Dataloader",
+          "total": 48
         },
         "cuda_threads": {
-          "index": 26,
-          "sectionTitle": "Chặng 6 — Tăng tốc GPU & CUDA",
-          "total": 42
-        },
-        "shared_memory_tiling": {
           "index": 27,
           "sectionTitle": "Chặng 6 — Tăng tốc GPU & CUDA",
-          "total": 42
+          "total": 48
         },
-        "coalescing_and_banks": {
+        "shared_memory_tiling": {
           "index": 28,
           "sectionTitle": "Chặng 6 — Tăng tốc GPU & CUDA",
-          "total": 42
+          "total": 48
         },
-        "roofline_arithmetic_intensity": {
+        "coalescing_and_banks": {
           "index": 29,
           "sectionTitle": "Chặng 6 — Tăng tốc GPU & CUDA",
-          "total": 42
+          "total": 48
         },
-        "mixed_precision": {
+        "roofline_arithmetic_intensity": {
           "index": 30,
           "sectionTitle": "Chặng 6 — Tăng tốc GPU & CUDA",
-          "total": 42
+          "total": 48
         },
-        "activation_checkpointing": {
+        "mixed_precision": {
           "index": 31,
           "sectionTitle": "Chặng 6 — Tăng tốc GPU & CUDA",
-          "total": 42
+          "total": 48
         },
-        "data_parallel_allreduce": {
+        "activation_checkpointing": {
           "index": 32,
           "sectionTitle": "Chặng 6 — Tăng tốc GPU & CUDA",
-          "total": 42
+          "total": 48
+        },
+        "data_parallel_allreduce": {
+          "index": 33,
+          "sectionTitle": "Chặng 6 — Tăng tốc GPU & CUDA",
+          "total": 48
+        },
+        "zero_fsdp": {
+          "index": 34,
+          "sectionTitle": "Chặng 6 — Tăng tốc GPU & CUDA",
+          "total": 48
         },
         "rnn_bptt": {
-          "index": 33,
-          "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
-          "total": 42
-        },
-        "self_attention": {
-          "index": 34,
-          "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
-          "total": 42
-        },
-        "embedding_tokenization": {
           "index": 35,
           "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
-          "total": 42
+          "total": 48
         },
-        "positional_encoding": {
+        "self_attention": {
           "index": 36,
           "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
-          "total": 42
+          "total": 48
         },
-        "multi_head_attention": {
+        "embedding_tokenization": {
           "index": 37,
           "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
-          "total": 42
+          "total": 48
         },
-        "transformer_block_params": {
+        "positional_encoding": {
           "index": 38,
           "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
-          "total": 42
+          "total": 48
         },
-        "kv_cache_anatomy": {
+        "rope_rotary": {
           "index": 39,
           "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
-          "total": 42
+          "total": 48
         },
-        "sampling_decoding": {
+        "multi_head_attention": {
           "index": 40,
           "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
-          "total": 42
+          "total": 48
         },
-        "flash_attention": {
+        "transformer_block_params": {
           "index": 41,
           "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
-          "total": 42
+          "total": 48
         },
-        "quantization_int8": {
+        "moe_routing": {
           "index": 42,
           "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
-          "total": 42
+          "total": 48
+        },
+        "kv_cache_anatomy": {
+          "index": 43,
+          "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
+          "total": 48
+        },
+        "gqa_kv_cache": {
+          "index": 44,
+          "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
+          "total": 48
+        },
+        "sampling_decoding": {
+          "index": 45,
+          "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
+          "total": 48
+        },
+        "flash_attention": {
+          "index": 46,
+          "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
+          "total": 48
+        },
+        "quantization_int8": {
+          "index": 47,
+          "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
+          "total": 48
+        },
+        "lora_finetuning": {
+          "index": 48,
+          "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
+          "total": 48
         }
       }
     }
   ],
-  "generatedAt": "2026-10-08T09:29:06.515Z",
-  "totalLessons": 42
+  "generatedAt": "2026-10-08T10:06:18.697Z",
+  "totalLessons": 48
 }

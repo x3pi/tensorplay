@@ -1,0 +1,26 @@
+{
+  "id": "zero_fsdp",
+  "title": "ZeRO / FSDP — Chia Nhỏ Trạng Thái Huấn Luyện Cho Nhiều GPU",
+  "summary": "Mô hình 7B nhân bản cần $112$ GB mỗi GPU (80 GB không đủ); ZeRO-1 còn $38.5$ GB, ZeRO-2 $26.25$ GB, ZeRO-3 $14$ GB với truyền thông gấp $1.5$ lần. 70B trên 64 GPU chỉ ZeRO-3 ($17.5$ GB) vừa.",
+  "topic": "gpu",
+  "tags": [
+    "zero",
+    "fsdp",
+    "memory",
+    "distributed-training",
+    "optimizer-state"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 13,
+  "status": "ready",
+  "prerequisites": [
+    "data_parallel_allreduce",
+    "mixed_precision"
+  ],
+  "related": [
+    "activation_checkpointing",
+    "gradient_accumulation_clipping"
+  ],
+  "sources": [],
+  "aliases": []
+}

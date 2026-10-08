@@ -1,0 +1,25 @@
+{
+  "id": "gradient_accumulation_clipping",
+  "title": "Gradient Accumulation & Clipping — Batch Lớn Trong RAM Nhỏ, Chặn Cú Nhảy Bất Thường",
+  "summary": "4 micro-batch 2 mẫu chia đúng cho gradient batch 8 trong 2 GB thay vì 8 GB; quên chia thì gradient gấp 4. Một micro-batch đột biến tạo bước nhảy gấp 9.5 lần; cắt theo chuẩn giữ hướng, cắt theo giá trị lệch 25°.",
+  "topic": "training-stability",
+  "tags": [
+    "gradient-accumulation",
+    "gradient-clipping",
+    "exploding-gradient",
+    "memory"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 11,
+  "status": "ready",
+  "prerequisites": [
+    "minibatch_sgd"
+  ],
+  "related": [
+    "data_parallel_allreduce",
+    "mixed_precision",
+    "rnn_bptt"
+  ],
+  "sources": [],
+  "aliases": []
+}

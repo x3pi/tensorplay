@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta name="tp-lesson" content="gqa_kv_cache">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GQA / MQA — Chia Sẻ K, V Giữa Các Đầu Để Thu Nhỏ KV-Cache - TensorPlay</title>
+  <meta name="description" content="Vì sao KV-Cache của MHA ăn hết VRAM ở batch lớn và ngữ cảnh dài, và GQA/MQA giảm nó 8–64 lần bằng cách cho nhiều đầu query dùng chung K,V.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">← Về Danh Mục</a>
+      </div>
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step" data-topic-badge></span>
+      </div>
+    </header>
+
+    <main class="lab-grid">
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt &amp; Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Bàn Thí Nghiệm KV-Cache</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Đặt Lại</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🔑 Số cặp K,V</div>
+            <div class="tp-seg" id="seg-nkv">
+              <button data-v="64">MHA (64)</button>
+              <button data-v="8">GQA (8)</button>
+              <button data-v="1">MQA (1)</button>
+            </div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">📏 Độ dài ngữ cảnh ($2^k$ token)</div>
+            <div id="mount-ctx-slider"></div>
+            <div class="tp-matrix-caption" id="txt-ctx"></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">👥 Số chuỗi phục vụ cùng lúc ($2^k$)</div>
+            <div id="mount-batch-slider"></div>
+            <div class="tp-matrix-caption" id="txt-batch"></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🧮 Mô hình 70B giả lập</div>
+            <table class="tp-kv-table"><tr><td>Số tầng L</td><td>80</td></tr><tr><td>Đầu query</td><td>64, mỗi đầu $d_{head} = 128$</td></tr><tr><td>Trọng số FP16</td><td>140 GB</td></tr><tr><td>Ngân sách KV-Cache</td><td>40 GiB</td></tr></table>
+          </div>
+        </div>
+      </section>
+
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math &amp; Telemetry</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div class="tp-panel">
+            <div class="tp-panel-title">📐 KV-Cache mỗi token</div>
+            <div class="tp-math-box" id="katex-kv"></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">📊 Dung lượng</div>
+            <table class="tp-kv-table" id="kv-table"></table>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🧬 Tham số $W_K, W_V$</div>
+            <table class="tp-kv-table" id="proj-table"></table>
+          </div>
+          <div class="tp-verdict" id="verdict"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createLiveSlider } from '../../shared/components/LiveSlider.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
+    import { markCompleted } from '../../shared/progress.js';
+    import { LessonLogic, PRESETS } from './logic.js';
+
+    const LESSON_ID = 'gqa_kv_cache';
+
+    const STEPS = [
+      {
+        step: 1, badge: 'Bước 1 / 4',
+        heading: 'KV-Cache là thứ ăn hết VRAM',
+        problem: 'Giải mã LLM giữ K và V của mọi token đã sinh ([[lesson:kv_cache_anatomy]]). Mô hình 70B có 64 đầu, mỗi đầu giữ riêng K,V ($d_{head} = 128$) ở mỗi trong 80 tầng. Mỗi token tốn bao nhiêu?',
+        mechanism: '$2 \\times 80 \\times 64 \\times 128 \\times 2\\ \\text{B} = 2\\,621\\,440$ B $= 2.5$ MiB mỗi token. Một chuỗi 4096 token là $10$ GiB. Phục vụ 16 chuỗi cùng lúc cần $160$ GiB, nhiều hơn cả trọng số mô hình ($140$ GB).',
+        action: '👉 Thao tác (Cột 2): Bấm preset "MHA: 64 đầu K,V".\n👁️ Quan sát (Cột 3): 2560 KiB mỗi token, batch 16 chiếm 160 GiB, kết luận đỏ: KV lớn hơn trọng số.',
+        takeaway: 'Ở batch lớn và ngữ cảnh dài, KV-Cache thay trọng số làm nút cổ chai bộ nhớ (xem [[lesson:roofline_arithmetic_intensity]]).'
+      },
+      {
+        step: 2, badge: 'Bước 2 / 4',
+        heading: 'GQA: nhiều đầu query dùng chung một cặp K,V',
+        problem: 'Đầu query khác nhau thật sự cần K,V khác nhau đến vậy không?',
+        mechanism: 'Grouped-Query Attention chia 64 đầu query thành 8 nhóm, mỗi nhóm 8 đầu dùng chung một cặp K,V. Đầu query $h$ dùng cặp K,V số $\\lfloor h/8 \\rfloor$. Cache còn $2 \\times 80 \\times 8 \\times 128 \\times 2 = 327\\,680$ B (320 KiB mỗi token), nhỏ hơn 8 lần: chuỗi 4096 token chỉ $1.25$ GiB, batch 16 chỉ $20$ GiB.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "GQA: 8 nhóm K,V ✅".\n👁️ Quan sát (Cột 3): 320 KiB mỗi token, 1.25 GiB mỗi chuỗi, ngân sách 40 GiB chứa 32 chuỗi thay vì 4.',
+        takeaway: 'GQA giữ mọi đầu query riêng nhưng chia sẻ K,V: cache giảm đúng bằng kích thước nhóm.'
+      },
+      {
+        step: 3, badge: 'Bước 3 / 4',
+        heading: 'MQA: cực đoan hơn nữa, và cái giá',
+        problem: 'Cho cả 64 đầu dùng chung một cặp K,V thì sao?',
+        mechanism: 'Multi-Query Attention ($n_{kv} = 1$): cache còn $40$ KiB mỗi token, nhỏ hơn MHA $64$ lần; chuỗi 4096 token chỉ $0.156$ GiB. Đổi lại mô hình mất khả năng biểu diễn: mỗi đầu query chỉ khác nhau ở $Q$, nên chất lượng thường giảm. GQA là điểm giữa: gần chất lượng MHA, gần dung lượng MQA. Số tham số $W_K, W_V$ cũng giảm từ $10.7$ tỉ xuống $1.34$ tỉ ở GQA-8.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "MQA: 1 cặp K,V dùng chung", rồi so bảng "Tham số".\n👁️ Quan sát (Cột 3): Cache 40 KiB mỗi token; tham số $W_K, W_V$ giảm theo.',
+        takeaway: '$n_{kv}$ là núm vặn giữa chất lượng mô hình và dung lượng phục vụ.'
+      },
+      {
+        step: 4, badge: 'Bước 4 / 4',
+        heading: 'Ngữ cảnh dài làm khác biệt lộ rõ',
+        problem: 'Ngữ cảnh 32k token và 8 chuỗi cùng lúc thì MHA với GQA khác nhau cỡ nào?',
+        mechanism: 'Mỗi chuỗi 32 768 token: MHA $80$ GiB (một chuỗi đã bằng cả một GPU 80 GB), GQA-8 chỉ $10$ GiB. Batch 8: MHA $640$ GiB, GQA $80$ GiB. Đây là lý do các mô hình ngữ cảnh dài đều dùng GQA, đi kèm [[lesson:rope_rotary]] để định vị token trong ngữ cảnh dài.',
+        action: '👉 Thao tác (Cột 2): Bấm lần lượt "MHA + ngữ cảnh 32k, batch 8 ❌" và "GQA + ngữ cảnh 32k, batch 8".\n👁️ Quan sát (Cột 3): 640 GiB so với 80 GiB.',
+        takeaway: 'Muốn phục vụ ngữ cảnh dài và nhiều người dùng, phải giảm KV-Cache từ kiến trúc, không chỉ từ phần cứng.'
+      }
+    ];
+
+    const STEP_COMMENTS = {
+      2: [{
+        id: 'gq2', author: 'Chuyên Gia LLM', role: 'LLM', avatar: '🧠', tag: 'Thực tế', tagType: 'systems',
+        content: 'Llama-2 70B, Llama-3 (8B và 70B), Mistral 7B đều dùng GQA (8 nhóm K,V). Có thể chuyển một mô hình MHA đã huấn luyện sang GQA bằng cách lấy trung bình các đầu K,V trong cùng nhóm rồi huấn luyện thêm một lượng nhỏ (uptraining).'
+      }],
+      3: [{
+        id: 'gq3', author: 'Kỹ Sư Backend', role: 'Systems', avatar: '⚙️', tag: 'Gotcha kinh điển', tagType: 'gotcha',
+        content: 'Khi cài đặt, K,V thường được `repeat_interleave` ra đủ số đầu query rồi đưa vào kernel MHA chung. Cách đó đúng về toán nhưng phình bộ nhớ tạm trở lại. Kernel tốt (FlashAttention, PagedAttention) đọc thẳng cache GQA và ánh xạ đầu query tới nhóm.'
+      }],
+      4: [{
+        id: 'gq4', author: 'Nhà Toán Học AI', role: 'Math', avatar: '📐', tag: 'Đo bằng băng thông', tagType: 'math',
+        content: 'Giải mã bị nghẽn băng thông: thời gian một token $\\approx$ (byte trọng số + byte KV cần đọc) $/$ băng thông. Giảm KV 8 lần ở batch 16, ngữ cảnh 4096 giảm lượng byte đọc từ $140 + 160 = 300$ GiB xuống $140 + 20 = 160$ GiB, tức tăng tốc khoảng $1.9$ lần, chưa kể chứa được nhiều chuỗi hơn.'
+      }]
+    };
+
+    const logic = new LessonLogic();
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
+    });
+
+    createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 1,
+      onStepChange: (n) => {
+        comments.setStep(n, STEP_COMMENTS[n] || []);
+        if (n === STEPS.length) markCompleted(LESSON_ID, true);
+      }
+    });
+
+    const sCtx = createLiveSlider(document.getElementById('mount-ctx-slider'), {
+      label: 'Số mũ ngữ cảnh $k$', min: 10, max: 17, step: 1, initial: logic.state.logCtx,
+      onChange: (v) => { logic.onUserUpdate({ logCtx: v }); presets.setActive(null); render(); }
+    });
+    const sBatch = createLiveSlider(document.getElementById('mount-batch-slider'), {
+      label: 'Số mũ batch $k$', min: 0, max: 6, step: 1, initial: logic.state.logBatch,
+      onChange: (v) => { logic.onUserUpdate({ logBatch: v }); presets.setActive(null); render(); }
+    });
+
+    function syncControls() {
+      sCtx.setValue(logic.state.logCtx);
+      sBatch.setValue(logic.state.logBatch);
+    }
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      initialActiveId: 'mha',
+      onPick: (p) => {
+        logic.applyPreset(p.state);
+        syncControls();
+        render();
+      }
+    });
+
+    document.querySelectorAll('#seg-nkv button').forEach(btn => btn.addEventListener('click', () => {
+      logic.onUserUpdate({ nKv: Number(btn.dataset.v) });
+      presets.setActive(null);
+      render();
+    }));
+
+    function render() {
+      const r = logic.calculate();
+      const s = logic.state;
+      document.querySelectorAll('#seg-nkv button').forEach(b => b.classList.toggle('active', Number(b.dataset.v) === s.nKv));
+      document.getElementById('txt-ctx').textContent = `${r.ctx.toLocaleString('en-US')} token`;
+      document.getElementById('txt-batch').textContent = `${r.batch} chuỗi`;
+
+      renderMath(document.getElementById('katex-kv'), r.formulaKaTeX, { displayMode: true });
+      document.getElementById('kv-table').innerHTML = `
+        <tr><td>Kiểu attention</td><td>${r.kind} (${r.group} đầu query / cặp K,V)</td></tr>
+        <tr><td>KV mỗi token</td><td>${r.kibPerToken} KiB</td></tr>
+        <tr><td>Một chuỗi ${r.ctx.toLocaleString('en-US')} token</td><td>${r.perSeqGiB} GiB (MHA: ${r.mhaPerSeqGiB} GiB)</td></tr>
+        <tr><td>${r.batch} chuỗi cùng lúc</td><td><strong>${r.batchGiB} GiB</strong> = ${r.kvVsWeights}× trọng số (${r.weightsGiB} GiB)</td></tr>
+        <tr><td>Số chuỗi chứa được trong ${r.budgetGiB} GiB</td><td>${r.maxSeqs}</td></tr>
+        <tr><td>Nhỏ hơn MHA</td><td>×${r.reduction}</td></tr>`;
+      document.getElementById('proj-table').innerHTML = `
+        <tr><td>$W_K, W_V$ toàn mô hình</td><td>${r.projParams.toLocaleString('en-US')}</td></tr>
+        <tr><td>Tiết kiệm so với MHA</td><td>${r.projSavedParams.toLocaleString('en-US')}</td></tr>`;
+      renderAllInlineMath(document.querySelector('.col-telemetry'));
+      const verdict = document.getElementById('verdict');
+      verdict.className = `tp-verdict ${r.verdict.type}`;
+      verdict.textContent = r.verdict.text;
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      syncControls();
+      presets.setActive('mha');
+      render();
+    });
+
+    renderAllInlineMath(document.querySelector('.col-sandbox'));
+    render();
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

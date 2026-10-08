@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta name="tp-lesson" content="rope_rotary">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RoPE — Mã Hóa Vị Trí Bằng Phép Xoay: Điểm Chú Ý Chỉ Phụ Thuộc Khoảng Cách - TensorPlay</title>
+  <meta name="description" content="RoPE xoay Q và K theo vị trí để tích vô hướng attention chỉ phụ thuộc hiệu vị trí m − n, khác với cách cộng mã vị trí tuyệt đối.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">← Về Danh Mục</a>
+      </div>
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step" data-topic-badge></span>
+      </div>
+    </header>
+
+    <main class="lab-grid">
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt &amp; Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Bàn Thí Nghiệm Phép Xoay</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Đặt Lại</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">📍 Vị trí của Query $m$</div>
+            <div id="mount-m-slider"></div>
+            <div class="tp-matrix-caption" id="txt-m"></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">📍 Vị trí của Key $n$</div>
+            <div id="mount-n-slider"></div>
+            <div class="tp-matrix-caption" id="txt-n"></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">➡️ Dịch cả hai vị trí thêm $s$</div>
+            <div id="mount-s-slider"></div>
+            <div class="tp-matrix-caption" id="txt-s"></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🔄 Góc xoay mỗi vị trí $\theta$</div>
+            <div class="tp-seg" id="seg-theta">
+              <button data-v="90">90°</button>
+              <button data-v="45">45°</button>
+              <button data-v="30">30°</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math &amp; Telemetry</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div class="tp-panel">
+            <div class="tp-panel-title">📐 Công thức</div>
+            <div class="tp-math-box" id="katex-rope"></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🧭 Q và K sau khi xoay</div>
+            <svg id="plot" viewBox="0 0 200 200" style="width:100%; max-width:220px; background:#090d15; border-radius:8px; display:block; margin:0 auto;"></svg>
+            <div class="tp-matrix-caption">cam = Query xoay $m\theta$ · xanh = Key xoay $n\theta$ · góc giữa chúng chỉ phụ thuộc $m - n$</div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">📊 So sánh với cách cộng PE</div>
+            <table class="tp-kv-table" id="cmp-table"></table>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">📈 Điểm theo khoảng cách $m - n$</div>
+            <table class="tp-kv-table" id="curve-table"></table>
+          </div>
+          <div class="tp-verdict" id="verdict"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createLiveSlider } from '../../shared/components/LiveSlider.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
+    import { markCompleted } from '../../shared/progress.js';
+    import { LessonLogic, PRESETS } from './logic.js';
+
+    const LESSON_ID = 'rope_rotary';
+
+    const STEPS = [
+      {
+        step: 1, badge: 'Bước 1 / 4',
+        heading: 'Điều ta thật sự cần: điểm phụ thuộc khoảng cách',
+        problem: 'Trong câu, điều quan trọng thường là hai từ cách nhau bao xa (từ liền trước, cách 2 từ...), không phải chúng đứng ở vị trí tuyệt đối số mấy. Cộng mã vị trí vào embedding ([[lesson:positional_encoding]]) có cho tính chất này không?',
+        mechanism: 'Không trực tiếp: điểm $(q + PE_m)\\cdot(k + PE_n)$ chứa các số hạng riêng của $m$ và $n$, nên dịch cả câu ra sau 2 vị trí làm điểm đổi. Mô hình phải tự học lại "cách 2 từ" ở mọi vị trí tuyệt đối khác nhau.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Dịch cả hai thêm 2 (45°) ✅".\n👁️ Quan sát (Cột 3): Dòng "cộng PE" đổi giá trị sau khi dịch.',
+        takeaway: 'Cộng PE tuyệt đối không cho điểm tương đối.'
+      },
+      {
+        step: 2, badge: 'Bước 2 / 4',
+        heading: 'RoPE: xoay thay vì cộng',
+        problem: 'Có cách nào để chính phép nhân vô hướng $q \\cdot k$ chỉ còn phụ thuộc $m - n$?',
+        mechanism: 'Xoay $q$ đi $m\\theta$ và $k$ đi $n\\theta$ (xoay 2D bảo toàn độ dài). Vì $R_a^\\top R_b = R_{b-a}$ nên $(R_{m\\theta}q)\\cdot(R_{n\\theta}k) = q^\\top R_{(n-m)\\theta} k$: chỉ còn hiệu vị trí. Với $q = k = [1, 0]$ và $\\theta = 90°$: điểm $= \\cos(90° \\times (m - n))$, hiệu $0, 1, 2, 3$ cho $1, 0, -1, 0$.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Xoay 90° mỗi vị trí" rồi kéo $m$ và $n$.\n👁️ Quan sát (Cột 3): Hai mũi tên cam và xanh; điểm chỉ phụ thuộc góc giữa chúng; $m = 3, n = 1$ cho $-1$.',
+        takeaway: 'RoPE nhúng khoảng cách tương đối thẳng vào tích vô hướng của attention.'
+      },
+      {
+        step: 3, badge: 'Bước 3 / 4',
+        heading: 'Kiểm tra bất biến theo dịch',
+        problem: 'Nếu cả câu bị dịch xa hơn trong ngữ cảnh (ví dụ sau một đoạn văn dài) thì điểm có đổi không?',
+        mechanism: 'Với RoPE, dịch cả $m, n$ thêm $s$ không đổi $m - n$ nên điểm giữ nguyên. Ví dụ $\\theta = 45°$, $(m, n) = (3, 1) \\to (5, 3)$: RoPE vẫn $0$; cộng PE đổi từ $2.414$ sang $1$. Đây là lý do mô hình ngoại suy tốt hơn sang vị trí chưa gặp.',
+        action: '👉 Thao tác (Cột 2): Đặt $\\theta = 45°$, kéo thanh dịch $s$ từ 0 lên 5.\n👁️ Quan sát (Cột 3): Dòng RoPE đứng yên, dòng cộng PE nhảy loạn.',
+        takeaway: 'RoPE đúng cho mọi vị trí tuyệt đối vì chỉ nhìn vào hiệu.'
+      },
+      {
+        step: 4, badge: 'Bước 4 / 4',
+        heading: 'Nhiều tần số: nhìn gần và nhìn xa',
+        problem: 'Một góc xoay duy nhất lặp lại sau $360° / \\theta$ vị trí (4 vị trí với 90°). Làm sao phân biệt vị trí xa?',
+        mechanism: 'Vector $d$ chiều được chia thành $d/2$ cặp, mỗi cặp xoay với tần số riêng $\\theta_i = 10000^{-2i/d}$: cặp đầu xoay nhanh (nhạy với khoảng cách vài token), cặp cuối xoay chậm (phân biệt hàng nghìn token). Bài này chỉ minh họa một cặp. Chọn $\\theta = 30°$ thì chu kỳ 12 vị trí: điểm chỉ về 0 lúc cách 3 vị trí và về $-1$ lúc cách 6.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Xoay chậm 30°" và xem bảng điểm theo khoảng cách.\n👁️ Quan sát (Cột 3): $\\cos(30° d)$ giảm chậm: $1, 0.866, 0.5, 0, -0.5$.',
+        takeaway: 'Dùng nhiều tần số xoay để biểu diễn cả khoảng cách gần lẫn xa.'
+      }
+    ];
+
+    const STEP_COMMENTS = {
+      2: [{
+        id: 'rp2', author: 'Chuyên Gia LLM', role: 'LLM', avatar: '🧠', tag: 'Thực tế', tagType: 'systems',
+        content: 'Llama, Mistral, Qwen... đều dùng RoPE. RoPE chỉ áp dụng lên Q và K (không lên V) tại MỖI tầng attention, khác với PE cộng một lần ở đầu mô hình. Vì thế KV-Cache ([[lesson:gqa_kv_cache]]) phải lưu K ĐÃ xoay theo đúng vị trí tuyệt đối của token.'
+      }],
+      3: [{
+        id: 'rp3', author: 'Kỹ Sư Backend', role: 'Systems', avatar: '⚙️', tag: 'Gotcha kinh điển', tagType: 'gotcha',
+        content: 'Khi sinh tiếp bằng KV-Cache, góc xoay của token mới phải dựa vào vị trí tuyệt đối = độ dài cache hiện tại. Quên cộng offset là bug làm chất lượng sinh tụt dần mà không báo lỗi. Ngoại suy sang ngữ cảnh dài hơn lúc huấn luyện cần thêm kỹ thuật co giãn tần số (position interpolation, YaRN).'
+      }],
+      4: [{
+        id: 'rp4', author: 'Nhà Toán Học AI', role: 'Math', avatar: '📐', tag: 'Dạng phức', tagType: 'math',
+        content: 'Xem cặp $(x_0, x_1)$ như số phức $x_0 + i x_1$: RoPE nhân với $e^{i m \\theta}$. Tích vô hướng thực là $\\text{Re}(q \\bar{k})$ nên thành $\\text{Re}(q\\bar{k}\\,e^{i(m-n)\\theta})$: chỉ còn $m - n$.'
+      }]
+    };
+
+    const logic = new LessonLogic();
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
+    });
+
+    createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 1,
+      onStepChange: (n) => {
+        comments.setStep(n, STEP_COMMENTS[n] || []);
+        if (n === STEPS.length) markCompleted(LESSON_ID, true);
+      }
+    });
+
+    const mk = (id, label, key, max) => createLiveSlider(document.getElementById(id), {
+      label, min: 0, max, step: 1, initial: logic.state[key],
+      onChange: (v) => { logic.onUserUpdate({ [key]: v }); presets.setActive(null); render(); }
+    });
+    const sM = mk('mount-m-slider', '$m$', 'm', 10);
+    const sN = mk('mount-n-slider', '$n$', 'n', 10);
+    const sS = mk('mount-s-slider', '$s$', 'shift', 8);
+
+    function syncControls() {
+      sM.setValue(logic.state.m);
+      sN.setValue(logic.state.n);
+      sS.setValue(logic.state.shift);
+    }
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      initialActiveId: 'quarter_turn',
+      onPick: (p) => {
+        logic.applyPreset(p.state);
+        syncControls();
+        render();
+      }
+    });
+
+    document.querySelectorAll('#seg-theta button').forEach(btn => btn.addEventListener('click', () => {
+      logic.onUserUpdate({ thetaDeg: Number(btn.dataset.v) });
+      presets.setActive(null);
+      render();
+    }));
+
+    function render() {
+      const r = logic.calculate();
+      const s = logic.state;
+      document.querySelectorAll('#seg-theta button').forEach(b => b.classList.toggle('active', Number(b.dataset.v) === s.thetaDeg));
+      document.getElementById('txt-m').textContent = `m = ${s.m}`;
+      document.getElementById('txt-n').textContent = `n = ${s.n}`;
+      document.getElementById('txt-s').textContent = `s = ${s.shift} (vị trí thật: ${r.m2} và ${r.n2})`;
+
+      renderMath(document.getElementById('katex-rope'), r.formulaKaTeX, { displayMode: true });
+      const C = 100, R = 80;
+      const tip = v => [C + v[0] * R, C - v[1] * R];
+      const a = tip(r.qRot), b = tip(r.kRot);
+      document.getElementById('plot').innerHTML =
+        `<circle cx="${C}" cy="${C}" r="${R}" fill="none" stroke="#334155"/><line x1="${C}" y1="${C}" x2="${a[0].toFixed(1)}" y2="${a[1].toFixed(1)}" stroke="#f59e0b" stroke-width="3"/>` +
+        `<line x1="${C}" y1="${C}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}" stroke="#38bdf8" stroke-width="3"/>` +
+        `<circle cx="${a[0].toFixed(1)}" cy="${a[1].toFixed(1)}" r="5" fill="#f59e0b"/><circle cx="${b[0].toFixed(1)}" cy="${b[1].toFixed(1)}" r="5" fill="#38bdf8"/>`;
+
+      document.getElementById('cmp-table').innerHTML = `
+        <tr><td></td><td><em>(m, n) = (${s.m}, ${s.n})</em></td><td><em>(${r.m2}, ${r.n2})</em></td></tr>
+        <tr><td>RoPE (xoay)</td><td>${r.rope1}</td><td>${r.rope2} ${r.ropeInvariant ? '✅' : '❌'}</td></tr>
+        <tr><td>Cộng PE</td><td>${r.add1}</td><td>${r.add2} ${r.addInvariant ? '(trùng)' : '❌ đổi'}</td></tr>`;
+      document.getElementById('curve-table').innerHTML = r.curve.map(c => `<tr><td>m − n = ${c.diff}</td><td>${c.score}</td></tr>`).join('');
+      renderAllInlineMath(document.querySelector('.col-telemetry'));
+      const verdict = document.getElementById('verdict');
+      verdict.className = `tp-verdict ${r.verdict.type}`;
+      verdict.textContent = r.verdict.text;
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      syncControls();
+      presets.setActive('quarter_turn');
+      render();
+    });
+
+    renderAllInlineMath(document.querySelector('.col-sandbox'));
+    render();
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

@@ -23,7 +23,8 @@
         "coalescing_and_banks",
         "roofline_arithmetic_intensity",
         "activation_checkpointing",
-        "data_parallel_allreduce"
+        "data_parallel_allreduce",
+        "zero_fsdp"
       ]
     }
   ]

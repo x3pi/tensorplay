@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta name="tp-lesson" content="lora_finetuning">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LoRA — Tinh Chỉnh Mô Hình Lớn Bằng Hai Ma Trận Hạng Thấp - TensorPlay</title>
+  <meta name="description" content="LoRA đóng băng W và học ΔW = BA hạng thấp: chỉ 0.06% tham số, RAM huấn luyện ~13 GB thay vì 105 GB, hợp nhất xong không tốn thêm khi suy diễn.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">← Về Danh Mục</a>
+      </div>
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step" data-topic-badge></span>
+      </div>
+    </header>
+
+    <main class="lab-grid">
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt &amp; Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Bàn Thí Nghiệm LoRA</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Đặt Lại</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🎓 Giai đoạn</div>
+            <div class="tp-seg" id="seg-trained">
+              <button data-v="init">Mới khởi tạo (B = 0)</button>
+              <button data-v="trained">Đã học</button>
+            </div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🎚️ Hạng $r$ của LoRA</div>
+            <div class="tp-seg" id="seg-r">
+              <button data-v="1">r = 1</button>
+              <button data-v="8">r = 8</button>
+              <button data-v="16">r = 16</button>
+              <button data-v="64">r = 64</button>
+            </div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🧪 Toy: $W = I_4$ (đóng băng), $r = 1$</div>
+            <table class="tp-kv-table"><tr><td>$B$ (4×1)</td><td>[1, 0, 2, 0]ᵀ</td></tr><tr><td>$A$ (1×4)</td><td>[0, 1, 0, 1]</td></tr><tr><td>Đầu vào $x$</td><td>[1, 2, 3, 4]</td></tr></table>
+          </div>
+        </div>
+      </section>
+
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math &amp; Telemetry</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div class="tp-panel">
+            <div class="tp-panel-title">📐 Công thức</div>
+            <div class="tp-math-box" id="katex-lora"></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🔬 Toy: ma trận cập nhật $\Delta W = B A$</div>
+            <div style="display:flex; justify-content:center;"><table class="tp-mini-matrix" id="delta-grid"></table></div>
+            <table class="tp-kv-table" id="toy-table" style="margin-top:0.5rem;"></table>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🏗️ Mô hình 6.57 tỉ tham số (LoRA trên $W_q, W_v$ của 32 tầng)</div>
+            <table class="tp-kv-table" id="real-table"></table>
+          </div>
+          <div class="tp-verdict" id="verdict"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createLiveSlider } from '../../shared/components/LiveSlider.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
+    import { markCompleted } from '../../shared/progress.js';
+    import { LessonLogic, PRESETS } from './logic.js';
+
+    const LESSON_ID = 'lora_finetuning';
+
+    const STEPS = [
+      {
+        step: 1, badge: 'Bước 1 / 4',
+        heading: 'Tinh chỉnh toàn phần quá đắt',
+        problem: 'Muốn dạy mô hình 6.57 tỉ tham số một nhiệm vụ mới. Tinh chỉnh toàn phần cần trọng số, gradient và Adam cho TẤT CẢ tham số: 16 byte mỗi tham số ([[lesson:mixed_precision]]), tức khoảng $105$ GB, và mỗi nhiệm vụ lại sinh một bản sao 13 GB.',
+        mechanism: 'Quan sát: thay đổi cần học khi tinh chỉnh thường có hạng thấp. Thay vì học $\\Delta W$ cỡ $d \\times d$, ta phân rã $\\Delta W = B A$ với $B$ là $d \\times r$, $A$ là $r \\times d$, $r \\ll d$. Trọng số gốc $W$ đóng băng, chỉ $A$ và $B$ được huấn luyện.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Đã học, r = 8 ✅".\n👁️ Quan sát (Cột 3): Chỉ $4\\,194\\,304$ tham số học (0.064%); RAM huấn luyện $\\approx 13.2$ GB so với $105$ GB.',
+        takeaway: 'LoRA đổi tinh chỉnh toàn phần lấy một lượng nhỏ tham số học, mô hình gốc dùng chung cho mọi nhiệm vụ.'
+      },
+      {
+        step: 2, badge: 'Bước 2 / 4',
+        heading: 'Ma trận hạng 1 tính tay được',
+        problem: 'Hãy xem một ví dụ $4 \\times 4$: $W = I$, $B = [1, 0, 2, 0]^\\top$, $A = [0, 1, 0, 1]$. $\\Delta W$ trông thế nào?',
+        mechanism: '$\\Delta W = B A$ là tích ngoài: cột 1 và cột 3 bằng $[1, 0, 2, 0]^\\top$ còn các cột khác bằng 0; chỉ $4$ ô khác 0 và hạng đúng bằng $1$. Số tham số học là $8$ ($4 + 4$) thay vì $16$. Với $d$ lớn, tỉ lệ $2dr / d^2 = 2r / d$ nhỏ dần: $d = 4096$, $r = 8$ chỉ $0.39\\%$ mỗi ma trận.',
+        action: '👉 Thao tác (Cột 2): Chọn "Đã học" và nhìn lưới $\\Delta W$ ở Cột 3.\n👁️ Quan sát (Cột 3): Đầu vào $x = [1,2,3,4]$ cho $y = [7, 2, 15, 4]$, cả khi cộng đường song song $B(Ax)$ lẫn khi hợp nhất $W + BA$.',
+        takeaway: 'Hạng của $\\Delta W$ không vượt quá $r$: LoRA giả định thay đổi cần học nằm trong không gian con nhỏ.'
+      },
+      {
+        step: 3, badge: 'Bước 3 / 4',
+        heading: 'Khởi tạo B = 0: bắt đầu từ đúng chỗ cũ',
+        problem: 'Nếu $A$ và $B$ khởi tạo ngẫu nhiên thì mô hình vừa gắn LoRA sẽ ra sao?',
+        mechanism: 'Sẽ bị nhiễu ngay. Quy ước: $A$ ngẫu nhiên nhỏ, $B = 0$. Khi đó $\\Delta W = BA = 0$ và đầu ra y hệt mô hình gốc ($y = [1, 2, 3, 4]$ trong ví dụ). Gradient của $B$ vẫn khác 0 (phụ thuộc $A$) nên $B$ học được. Hệ số $\\alpha / r$ giữ cho độ lớn cập nhật không đổi khi đổi $r$.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Mới khởi tạo (B = 0)".\n👁️ Quan sát (Cột 3): $\\Delta W$ toàn 0, đầu ra $= [1, 2, 3, 4]$, hạng bằng 0.',
+        takeaway: 'Khởi tạo $B = 0$ đảm bảo thêm LoRA không làm hỏng mô hình trước khi huấn luyện.'
+      },
+      {
+        step: 4, badge: 'Bước 4 / 4',
+        heading: 'Hợp nhất xong là không còn chi phí suy diễn',
+        problem: 'Thêm hai ma trận nhỏ vào mỗi tầng có làm mô hình chậm đi lúc phục vụ không?',
+        mechanism: 'Không, nếu hợp nhất: $W\' = W + \\frac{\\alpha}{r} B A$ có cùng kích thước $W$, nên suy diễn y hệt mô hình gốc. Ngoài ra có thể giữ nhiều bộ $(A, B)$ cho nhiều nhiệm vụ và đổi giữa chúng. Đổi $r$ đánh đổi dung lượng và chi phí: $r = 64$ vẫn chỉ $33.5$ triệu tham số, dưới $1\\%$ mô hình.',
+        action: '👉 Thao tác (Cột 2): Lần lượt chọn $r = 1, 8, 16, 64$.\n👁️ Quan sát (Cột 3): Tham số học tăng tuyến tính theo $r$ (524 288 đến 33 554 432), RAM huấn luyện chỉ nhích từ 13.16 lên 13.7 GB.',
+        takeaway: 'LoRA phổ biến vì rẻ lúc huấn luyện và miễn phí lúc suy diễn; QLoRA còn lượng tử hóa mô hình gốc xuống 4 bit ([[lesson:quantization_int8]]).'
+      }
+    ];
+
+    const STEP_COMMENTS = {
+      2: [{
+        id: 'lo2', author: 'Nhà Toán Học AI', role: 'Math', avatar: '📐', tag: 'Vì sao hạng thấp', tagType: 'math',
+        content: 'Nghiên cứu về "kích thước nội tại" cho thấy tinh chỉnh một mô hình đã tiền huấn luyện chỉ di chuyển trọng số trong một không gian con có số chiều rất nhỏ so với số tham số. LoRA khai thác điều này bằng cách ép $\\text{rank}(\\Delta W) \\le r$.'
+      }],
+      3: [{
+        id: 'lo3', author: 'Chuyên Gia LLM', role: 'LLM', avatar: '🧠', tag: 'Thực tế', tagType: 'systems',
+        content: 'Thường gắn LoRA vào $W_q, W_v$ (hoặc toàn bộ ma trận attention và FFN), $r$ từ 8 đến 64. Tinh chỉnh bằng LoRA cho cùng chất lượng với tinh chỉnh toàn phần trên nhiều nhiệm vụ, nhưng ít hiệu quả hơn khi cần dạy kiến thức hoàn toàn mới.'
+      }],
+      4: [{
+        id: 'lo4', author: 'Kỹ Sư Backend', role: 'Systems', avatar: '⚙️', tag: 'Gotcha kinh điển', tagType: 'gotcha',
+        content: 'Đừng hợp nhất LoRA vào mô hình đã lượng tử hóa mà không cẩn thận: cộng $\\Delta W$ nhỏ vào trọng số INT4 làm tròn lại có thể xóa sạch cập nhật. Cách an toàn là giữ LoRA ở FP16 chạy song song như QLoRA, hoặc hợp nhất trước rồi mới lượng tử hóa.'
+      }]
+    };
+
+    const logic = new LessonLogic();
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
+    });
+
+    createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 1,
+      onStepChange: (n) => {
+        comments.setStep(n, STEP_COMMENTS[n] || []);
+        if (n === STEPS.length) markCompleted(LESSON_ID, true);
+      }
+    });
+
+
+
+    function syncControls() {
+      void 0;
+    }
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      initialActiveId: 'trained_r8',
+      onPick: (p) => {
+        logic.applyPreset(p.state);
+        syncControls();
+        render();
+      }
+    });
+
+    document.querySelectorAll('#seg-trained button').forEach(btn => btn.addEventListener('click', () => {
+      logic.onUserUpdate({ trained: btn.dataset.v === 'trained' });
+      presets.setActive(null);
+      render();
+    }));
+    document.querySelectorAll('#seg-r button').forEach(btn => btn.addEventListener('click', () => {
+      const r = Number(btn.dataset.v);
+      logic.onUserUpdate({ r, alpha: 2 * r });
+      presets.setActive(null);
+      render();
+    }));
+
+    function render() {
+      const r = logic.calculate();
+      const s = logic.state;
+      document.querySelectorAll('#seg-trained button').forEach(b => b.classList.toggle('active', (b.dataset.v === 'trained') === s.trained));
+      document.querySelectorAll('#seg-r button').forEach(b => b.classList.toggle('active', Number(b.dataset.v) === s.r));
+
+      renderMath(document.getElementById('katex-lora'), r.formulaKaTeX, { displayMode: true });
+      document.getElementById('delta-grid').innerHTML = r.toy.delta.map(row =>
+        `<tr>${row.map(v => `<td class="${v > 0 ? 'pos' : ''}" style="min-width:40px; text-align:center;">${v}</td>`).join('')}</tr>`).join('');
+      document.getElementById('toy-table').innerHTML = `
+        <tr><td>Hạng của ΔW</td><td>${r.toy.rank}</td></tr>
+        <tr><td>y = W x (mô hình gốc)</td><td>[${r.toy.yBase.join(', ')}]</td></tr>
+        <tr><td>y = W x + B (A x) (đường song song)</td><td>[${r.toy.yLora.join(', ')}]</td></tr>
+        <tr><td>y = (W + BA) x (đã hợp nhất)</td><td>[${r.toy.yMerged.join(', ')}] ${r.mergeIdentical ? '✅ trùng' : '❌'}</td></tr>`;
+      document.getElementById('real-table').innerHTML = `
+        <tr><td>Hạng r (hệ số α/r = ${r.scale})</td><td>${r.r}</td></tr>
+        <tr><td>Tham số học mỗi ma trận 2dr</td><td>${r.perMatrix.toLocaleString('en-US')} (${r.matrixRatio}% của d²)</td></tr>
+        <tr><td>Tổng tham số học (${r.adapted} ma trận)</td><td><strong>${r.trainable.toLocaleString('en-US')}</strong> (${r.pct}% mô hình)</td></tr>
+        <tr><td>Trạng thái huấn luyện LoRA (16 B/tham số)</td><td>${r.trainableMB} MB</td></tr>
+        <tr><td>Trọng số gốc đóng băng FP16</td><td>${r.baseGB} GB</td></tr>
+        <tr><td>Tổng RAM huấn luyện LoRA</td><td>${r.totalGB} GB</td></tr>
+        <tr><td>Tinh chỉnh toàn phần</td><td>${r.fullFtGB} GB (gấp ×${r.saving})</td></tr>`;
+      renderAllInlineMath(document.querySelector('.col-telemetry'));
+      const verdict = document.getElementById('verdict');
+      verdict.className = `tp-verdict ${r.verdict.type}`;
+      verdict.textContent = r.verdict.text;
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      syncControls();
+      presets.setActive('trained_r8');
+      render();
+    });
+
+    renderAllInlineMath(document.querySelector('.col-sandbox'));
+    render();
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

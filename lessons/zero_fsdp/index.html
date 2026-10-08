@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta name="tp-lesson" content="zero_fsdp">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZeRO / FSDP — Chia Nhỏ Trạng Thái Huấn Luyện Cho Nhiều GPU - TensorPlay</title>
+  <meta name="description" content="Vì sao data parallel nhân bản 16 byte/tham số lên mọi GPU, và ZeRO-1/2/3 (FSDP) chia optimizer, gradient, trọng số để nạp mô hình lớn với cái giá truyền thông ra sao.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">← Về Danh Mục</a>
+      </div>
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step" data-topic-badge></span>
+      </div>
+    </header>
+
+    <main class="lab-grid">
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt &amp; Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Bàn Thí Nghiệm Chia Trạng Thái</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Đặt Lại</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🧩 Chiến lược chia</div>
+            <div class="tp-seg" id="seg-stage">
+              <button data-v="dp">Nhân bản (DP)</button>
+              <button data-v="zero1">ZeRO-1</button>
+              <button data-v="zero2">ZeRO-2</button>
+              <button data-v="zero3">ZeRO-3 / FSDP</button>
+            </div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🔗 Số GPU ($N = 2^k$)</div>
+            <div id="mount-n-slider"></div>
+            <div class="tp-matrix-caption" id="txt-n"></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">📦 Cỡ mô hình</div>
+            <div class="tp-seg" id="seg-params">
+              <button data-v="7">7B tham số</button>
+              <button data-v="70">70B tham số</button>
+            </div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🖥️ GPU giả lập</div>
+            <table class="tp-kv-table"><tr><td>Bộ nhớ mỗi GPU</td><td>80 GB</td></tr><tr><td>Trạng thái mỗi tham số (Adam mixed)</td><td>2 + 2 + 12 = 16 byte</td></tr></table>
+          </div>
+        </div>
+      </section>
+
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math &amp; Telemetry</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div class="tp-panel">
+            <div class="tp-panel-title">📐 Byte mỗi tham số trên mỗi GPU</div>
+            <div class="tp-math-box" id="katex-bpp"></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">📊 So sánh 4 chiến lược</div>
+            <table class="tp-kv-table" id="cmp-table"></table>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🌐 Hiện tại</div>
+            <table class="tp-kv-table" id="cur-table"></table>
+          </div>
+          <div class="tp-verdict" id="verdict"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createLiveSlider } from '../../shared/components/LiveSlider.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
+    import { markCompleted } from '../../shared/progress.js';
+    import { LessonLogic, PRESETS } from './logic.js';
+
+    const LESSON_ID = 'zero_fsdp';
+
+    const STEPS = [
+      {
+        step: 1, badge: 'Bước 1 / 4',
+        heading: 'Nhân bản là lãng phí',
+        problem: 'Data parallel ([[lesson:data_parallel_allreduce]]) đặt một bản mô hình ĐẦY ĐỦ lên mỗi GPU. Mô hình 7B với Adam mixed precision cần 16 byte mỗi tham số ([[lesson:mixed_precision]]): $7 \\times 10^9 \\times 16 = 112$ GB. GPU chỉ có 80 GB. Thêm GPU có giúp được không?',
+        mechanism: 'Không: mỗi GPU vẫn phải chứa đủ 112 GB vì ai cũng giữ bản sao của trọng số, gradient và trạng thái optimizer giống hệt nhau. Thêm GPU chỉ tăng thông lượng, không giảm bộ nhớ mỗi GPU.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "7B, 8 GPU: nhân bản ❌", rồi kéo số GPU từ $k = 1$ đến $k = 6$.\n👁️ Quan sát (Cột 3): Dòng nhân bản luôn 112 GB, kết luận đỏ.',
+        takeaway: 'Nhân bản trạng thái là chi phí bộ nhớ không đổi theo số GPU.'
+      },
+      {
+        step: 2, badge: 'Bước 2 / 4',
+        heading: 'ZeRO-1: chia optimizer',
+        problem: 'Trong 16 byte, phần nào nặng nhất và chỉ cần ở bước cập nhật?',
+        mechanism: 'Bản master FP32, $m$ và $v$ của Adam chiếm $12$ byte, chỉ dùng khi cập nhật trọng số. ZeRO-1 chia 12 byte này cho $N$ GPU: mỗi GPU chỉ giữ và cập nhật $1/N$ tham số. Với $N = 8$: $2 + 2 + 12/8 = 5.5$ byte, tức $38.5$ GB cho 7B: vừa GPU 80 GB. Truyền thông không tăng.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "7B, 8 GPU: ZeRO-1 ✅".\n👁️ Quan sát (Cột 3): 38.5 GB, kết luận xanh, truyền thông bằng DP.',
+        takeaway: 'Chia trạng thái optimizer cho 4× bộ nhớ ở mức miễn phí về truyền thông.'
+      },
+      {
+        step: 3, badge: 'Bước 3 / 4',
+        heading: 'ZeRO-2 và ZeRO-3 (FSDP): chia luôn gradient và trọng số',
+        problem: 'Còn 2 + 2 byte nữa. Chia tiếp được không và cái giá là gì?',
+        mechanism: 'ZeRO-2 chia thêm gradient: $2 + 14/8 = 3.75$ byte ($26.25$ GB). ZeRO-3 chia luôn trọng số: $16/8 = 2$ byte ($14$ GB) nhưng trọng số không còn nằm đủ trên mỗi GPU, phải all-gather ngay trước khi dùng mỗi tầng, ở cả lượt thuận lẫn lượt ngược. Truyền thông tăng từ $2\\,\\Psi$ lên $3\\,\\Psi$, gấp $1.5$ lần.',
+        action: '👉 Thao tác (Cột 2): Bấm lần lượt "ZeRO-2" và "ZeRO-3 / FSDP".\n👁️ Quan sát (Cột 3): 26.25 GB rồi 14 GB; cột truyền thông nhảy từ 24.5 lên 36.75 GB.',
+        takeaway: 'Mỗi tầng chia thêm đổi một ít truyền thông lấy nhiều bộ nhớ hơn.'
+      },
+      {
+        step: 4, badge: 'Bước 4 / 4',
+        heading: 'Mô hình 70B: khi chỉ ZeRO-3 còn đường sống',
+        problem: 'Mô hình 70B trên 64 GPU 80 GB. Cách nào nạp được?',
+        mechanism: 'Nhân bản cần $1120$ GB mỗi GPU, ZeRO-1 cần $293$ GB, ZeRO-2 cần $155$ GB: đều vượt 80 GB. Chỉ ZeRO-3 đạt $16/64 = 0.25$ byte, tức $17.5$ GB mỗi GPU, còn chỗ cho activation ([[lesson:activation_checkpointing]]). Vì mỗi GPU chỉ giữ $1/N$ mô hình, thêm GPU giờ thật sự giảm bộ nhớ mỗi GPU.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "70B, 64 GPU: chỉ ZeRO-3 vừa ✅".\n👁️ Quan sát (Cột 3): Bảng so sánh: ba dòng đầu đỏ, dòng ZeRO-3 xanh.',
+        takeaway: 'ZeRO-3/FSDP biến bộ nhớ nhiều GPU thành một vùng nhớ chung, đổi lại băng thông giữa các GPU.'
+      }
+    ];
+
+    const STEP_COMMENTS = {
+      2: [{
+        id: 'zr2', author: 'Chuyên Gia GPU', role: 'GPU', avatar: '⚡', tag: 'Tài liệu gốc', tagType: 'systems',
+        content: 'Bài báo ZeRO (Rajbhandari et al., 2020) gọi 12 byte kia là hệ số $K = 12$ của Adam mixed precision. FSDP của PyTorch là cài đặt tương đương ZeRO-3; DeepSpeed gọi theo số giai đoạn 1/2/3.'
+      }],
+      3: [{
+        id: 'zr3', author: 'Kỹ Sư Backend', role: 'Systems', avatar: '⚙️', tag: 'Gotcha kinh điển', tagType: 'gotcha',
+        content: 'Con số trong bài chưa tính activation, bộ đệm tạm của all-gather và phân mảnh bộ nhớ, nên ngoài đời cần chừa 20–30% dư địa. ZeRO-3 cũng cần mạng nhanh giữa các GPU (NVLink/InfiniBand); trên mạng chậm, truyền thông gấp 1.5 lần DP có thể làm huấn luyện chậm hẳn.'
+      }],
+      4: [{
+        id: 'zr4', author: 'Nhà Toán Học AI', role: 'Math', avatar: '📐', tag: 'Tỉ lệ chia', tagType: 'math',
+        content: 'Bộ nhớ mỗi GPU của ZeRO-3 là $16\\Psi/N$ nên $N$ GPU chứa được mô hình lớn gấp $N$ lần một GPU. Dữ liệu trong bài kết hợp được với tích lũy gradient ([[lesson:gradient_accumulation_clipping]]) để giữ batch hiệu dụng khi mỗi GPU chỉ có micro-batch nhỏ.'
+      }]
+    };
+
+    const logic = new LessonLogic();
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
+    });
+
+    createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 1,
+      onStepChange: (n) => {
+        comments.setStep(n, STEP_COMMENTS[n] || []);
+        if (n === STEPS.length) markCompleted(LESSON_ID, true);
+      }
+    });
+
+    const sN = createLiveSlider(document.getElementById('mount-n-slider'), {
+      label: 'Số mũ $k$ ($N = 2^k$ GPU)', min: 1, max: 6, step: 1, initial: logic.state.logN,
+      onChange: (v) => { logic.onUserUpdate({ logN: v }); presets.setActive(null); render(); }
+    });
+
+    function syncControls() {
+      sN.setValue(logic.state.logN);
+    }
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      initialActiveId: 'dp_7b',
+      onPick: (p) => {
+        logic.applyPreset(p.state);
+        syncControls();
+        render();
+      }
+    });
+
+    document.querySelectorAll('#seg-stage button').forEach(btn => btn.addEventListener('click', () => {
+      logic.onUserUpdate({ stage: btn.dataset.v });
+      presets.setActive(null);
+      render();
+    }));
+    document.querySelectorAll('#seg-params button').forEach(btn => btn.addEventListener('click', () => {
+      logic.onUserUpdate({ paramsB: Number(btn.dataset.v) });
+      presets.setActive(null);
+      render();
+    }));
+
+    function render() {
+      const r = logic.calculate();
+      const s = logic.state;
+      document.querySelectorAll('#seg-stage button').forEach(b => b.classList.toggle('active', b.dataset.v === s.stage));
+      document.querySelectorAll('#seg-params button').forEach(b => b.classList.toggle('active', Number(b.dataset.v) === s.paramsB));
+      document.getElementById('txt-n').textContent = `N = ${r.N} GPU`;
+
+      renderMath(document.getElementById('katex-bpp'), r.formulaKaTeX, { displayMode: true });
+      document.getElementById('cmp-table').innerHTML =
+        `<tr><td><em>Chiến lược</em></td><td><em>GB mỗi GPU · truyền thông GB/bước</em></td></tr>` +
+        r.table.map(t => `<tr><td>${t.name}${t.stage === s.stage ? ' 👈' : ''}</td><td>${t.gb} GB ${t.fits ? '✅' : '❌'} · ${t.trafficGB} GB</td></tr>`).join('');
+      document.getElementById('cur-table').innerHTML = `
+        <tr><td>Byte/tham số trên mỗi GPU</td><td>${r.bytesPerParam}</td></tr>
+        <tr><td>Giảm so với nhân bản</td><td>×${r.savings}</td></tr>
+        <tr><td>Truyền thông so với DP</td><td>×${r.trafficRatio}</td></tr>`;
+      renderAllInlineMath(document.querySelector('.col-telemetry'));
+      const verdict = document.getElementById('verdict');
+      verdict.className = `tp-verdict ${r.verdict.type}`;
+      verdict.textContent = r.verdict.text;
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      syncControls();
+      presets.setActive('dp_7b');
+      render();
+    });
+
+    renderAllInlineMath(document.querySelector('.col-sandbox'));
+    render();
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

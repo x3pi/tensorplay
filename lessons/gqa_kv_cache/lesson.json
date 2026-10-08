@@ -1,0 +1,27 @@
+{
+  "id": "gqa_kv_cache",
+  "title": "GQA / MQA — Chia Sẻ K, V Giữa Các Đầu Để Thu Nhỏ KV-Cache",
+  "summary": "Mô hình 70B kiểu MHA tốn $2.5$ MiB KV mỗi token (batch 16 × 4096 token = $160$ GiB, hơn cả trọng số). GQA-8 còn $320$ KiB (nhỏ hơn 8 lần), MQA $40$ KiB, với chất lượng gần MHA ở GQA.",
+  "topic": "llm-serving",
+  "tags": [
+    "gqa",
+    "mqa",
+    "kv-cache",
+    "attention",
+    "serving"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 12,
+  "status": "ready",
+  "prerequisites": [
+    "multi_head_attention",
+    "kv_cache_anatomy"
+  ],
+  "related": [
+    "roofline_arithmetic_intensity",
+    "flash_attention",
+    "transformer_block_params"
+  ],
+  "sources": [],
+  "aliases": []
+}

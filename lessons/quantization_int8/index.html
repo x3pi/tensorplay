@@ -119,8 +119,8 @@
       {
         step: 1, badge: 'Bước 1 / 4',
         heading: 'Cùng tính chất, ít byte hơn',
-        problem: 'Giải mã LLM bị nghẽn băng thông ([[lesson:roofline_arithmetic_intensity]]): thời gian mỗi token $\approx$ số byte trọng số $/$ băng thông. Vậy chỉ cần lưu trọng số bằng ít byte hơn là nhanh hơn?',
-        mechanism: 'Lượng tử hóa đối xứng INT8: $s = \max|w| / 127$, $q = \text{round}(w / s)$, khôi phục $\hat{w} = q s$. Với 8 trọng số bình thường $\max|w| = 0.3$, $s = 0.00236$ và sai số trung bình chỉ $0.0005$. Mô hình 7B từ $14$ GB còn $7$ GB, thông lượng giải mã gấp đôi: $143 \to 286$ token/s.',
+        problem: 'Giải mã LLM bị nghẽn băng thông ([[lesson:roofline_arithmetic_intensity]]): thời gian mỗi token $\\approx$ số byte trọng số $/$ băng thông. Vậy chỉ cần lưu trọng số bằng ít byte hơn là nhanh hơn?',
+        mechanism: 'Lượng tử hóa đối xứng INT8: $s = \\max|w| / 127$, $q = \\text{round}(w / s)$, khôi phục $\\hat{w} = q s$. Với 8 trọng số bình thường $\\max|w| = 0.3$, $s = 0.00236$ và sai số trung bình chỉ $0.0005$. Mô hình 7B từ $14$ GB còn $7$ GB, thông lượng giải mã gấp đôi: $143 \\to 286$ token/s.',
         action: '👉 Thao tác (Cột 2): Bấm preset "INT8, trọng số bình thường ✅".\n👁️ Quan sát (Cột 3): $q = [42, -85, 127, 85, -42, 106, -127, 119]$, sai số $0.0005$, bảng 7B báo 7 GB và 285.7 token/s.',
         takeaway: 'Nén trọng số gần như miễn phí về chất lượng khi các trọng số cùng cỡ.'
       },
@@ -128,7 +128,7 @@
         step: 2, badge: 'Bước 2 / 4',
         heading: 'Một ngoại lai phá hỏng tất cả',
         problem: 'Nếu một trọng số bất thường có giá trị 20 trong khi phần còn lại cỡ 0.1–0.3 thì sao?',
-        mechanism: 'Hệ số $s = 20 / 127 = 0.157$ giờ bị ngoại lai quyết định. Các trọng số nhỏ chỉ còn vài mức: $0.1 / 0.157 = 0.64 \to 1$, $0.2 \to 1$, $0.3 \to 2$. Sai số trung bình tăng $0.0005 \to 0.0421$ (gấp 83 lần), trọng số $0.1$ bị khôi phục thành $0.157$ (lệch $57.5\%$).',
+        mechanism: 'Hệ số $s = 20 / 127 = 0.157$ giờ bị ngoại lai quyết định. Các trọng số nhỏ chỉ còn vài mức: $0.1 / 0.157 = 0.64 \\to 1$, $0.2 \\to 1$, $0.3 \\to 2$. Sai số trung bình tăng $0.0005 \\to 0.0421$ (gấp 83 lần), trọng số $0.1$ bị khôi phục thành $0.157$ (lệch $57.5\\%$).',
         action: '👉 Thao tác (Cột 2): Bấm preset "INT8 + 1 ngoại lai (per-tensor) ❌".\n👁️ Quan sát (Cột 3): $q = [1, -1, 2, 1, -1, 2, -2, 127]$, kết luận đỏ.',
         takeaway: 'Độ phân giải của lượng tử hóa do giá trị lớn nhất quyết định, không phải giá trị điển hình.'
       },
@@ -136,7 +136,7 @@
         step: 3, badge: 'Bước 3 / 4',
         heading: 'Chia nhóm: mỗi nhóm một thước đo',
         problem: 'Làm sao để ngoại lai chỉ ảnh hưởng đến hàng xóm gần nhất của nó?',
-        mechanism: 'Mỗi nhóm 2 trọng số có hệ số $s$ riêng. Ngoại lai chỉ kéo $s$ của nhóm cuối $[-0.3, 20]$; ba nhóm còn lại giữ độ phân giải $0.2/127$. Sai số trung bình giảm $0.0421 \to 0.0024$ (khoảng 17 lần), chỉ $-0.3$ bị lệch $5\%$. Giá phải trả: thêm 1 hệ số FP16 mỗi nhóm; ở nhóm thực tế 128 trọng số là $2/128 = 1.6\%$ bộ nhớ.',
+        mechanism: 'Mỗi nhóm 2 trọng số có hệ số $s$ riêng. Ngoại lai chỉ kéo $s$ của nhóm cuối $[-0.3, 20]$; ba nhóm còn lại giữ độ phân giải $0.2/127$. Sai số trung bình giảm $0.0421 \\to 0.0024$ (khoảng 17 lần), chỉ $-0.3$ bị lệch $5\\%$. Giá phải trả: thêm 1 hệ số FP16 mỗi nhóm; ở nhóm thực tế 128 trọng số là $2/128 = 1.6\\%$ bộ nhớ.',
         action: '👉 Thao tác (Cột 2): Bấm preset "INT8 + ngoại lai, chia nhóm ✅".\n👁️ Quan sát (Cột 3): $q = [63, -127, 127, 85, -51, 127, -2, 127]$, sai số $0.0024$.',
         takeaway: 'Chia nhóm (group-wise) là kỹ thuật chuẩn của các bộ lượng tử hóa LLM như GPTQ và AWQ.'
       },
@@ -144,8 +144,8 @@
         step: 4, badge: 'Bước 4 / 4',
         heading: 'INT4: ranh giới của sự đánh đổi',
         problem: 'Đi tiếp xuống 4 bit thì được gì, mất gì?',
-        mechanism: 'INT4 chỉ có 15 mức ($-7\ldots7$): mô hình 7B còn $3.5$ GB và đạt $571$ token/s. Nhưng với ngoại lai và một scale chung, $s = 20 / 7 = 2.86$ nên cả 7 trọng số bình thường về 0: $q = [0, 0, 0, 0, 0, 0, 0, 7]$. Chia nhóm cứu được phần lớn. Bài học: giảm bit luôn đi kèm xử lý ngoại lai.',
-        action: '👉 Thao tác (Cột 2): Bấm preset "INT4 + ngoại lai (per-tensor) ❌", rồi "INT4, chia nhóm, không ngoại lai".\n👁️ Quan sát (Cột 3): Trường hợp đầu toàn số 0, trường hợp sau sai số $0.0051$ (lệch tối đa $14.3\%$).',
+        mechanism: 'INT4 chỉ có 15 mức ($-7\\ldots7$): mô hình 7B còn $3.5$ GB và đạt $571$ token/s. Nhưng với ngoại lai và một scale chung, $s = 20 / 7 = 2.86$ nên cả 7 trọng số bình thường về 0: $q = [0, 0, 0, 0, 0, 0, 0, 7]$. Chia nhóm cứu được phần lớn. Bài học: giảm bit luôn đi kèm xử lý ngoại lai.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "INT4 + ngoại lai (per-tensor) ❌", rồi "INT4, chia nhóm, không ngoại lai".\n👁️ Quan sát (Cột 3): Trường hợp đầu toàn số 0, trường hợp sau sai số $0.0051$ (lệch tối đa $14.3\\%$).',
         takeaway: 'Lượng tử hóa đổi chất lượng lấy băng thông: nhanh hơn 2–4 lần ở vùng nghẽn băng thông.'
       }
     ];
@@ -161,7 +161,7 @@
       }],
       4: [{
         id: 'qt4', author: 'Nhà Toán Học AI', role: 'Math', avatar: '📐', tag: 'Sai số tối đa', tagType: 'math',
-        content: 'Với làm tròn tới số nguyên gần nhất, $|\hat{w} - w| \le s/2$. Do đó sai số tuyệt đối tối đa tỉ lệ với $\max|w|$, và sai số tương đối của một trọng số nhỏ $w$ là $\le s / (2|w|)$: vô hạn khi $w \to 0$. Đây là lý do một trọng số nhỏ nằm cạnh ngoại lai bị hỏng nặng nhất.'
+        content: 'Với làm tròn tới số nguyên gần nhất, $|\\hat{w} - w| \\le s/2$. Do đó sai số tuyệt đối tối đa tỉ lệ với $\\max|w|$, và sai số tương đối của một trọng số nhỏ $w$ là $\\le s / (2|w|)$: vô hạn khi $w \\to 0$. Đây là lý do một trọng số nhỏ nằm cạnh ngoại lai bị hỏng nặng nhất.'
       }]
     };
 

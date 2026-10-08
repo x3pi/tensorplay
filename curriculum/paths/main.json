@@ -41,6 +41,7 @@
         "optimizers",
         "adamw_weight_decay",
         "lr_schedule_warmup",
+        "gradient_accumulation_clipping",
         "batch_norm_dynamics",
         "overfitting_validation",
         "dropout",
@@ -63,7 +64,8 @@
         "roofline_arithmetic_intensity",
         "mixed_precision",
         "activation_checkpointing",
-        "data_parallel_allreduce"
+        "data_parallel_allreduce",
+        "zero_fsdp"
       ]
     },
     {
@@ -73,12 +75,16 @@
         "self_attention",
         "embedding_tokenization",
         "positional_encoding",
+        "rope_rotary",
         "multi_head_attention",
         "transformer_block_params",
+        "moe_routing",
         "kv_cache_anatomy",
+        "gqa_kv_cache",
         "sampling_decoding",
         "flash_attention",
-        "quantization_int8"
+        "quantization_int8",
+        "lora_finetuning"
       ]
     }
   ]

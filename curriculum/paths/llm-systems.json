@@ -22,8 +22,10 @@
         "self_attention",
         "embedding_tokenization",
         "positional_encoding",
+        "rope_rotary",
         "multi_head_attention",
-        "transformer_block_params"
+        "transformer_block_params",
+        "moe_routing"
       ]
     },
     {
@@ -32,9 +34,11 @@
         "mixed_precision",
         "roofline_arithmetic_intensity",
         "kv_cache_anatomy",
+        "gqa_kv_cache",
         "sampling_decoding",
         "flash_attention",
-        "quantization_int8"
+        "quantization_int8",
+        "lora_finetuning"
       ]
     }
   ]

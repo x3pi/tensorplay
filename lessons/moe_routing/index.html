@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta name="tp-lesson" content="moe_routing">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mixture-of-Experts — Nhiều Chuyên Gia, Mỗi Token Chỉ Gọi Vài Người - TensorPlay</title>
+  <meta name="description" content="MoE tách số tham số khỏi chi phí tính toán mỗi token; router top-k, dung lượng chuyên gia, token bị bỏ và cân bằng tải, với ví dụ 8 token tính tay được.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">← Về Danh Mục</a>
+      </div>
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step" data-topic-badge></span>
+      </div>
+    </header>
+
+    <main class="lab-grid">
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt &amp; Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Bàn Thí Nghiệm Định Tuyến</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Đặt Lại</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🎯 Số chuyên gia mỗi token (top-k)</div>
+            <div class="tp-seg" id="seg-k">
+              <button data-v="1">k = 1</button>
+              <button data-v="2">k = 2</button>
+            </div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">📦 Dung lượng mỗi chuyên gia (capacity factor)</div>
+            <div class="tp-seg" id="seg-cf">
+              <button data-v="1">1.0</button>
+              <button data-v="1.25">1.25</button>
+              <button data-v="2.5">2.5</button>
+            </div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">⚖️ Cân bằng tải</div>
+            <div class="tp-seg" id="seg-bal">
+              <button data-v="off">Tắt</button>
+              <button data-v="on">Bật (bias điều chỉnh) ✅</button>
+            </div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🧩 Tham số</div>
+            <table class="tp-kv-table" id="params-table"></table>
+          </div>
+        </div>
+      </section>
+
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math &amp; Telemetry</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div class="tp-panel">
+            <div class="tp-panel-title">📐 Công thức</div>
+            <div class="tp-math-box" id="katex-moe"></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🔀 Token được gửi tới chuyên gia nào?</div>
+            <table class="tp-kv-table" id="route-table"></table>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">📊 Tải từng chuyên gia</div>
+            <table class="tp-kv-table" id="load-table"></table>
+            <div id="bars" style="margin-top:0.5rem;"></div>
+          </div>
+          <div class="tp-verdict" id="verdict"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createLiveSlider } from '../../shared/components/LiveSlider.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
+    import { markCompleted } from '../../shared/progress.js';
+    import { LessonLogic, PRESETS } from './logic.js';
+
+    const LESSON_ID = 'moe_routing';
+
+    const STEPS = [
+      {
+        step: 1, badge: 'Bước 1 / 4',
+        heading: 'Nhiều tham số nhưng ít tính toán',
+        problem: 'Muốn mô hình lớn hơn mà không tăng chi phí mỗi token tương ứng. Có cách nào?',
+        mechanism: 'Thay một FFN bằng $E = 4$ chuyên gia FFN. Một khối đồ chơi ($d = 4$, $m = 4$) có $128$ tham số FFN ([[lesson:transformer_block_params]]); MoE có $512$ tham số tổng. Nhưng router chỉ gửi mỗi token tới top-$k$ chuyên gia: với $k = 2$ mỗi token chỉ dùng $256$ tham số, tức FLOPs mỗi token chỉ bằng $2$ chuyên gia dù mô hình có $4$.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Top-2, dung lượng 1.0" và xem bảng tham số.\n👁️ Quan sát (Cột 2 và 3): Tổng 512, kích hoạt 256, mỗi token được gửi tới 2 chuyên gia.',
+        takeaway: 'MoE tách số tham số (dung lượng) ra khỏi chi phí tính toán mỗi token.'
+      },
+      {
+        step: 2, badge: 'Bước 2 / 4',
+        heading: 'Router chấm điểm và chọn top-k',
+        problem: '8 token, mỗi token có điểm cho 4 chuyên gia. Chọn thế nào?',
+        mechanism: 'Softmax logits của từng token rồi lấy $k$ chuyên gia xác suất cao nhất. Với $k = 1$: token $t_0, t_1, t_3, t_4, t_7$ đều thích chuyên gia 0, $t_2$ thích chuyên gia 1, $t_5$ thích 2, $t_6$ thích 3. Phân bố $[5, 1, 1, 1]$: chuyên gia 0 nhận $5$ token, mức đều chỉ là $2$.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Top-1, dung lượng 1.0: một chuyên gia quá tải ❌".\n👁️ Quan sát (Cột 3): Bảng định tuyến và thanh tải: chuyên gia 0 cao gấp 2.5 lần mức đều.',
+        takeaway: 'Router tự do thì dễ "sụp": vài chuyên gia hút hết token (expert collapse).'
+      },
+      {
+        step: 3, badge: 'Bước 3 / 4',
+        heading: 'Hết chỗ thì bỏ token',
+        problem: 'Mỗi chuyên gia chạy trên một phần cứng có bộ nhớ cố định. Chuyên gia 0 nhận 5 token nhưng chỉ đủ chỗ cho bao nhiêu?',
+        mechanism: 'Dung lượng $\\text{cap} = \\lceil \\text{cf} \\times T k / E \\rceil = \\lceil 1.0 \\times 8 / 4 \\rceil = 2$. Token đến muộn ($t_3, t_4, t_7$) bị bỏ: chúng đi qua tầng mà không được chuyên gia nào xử lý (chỉ còn đường residual). Nâng capacity factor lên $2.5$ thì $\\text{cap} = 5$ không bỏ ai, nhưng 3 chuyên gia còn lại gần như rảnh và bộ nhớ phân bổ bị lãng phí.',
+        action: '👉 Thao tác (Cột 2): Bấm lần lượt "Top-1, dung lượng 1.0 ..." rồi "Top-1, dung lượng 2.5 ...".\n👁️ Quan sát (Cột 3): 3 lượt bị bỏ biến mất, nhưng tải vẫn lệch [5, 1, 1, 1].',
+        takeaway: 'Mất cân bằng tải làm mất token hoặc lãng phí phần cứng; không thể chỉ chữa bằng dung lượng.'
+      },
+      {
+        step: 4, badge: 'Bước 4 / 4',
+        heading: 'Cân bằng tải',
+        problem: 'Làm sao ép router rải đều token?',
+        mechanism: 'Cách 1: thêm vào mất mát một số hạng phụ $\\text{aux} = E \\sum_i f_i P_i$ ($f_i$ là tỉ lệ token thật sự gửi tới chuyên gia $i$, $P_i$ là xác suất router trung bình): bằng $1$ khi đều, ở đây $1.486$ khi lệch. Cách 2: cộng một bias điều chỉnh vào logits của chuyên gia quá tải và giảm bias của chuyên gia dư tải. Với bias $[-1.5, 0, +0.5, +0.5]$ tải thành $[2, 2, 2, 2]$, $\\text{aux} = 1.0$ và không bỏ token nào.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Top-1 + cân bằng tải ✅".\n👁️ Quan sát (Cột 3): Cả 4 thanh tải cao bằng nhau, kết luận xanh.',
+        takeaway: 'Một MoE huấn luyện tốt cần cơ chế cân bằng tải ngay trong huấn luyện, không chỉ khi suy diễn.'
+      }
+    ];
+
+    const STEP_COMMENTS = {
+      2: [{
+        id: 'mo2', author: 'Chuyên Gia LLM', role: 'LLM', avatar: '🧠', tag: 'Thực tế', tagType: 'systems',
+        content: 'Mixtral 8x7B có 8 chuyên gia FFN mỗi tầng và top-2: tổng khoảng 47 tỉ tham số nhưng mỗi token chỉ kích hoạt khoảng 13 tỉ. Lưu ý: dù FLOPs mỗi token thấp, TẤT CẢ chuyên gia phải nằm trong VRAM (hoặc phân tán qua nhiều GPU), nên MoE tiết kiệm tính toán chứ không tiết kiệm bộ nhớ ([[lesson:zero_fsdp]]).'
+      }],
+      3: [{
+        id: 'mo3', author: 'Kỹ Sư Backend', role: 'Systems', avatar: '⚙️', tag: 'Gotcha kinh điển', tagType: 'gotcha',
+        content: 'Khi mỗi chuyên gia nằm trên một GPU khác nhau (expert parallelism), định tuyến token là phép all-to-all trên mạng. Mất cân bằng tải biến thành một GPU chạy chậm và cả nhóm phải chờ. Đây là chi phí truyền thông mới so với data parallel ([[lesson:data_parallel_allreduce]]).'
+      }],
+      4: [{
+        id: 'mo4', author: 'Nhà Toán Học AI', role: 'Math', avatar: '📐', tag: 'Loss phụ', tagType: 'math',
+        content: 'Với $f_i$ là tỉ lệ phân công cứng (không khả vi) và $P_i$ là xác suất mềm (khả vi), tích $f_i P_i$ cho gradient chảy qua $P_i$. Khi cả hai đều thì $E \\sum f_i P_i = 1$; khi $f$ dồn vào chuyên gia đang có $P$ cao thì giá trị vượt 1, và gradient qua $P_i$ đẩy xác suất khỏi chuyên gia quá tải.'
+      }]
+    };
+
+    const logic = new LessonLogic();
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
+    });
+
+    createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 1,
+      onStepChange: (n) => {
+        comments.setStep(n, STEP_COMMENTS[n] || []);
+        if (n === STEPS.length) markCompleted(LESSON_ID, true);
+      }
+    });
+
+
+
+    function syncControls() {
+      void 0;
+    }
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      initialActiveId: 'collapse_top1',
+      onPick: (p) => {
+        logic.applyPreset(p.state);
+        syncControls();
+        render();
+      }
+    });
+
+    function segBind(id, apply) {
+      document.querySelectorAll(`#${id} button`).forEach(btn => btn.addEventListener('click', () => {
+        logic.onUserUpdate(apply(btn.dataset.v));
+        presets.setActive(null);
+        render();
+      }));
+    }
+    segBind('seg-k', v => ({ k: Number(v) }));
+    segBind('seg-cf', v => ({ capacityFactor: Number(v) }));
+    segBind('seg-bal', v => ({ balanced: v === 'on' }));
+
+    function render() {
+      const r = logic.calculate();
+      const s = logic.state;
+      document.querySelectorAll('#seg-k button').forEach(b => b.classList.toggle('active', Number(b.dataset.v) === s.k));
+      document.querySelectorAll('#seg-cf button').forEach(b => b.classList.toggle('active', Number(b.dataset.v) === s.capacityFactor));
+      document.querySelectorAll('#seg-bal button').forEach(b => b.classList.toggle('active', (b.dataset.v === 'on') === s.balanced));
+
+      document.getElementById('params-table').innerHTML = `
+        <tr><td>FFN thường (d=4, m=4)</td><td>${r.denseParams}</td></tr>
+        <tr><td>MoE 4 chuyên gia: tổng</td><td>${r.moeTotalParams}</td></tr>
+        <tr><td>Mỗi token dùng (k × 128)</td><td>${r.activeParams} (${(r.activeParams / r.moeTotalParams * 100).toFixed(0)}% tổng)</td></tr>`;
+      renderMath(document.getElementById('katex-moe'), r.formulaKaTeX, { displayMode: true });
+      const dropSet = new Set(r.dropped.map(d => d[0] + ':' + d[1]));
+      document.getElementById('route-table').innerHTML = r.choice.map((c, t) =>
+        `<tr><td>token t${t}</td><td>${c.map(e => `E${e}${dropSet.has(t + ':' + e) ? ' ✂️(bỏ)' : ''}`).join(', ')}</td></tr>`).join('');
+      document.getElementById('load-table').innerHTML =
+        `<tr><td>Dung lượng mỗi chuyên gia</td><td>${r.cap}</td></tr>` +
+        r.counts.map((c, i) => `<tr><td>E${i}: được gọi / nhận được</td><td>${c} / ${r.load[i]}</td></tr>`).join('') +
+        `<tr><td>Loss cân bằng tải aux</td><td>${r.aux} (lý tưởng 1)</td></tr>
+         <tr><td>Chuyên gia nặng nhất so với mức đều</td><td>×${r.imbalance}</td></tr>
+         <tr><td>Lượt gọi bị bỏ</td><td>${r.dropped.length}/${r.T * r.k} (${(r.dropFrac * 100).toFixed(1)}%)</td></tr>`;
+      const maxC = Math.max(...r.counts, r.cap);
+      document.getElementById('bars').innerHTML = r.counts.map((c, i) =>
+        `<div style="display:flex; align-items:center; gap:6px; margin:3px 0; font-size:0.7rem; color:var(--text-dim);"><span style="width:24px;">E${i}</span>` +
+        `<div style="flex:1; height:12px; background:#0f172a; border-radius:6px; position:relative; overflow:hidden;">` +
+        `<div style="width:${c / maxC * 100}%; height:100%; background:${c > r.cap ? '#ef4444' : '#38bdf8'};"></div>` +
+        `<div style="position:absolute; left:${r.cap / maxC * 100}%; top:0; bottom:0; width:2px; background:#f59e0b;"></div></div><span style="width:20px;">${c}</span></div>`).join('') +
+        `<div class="tp-matrix-caption">thanh = số lượt được gọi · vạch cam = dung lượng · đỏ = vượt dung lượng</div>`;
+      renderAllInlineMath(document.querySelector('.col-telemetry'));
+      const verdict = document.getElementById('verdict');
+      verdict.className = `tp-verdict ${r.verdict.type}`;
+      verdict.textContent = r.verdict.text;
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      syncControls();
+      presets.setActive('collapse_top1');
+      render();
+    });
+
+    renderAllInlineMath(document.querySelector('.col-sandbox'));
+    render();
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

@@ -136,16 +136,20 @@ export function neighbors(slug, pathId = 'main', catalog = cachedCatalog) {
  * Resolves cross-references like [[lesson:slug]] into «Short Title».
  * Fallback gracefully without throwing if catalog or lesson is missing.
  */
-export function resolveRefs(text, catalog = cachedCatalog) {
+export function resolveRefs(text, catalog = cachedCatalog, options = {}) {
   if (typeof text !== 'string') return text;
+  const asLink = options.asLink ?? false;
 
   return text.replace(/\[\[lesson:([a-z0-9_]+)\]\]/g, (match, slug) => {
     const lesson = getLesson(slug, catalog);
     if (!lesson || !lesson.title) {
-      return `«${slug}»`;
+      return asLink ? `<a href="../${slug}/" class="tp-lesson-ref">«${slug}»</a>` : `«${slug}»`;
     }
     // Extract short title before " — " or ": "
     const shortTitle = lesson.title.split(/ — |: /)[0].trim();
+    if (asLink) {
+      return `<a href="../${slug}/" class="tp-lesson-ref" title="${lesson.title}">«${shortTitle}»</a>`;
+    }
     return `«${shortTitle}»`;
   });
 }

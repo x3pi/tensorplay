@@ -1,0 +1,25 @@
+{
+  "id": "multi_head_attention",
+  "title": "Multi-Head Attention — Nhiều Cặp Mắt Cùng Nhìn",
+  "summary": "Chia $d_{model}$ thành $h$ đầu để mỗi đầu học một kiểu quan hệ khác nhau, số tham số vẫn là $4d^2$. Đánh đổi: đầu quá hẹp ($d_k = 1$) mất khả năng phân biệt; nền tảng của MQA/GQA giảm KV-Cache.",
+  "topic": "transformer",
+  "tags": [
+    "multi-head",
+    "attention",
+    "kv-cache",
+    "gqa"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 12,
+  "status": "ready",
+  "prerequisites": [
+    "self_attention"
+  ],
+  "related": [
+    "kv_cache_anatomy"
+  ],
+  "sources": [],
+  "aliases": [
+    "multi_head_attention"
+  ]
+}

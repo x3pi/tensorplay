@@ -1,6 +1,8 @@
 # 📋 Kế Hoạch Triển Khai: TensorPlay
 ### *Nền Tảng Tương Tác Trực Quan Hóa Toán Học & Kỹ Nghệ Hệ Thống AI (DLSys Visual Lab)*
 
+> 💡 **Cập nhật Kiến trúc**: Kế hoạch tái cấu trúc thư viện bài học tự quản và lộ trình linh hoạt (`lessons/<slug>/`, `curriculum/paths/`, cross-refs `[[lesson:slug]]`) được đặc tả chi tiết tại [KE_HOACH_CAU_TRUC_LINH_HOAT.md](KE_HOACH_CAU_TRUC_LINH_HOAT.md).
+
 ---
 
 ## 🎯 I. Mục Tiêu & Triết Lý Thiết Kế

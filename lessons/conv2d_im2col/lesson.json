@@ -1,0 +1,26 @@
+{
+  "id": "conv2d_im2col",
+  "title": "Conv2D & Thần Chú Im2col",
+  "summary": "Phép cuộn 2D trượt cửa sổ. Kỹ thuật Im2col biến đổi ảnh và bộ lọc thành ma trận 2D khổng lồ để tận dụng tối đa nhân phần cứng GEMM (BLAS/cuBLAS).",
+  "topic": "cnn-data",
+  "tags": [
+    "convolution",
+    "im2col",
+    "gemm",
+    "image-processing"
+  ],
+  "difficulty": "advanced",
+  "estimatedMinutes": 18,
+  "status": "ready",
+  "prerequisites": [
+    "strides_views"
+  ],
+  "related": [
+    "minibatch_assembly"
+  ],
+  "sources": [],
+  "aliases": [
+    "bai_08_conv2d_im2col",
+    "conv2d_im2col"
+  ]
+}

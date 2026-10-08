@@ -1,0 +1,28 @@
+{
+  "id": "cpp_matmul_loops",
+  "title": "Dò Tay Vòng Lặp Nhân Ma Trận C++",
+  "summary": "Dò từng bước 3 vòng lặp `for (i, j, k)` trong C++. Hiểu cơ chế tính toán offset 1D: `A[i * K + k]` và `B[k * N + j]`.",
+  "topic": "memory-systems",
+  "tags": [
+    "c-plus-plus",
+    "pointers",
+    "loops",
+    "memory-offset"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 12,
+  "status": "ready",
+  "prerequisites": [
+    "robot_vision"
+  ],
+  "related": [
+    "cache_locality",
+    "memory_leak",
+    "cuda_threads"
+  ],
+  "sources": [],
+  "aliases": [
+    "bai_06a_cpp_matmul_loops",
+    "cpp_matmul_loops"
+  ]
+}

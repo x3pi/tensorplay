@@ -1,0 +1,26 @@
+{
+  "id": "rnn_bptt",
+  "title": "RNN & BPTT — Vì Sao Cần Transformer?",
+  "summary": "Lan truyền ngược qua thời gian (BPTT). Hiện tượng tiêu biến và bùng nổ gradient trong chuỗi tuần hoàn, đường cao tốc LSTM và bước chuyển dịch sang Self-Attention.",
+  "topic": "transformer",
+  "tags": [
+    "rnn",
+    "bptt",
+    "vanishing-gradient",
+    "lstm",
+    "transformer-motivation"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 15,
+  "status": "ready",
+  "prerequisites": [
+    "autograd_graph"
+  ],
+  "related": [
+    "self_attention"
+  ],
+  "sources": [],
+  "aliases": [
+    "rnn_bptt"
+  ]
+}

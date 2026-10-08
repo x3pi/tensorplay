@@ -5,6 +5,7 @@
  */
 
 import { renderInlineMath, renderMath } from '../katex-render.js';
+import { getLessonSlug } from '../lesson-context.js';
 
 const STORAGE_KEY = 'tensorplay:gemini_api_key';
 const STORAGE_MODEL_KEY = 'tensorplay:gemini_model';
@@ -28,6 +29,53 @@ export function isValidGeminiKey(key) {
 
 // Preset context-aware suggestion prompts per lesson topic
 const LESSON_QUESTIONS = {
+  robot_vision: [
+    'Tại sao trọng số âm lại đóng vai trò là "bằng chứng bác bỏ"?',
+    'Công thức offset 1D index = r * N + c hoạt động thế nào trong C++?',
+    'Phép nhân vô hướng (Dot Product) đo lường sự tương đồng ra sao?'
+  ],
+  softmax_stability: [
+    'M = max(z) đây có phải là số lớn nhất của đầu ra không?',
+    'Tại sao z > 88 lại gây tràn số (Overflow) trong chuẩn IEEE-754 float32?',
+    'Chứng minh toán học: Tại sao trừ M không làm thay đổi xác suất Softmax?',
+    'Làm thế nào để tránh chia cho 0 khi tính Cross-Entropy Loss?'
+  ],
+  softmax_regression: [
+    'Tại sao vector sai số đạo hàm của Softmax Loss lại cực kỳ gọn: G = P - Iy?',
+    'Ý nghĩa trực quan của gradient ma trận ∇W = X^T · G là gì?',
+    'Tốc độ học (learning rate) quá lớn sẽ gây hiện tượng gì?'
+  ],
+  twolayer_relu_backprop: [
+    'Tại sao hàm kích hoạt phi tuyến (ReLU) lại là bắt buộc trong Deep Learning?',
+    'Hiện tượng nơ-ron chết (Dead Neuron) xảy ra như thế nào khi z ≤ 0?',
+    'Giải thích công thức dội ngược sai số qua tầng ẩn G1 = (G2 · W2^T) ⊙ M?'
+  ],
+  minibatch_sgd: [
+    'Tại sao phép chuyển vị X^T lại tự động gom và cộng dồn Gradient của cả lô ảnh?',
+    'Mini-batch B=2 khác gì so với huấn luyện từng ảnh đơn lẻ?',
+    'Tại sao sai số trung bình lại cần chia cho B?'
+  ],
+  cpp_matmul_loops: [
+    'Tại sao hoán đổi thứ tự vòng lặp i-j-k lại thay đổi tốc độ chạy đến 10 lần?',
+    'Bộ nhớ đệm CPU L1 Cache hoạt động theo nguyên lý Spatial Locality như thế nào?'
+  ],
+  batch_norm_dynamics: [
+    'Internal Covariate Shift là gì và tại sao Batch Normalization giải quyết được?',
+    'Tại sao cần tham số scale γ và shift β sau khi đã chuẩn hóa μ=0, σ=1?'
+  ],
+  self_attention: [
+    'Tại sao trong Attention lại cần chia cho căn bậc hai của d_k (1/√d_k)?',
+    'Mặt nạ nhân quả Causal Mask chặn nơ-ron nhìn trộm tương lai như thế nào?'
+  ],
+  kv_cache_anatomy: [
+    'KV-Cache biến độ phức tạp tính toán từ O(N²) thành O(N) bằng cách nào?',
+    'Tại sao KV-Cache lại là nút thắt cổ chai VRAM hàng đầu khi chạy LLM?'
+  ],
+  flash_attention: [
+    'FlashAttention tăng tốc bằng cách nào khi số phép tính FLOPs không hề giảm?',
+    'Thuật toán Online Softmax cập nhật giá trị cực đại m và tổng e động ra sao?'
+  ],
+  // Legacy aliases
   bai_01: [
     'Tại sao trọng số âm lại đóng vai trò là "bằng chứng bác bỏ"?',
     'Công thức offset 1D index = r * N + c hoạt động thế nào trong C++?',
@@ -1300,10 +1348,15 @@ export class AiTutor {
       'Ý nghĩa toán học cốt lõi ở bước hiện tại là gì?'
     ];
 
-    for (const [key, qList] of Object.entries(LESSON_QUESTIONS)) {
-      if (path.includes(key)) {
-        questions = qList;
-        break;
+    const slug = getLessonSlug(typeof window !== 'undefined' ? window : null);
+    if (slug && LESSON_QUESTIONS[slug]) {
+      questions = LESSON_QUESTIONS[slug];
+    } else {
+      for (const [key, qList] of Object.entries(LESSON_QUESTIONS)) {
+        if (path.includes(key)) {
+          questions = qList;
+          break;
+        }
       }
     }
 
@@ -1831,6 +1884,10 @@ Quy chuẩn trả lời:
 
   getChatStorageKey() {
     if (typeof window === 'undefined' || !window.location) return `${CHAT_HISTORY_PREFIX}default`;
+    const slug = getLessonSlug(window);
+    if (slug) {
+      return `${CHAT_HISTORY_PREFIX}${slug}`;
+    }
     const path = window.location.pathname || '';
     const filename = path.split('/').filter(Boolean).pop() || 'index';
     const cleanId = filename.replace(/\.html$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');

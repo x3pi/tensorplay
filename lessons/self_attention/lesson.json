@@ -1,0 +1,28 @@
+{
+  "id": "self_attention",
+  "title": "Scaled Dot-Product Self-Attention",
+  "summary": "Cơ chế $Q, K, V$. Tại sao phải chia cho $\\sqrt{d_k}$ (bảo toàn phương sai tránh bão hòa Softmax). Trực quan hóa ma trận trọng số tương quan Attention Map.",
+  "topic": "transformer",
+  "tags": [
+    "transformer",
+    "self-attention",
+    "scaling-factor",
+    "softmax-saturation"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 15,
+  "status": "ready",
+  "prerequisites": [
+    "rnn_bptt"
+  ],
+  "related": [
+    "positional_encoding",
+    "multi_head_attention",
+    "kv_cache_anatomy"
+  ],
+  "sources": [],
+  "aliases": [
+    "bai_13_self_attention",
+    "self_attention"
+  ]
+}

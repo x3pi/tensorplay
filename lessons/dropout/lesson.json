@@ -1,0 +1,25 @@
+{
+  "id": "dropout",
+  "title": "Dropout — Phá Vỡ Co-Adaptation & Kỹ Thuật Inverted Scaling",
+  "summary": "Tắt ngẫu nhiên nơ-ron để ép học đặc trưng độc lập. Sự khác biệt giữa Train và Eval, bẫy quên scale $\\frac{1}{1-p}$ và dòng gradient dội ngược qua mặt nạ.",
+  "topic": "training-stability",
+  "tags": [
+    "regularization",
+    "dropout",
+    "inverted-scaling",
+    "ensemble"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 12,
+  "status": "ready",
+  "prerequisites": [
+    "kaiming_init"
+  ],
+  "related": [
+    "layernorm_residual"
+  ],
+  "sources": [],
+  "aliases": [
+    "dropout"
+  ]
+}

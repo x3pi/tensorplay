@@ -1,0 +1,26 @@
+{
+  "id": "coalescing_and_banks",
+  "title": "Memory Coalescing & Bank Conflicts",
+  "summary": "Warp 32 luồng đọc bộ nhớ gộp (Coalesced 128-byte transaction). Cơn ác mộng Bank Conflict trong 32 banks Shared Memory và kỹ thuật đệm Padding.",
+  "topic": "gpu",
+  "tags": [
+    "cuda",
+    "coalescing",
+    "bank-conflicts",
+    "warp-level"
+  ],
+  "difficulty": "advanced",
+  "estimatedMinutes": 20,
+  "status": "ready",
+  "prerequisites": [
+    "shared_memory_tiling"
+  ],
+  "related": [
+    "flash_attention"
+  ],
+  "sources": [],
+  "aliases": [
+    "bai_12_coalescing_and_banks",
+    "coalescing_and_banks"
+  ]
+}

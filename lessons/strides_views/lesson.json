@@ -1,0 +1,27 @@
+{
+  "id": "strides_views",
+  "title": "Strides & View — Một Vùng Nhớ, Nhiều Cách Nhìn",
+  "summary": "Mô hình NDArray dùng shape, strides và offset để transpose, slice, broadcast mà không tốn 1 byte sao chép. Khi nào bắt buộc phải gọi `compact()` sang bộ nhớ mới.",
+  "topic": "memory-systems",
+  "tags": [
+    "ndarray",
+    "strides",
+    "views",
+    "memory-layout",
+    "compact"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 15,
+  "status": "ready",
+  "prerequisites": [
+    "cpp_matmul_loops"
+  ],
+  "related": [
+    "broadcast_grad",
+    "conv2d_im2col"
+  ],
+  "sources": [],
+  "aliases": [
+    "strides_views"
+  ]
+}

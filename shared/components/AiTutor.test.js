@@ -161,6 +161,14 @@ describe('AiTutor Component', () => {
     const tutor2 = new AiTutor();
     expect(tutor2.getChatStorageKey()).toBe('tensorplay:chat_history:bai_02_softmax_loss');
 
+    global.window.location.pathname = '/lessons/robot_vision/';
+    const tutor3 = new AiTutor();
+    expect(tutor3.getChatStorageKey()).toBe('tensorplay:chat_history:robot_vision');
+
+    global.window.location.pathname = '/lessons/flash_attention/index.html';
+    const tutor4 = new AiTutor();
+    expect(tutor4.getChatStorageKey()).toBe('tensorplay:chat_history:flash_attention');
+
     // Dọn dẹp mock window
     delete global.window;
   });

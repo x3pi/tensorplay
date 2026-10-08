@@ -16,7 +16,7 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: Object.fromEntries(
-        ['index.html', ...findHtmlFiles('examples')].map((f) => [
+        ['index.html', ...findHtmlFiles('lessons')].map((f) => [
           f.replace(/[\\/]/g, '_').replace(/\.html$/, ''),
           f
         ])

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta name="tp-lesson" content="layernorm_residual">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LayerNorm &amp; Residual — Chuẩn Hóa Theo Mẫu, Cao Tốc Cho Gradient - TensorPlay</title>
+  <meta name="description" content="Vì sao Transformer dùng LayerNorm thay vì BatchNorm (batch=1 khi sinh token), và vì sao kết nối residual y = x + f(x) giữ gradient sống qua mạng sâu.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">← Về Danh Mục</a>
+      </div>
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step" style="border-color: rgba(16, 185, 129, 0.4);">Track 2: Modules &amp; CNN</span>
+      </div>
+    </header>
+
+    <main class="lab-grid">
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt &amp; Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Bàn Thí Nghiệm Chuẩn Hóa &amp; Residual</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Đặt Lại</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">🧪 Kích hoạt đầu vào $X$ (hàng = mẫu, cột = đặc trưng)</div>
+            <div style="display: flex; justify-content: center;">
+              <table class="tp-mini-matrix" id="x-grid"></table>
+            </div>
+            <div class="tp-matrix-caption">Mẫu 2 chỉ là mẫu 1 phóng to gấp đôi — cùng "hình dạng", khác "độ lớn"</div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">📏 Chuẩn hóa theo trục nào?</div>
+            <div class="tp-seg" id="seg-norm">
+              <button data-v="ln">LayerNorm (theo hàng) ✅</button>
+              <button data-v="bn">BatchNorm (theo cột)</button>
+            </div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">📦 Kích thước batch lúc chạy</div>
+            <div class="tp-seg" id="seg-batch">
+              <button data-v="2">Batch = 2 (huấn luyện)</button>
+              <button data-v="1">Batch = 1 (sinh từng token)</button>
+            </div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">🛣️ Kết nối Residual $y = x + f(x)$</div>
+            <div class="tp-seg" id="seg-residual">
+              <button data-v="on">Có residual ✅</button>
+              <button data-v="off">Không residual</button>
+            </div>
+            <div id="mount-depth-slider" style="margin-top: 0.6rem;"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math &amp; Telemetry</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div class="tp-panel">
+            <div class="tp-panel-title">➡️ Đầu ra sau chuẩn hóa $\hat{X}$</div>
+            <div style="display: flex; justify-content: center; margin-bottom: 0.5rem;">
+              <table class="tp-mini-matrix" id="out-grid"></table>
+            </div>
+            <div class="tp-math-box" id="katex-norm"></div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">📊 Mẫu 1 có "bị ảnh hưởng bởi hàng xóm" không?</div>
+            <table class="tp-kv-table" id="stats-table"></table>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">⬅️ Gradient dội ngược qua $L$ tầng</div>
+            <div class="tp-math-box" id="katex-grad"></div>
+            <table class="tp-kv-table" id="grad-table"></table>
+          </div>
+
+          <div class="tp-verdict" id="verdict"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createLiveSlider } from '../../shared/components/LiveSlider.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
+    import { markCompleted } from '../../shared/progress.js';
+    import { LessonLogic, PRESETS } from './logic.js';
+
+    const LESSON_ID = 'layernorm_residual';
+
+    const STEPS = [
+      {
+        step: 1, badge: 'Bước 1 / 5',
+        heading: 'Hai cách chuẩn hóa: cắt theo cột hay cắt theo hàng?',
+        problem: '[[lesson:batch_norm_dynamics]] chuẩn hóa mỗi đặc trưng bằng thống kê của cả batch. Với ma trận $X = \\begin{bmatrix} 1 & 3 \\\\ 2 & 6 \\end{bmatrix}$ (2 mẫu, 2 đặc trưng), có cách nào chuẩn hóa mà không cần nhìn sang mẫu khác?',
+        mechanism: 'LayerNorm tính trung bình và độ lệch chuẩn trên chính hàng của mẫu đó. Hàng $[1, 3]$ có $\\mu = 2, \\sigma = 1$ nên thành $[-1, 1]$. Hàng $[2, 6]$ có $\\mu = 4, \\sigma = 2$ cũng thành $[-1, 1]$.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "LayerNorm (batch=2)", rồi chuyển sang "BatchNorm (batch=2)".\n👁️ Quan sát (Cột 3): LayerNorm ra $[[-1,1],[-1,1]]$, BatchNorm ra $[[-1,-1],[1,1]]$ — cùng công thức, khác trục.',
+        takeaway: 'BatchNorm cắt theo cột (qua batch), LayerNorm cắt theo hàng (qua đặc trưng).'
+      },
+      {
+        step: 2, badge: 'Bước 2 / 5',
+        heading: 'Sinh token: batch chỉ còn 1 mẫu',
+        problem: 'Khi LLM sinh từng token (như trong [[lesson:kv_cache_anatomy]]), mỗi lượt chỉ có 1 chuỗi trong batch. BatchNorm lúc này tính phương sai trên đúng 1 giá trị mỗi cột. Chuyện gì xảy ra?',
+        mechanism: 'Mỗi cột chỉ có một phần tử nên $\\sigma^2 = 0$ và $x - \\mu = 0$: toàn bộ đầu ra sụp về 0. LayerNorm không quan tâm batch có bao nhiêu mẫu nên vẫn ra $[-1, 1]$.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "BatchNorm khi sinh từng token (batch=1) ❌", sau đó đổi sang LayerNorm.\n👁️ Quan sát (Cột 3): Đầu ra BatchNorm toàn số 0 và thanh kết luận đỏ.',
+        takeaway: 'Mô hình phải cho cùng một kết quả dù được chạy chung với 1 hay 100 mẫu khác — đó là lý do Transformer chọn LayerNorm.'
+      },
+      {
+        step: 3, badge: 'Bước 3 / 5',
+        heading: 'Mẫu của bạn có bị "hàng xóm" làm lệch?',
+        problem: 'Ngay cả khi BatchNorm không sụp, đầu ra của mẫu 1 có giống nhau khi nó được chạy một mình và khi chạy cạnh mẫu 2 không?',
+        mechanism: 'Với BatchNorm, mẫu 1 ra $[0, 0]$ khi chạy một mình nhưng ra $[-1, -1]$ khi chạy cạnh mẫu 2. Kết quả của bạn phụ thuộc vào ai ngồi cùng batch. LayerNorm cho độ lệch đúng 0.',
+        action: '👉 Thao tác (Cột 2): Chọn BatchNorm, batch = 2.\n👁️ Quan sát (Cột 3): Bảng "Mẫu 1 khi batch=1" và "khi batch=2" khác nhau, độ lệch > 0.',
+        takeaway: 'Phụ thuộc chéo giữa các mẫu là nguồn bug khó thấy: cùng một ảnh, đổi batch là đổi dự đoán.'
+      },
+      {
+        step: 4, badge: 'Bước 4 / 5',
+        heading: 'Mạng sâu: gradient chết dần qua từng tầng',
+        problem: 'Giả sử mỗi tầng có đạo hàm cục bộ $f\' = 0.1$. Sau 6 tầng, gradient chạm tới đầu vào còn bao nhiêu?',
+        mechanism: 'Quy tắc dây chuyền nhân các đạo hàm: $0.1^6 = 10^{-6}$. Tầng đầu gần như không nhận được tín hiệu học. Đây là cùng bệnh tiêu biến gradient của RNN ([[lesson:rnn_bptt]]).',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Mạng sâu 6 tầng, không residual ❌".\n👁️ Quan sát (Cột 3): Gradient về đầu vào chỉ còn khoảng $1.0 \\times 10^{-6}$.',
+        takeaway: 'Nhân nhiều số nhỏ hơn 1 liên tiếp là công thức làm gradient tiêu biến.'
+      },
+      {
+        step: 5, badge: 'Bước 5 / 5',
+        heading: 'Residual: mở một đường cao tốc cho gradient',
+        problem: 'Làm sao để gradient có một lối đi không bị nhân với số nhỏ?',
+        mechanism: 'Với $y = x + f(x)$ thì $\\frac{\\partial y}{\\partial x} = 1 + f\'(x)$. Số $1$ là "đường cao tốc" đi thẳng. Sau $L$ tầng ta có $(1 + f\')^L = 1.1^6 \\approx 1.77$ thay vì $10^{-6}$. Mỗi khối Transformer đều dùng $y = x + \\text{Sublayer}(\\text{LN}(x))$.',
+        action: '👉 Thao tác (Cột 2): Bật "Có residual" và kéo thanh độ sâu từ 1 đến 6.\n👁️ Quan sát (Cột 3): Gradient có residual luôn quanh mức 1, không có residual rơi theo hàm mũ.',
+        takeaway: 'LayerNorm giữ tín hiệu ổn định theo chiều ngang, residual giữ gradient sống theo chiều sâu. Hai thứ này gộp lại thành khối Transformer.'
+      }
+    ];
+
+    const STEP_COMMENTS = {
+      2: [{
+        id: 'ln2', author: 'Kỹ Sư Serving', role: 'Systems', avatar: '⚙️', tag: 'Gotcha kinh điển', tagType: 'gotcha',
+        content: 'Ngay cả khi BatchNorm có "running stats" dùng lúc inference ([[lesson:batch_norm_dynamics]]), việc huấn luyện với batch nhỏ vẫn cho thống kê nhiễu. Sequence dài khiến batch phải nhỏ, nên LLM gần như không dùng BatchNorm.'
+      }],
+      3: [{
+        id: 'ln3', author: 'Nhà Toán Học AI', role: 'Math', avatar: '📐', tag: 'Bất biến theo tỉ lệ', tagType: 'math',
+        content: 'LayerNorm bất biến khi nhân cả hàng với hằng số dương $a$: $\\text{LN}(a x) = \\text{LN}(x)$. Đó là lý do hàng $[2, 6]$ và $[1, 3]$ ra cùng kết quả. Ở thực tế còn có thêm $\\gamma, \\beta$ học được và $\\epsilon \\approx 10^{-5}$ chống chia cho 0.'
+      }],
+      5: [{
+        id: 'ln5', author: 'Chuyên Gia LLM', role: 'LLM', avatar: '🧠', tag: 'Pre-LN vs Post-LN', tagType: 'systems',
+        content: 'Bản Transformer gốc đặt LayerNorm sau residual (Post-LN), khó huấn luyện sâu nếu không warmup. Hầu hết LLM hiện đại dùng Pre-LN: $y = x + f(\\text{LN}(x))$ để đường residual không bị LN chặn ngang, và nhiều mô hình dùng RMSNorm (bỏ bước trừ trung bình).'
+      }]
+    };
+
+    const logic = new LessonLogic();
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
+    });
+
+    createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 1,
+      onStepChange: (n) => {
+        comments.setStep(n, STEP_COMMENTS[n] || []);
+        if (n === STEPS.length) markCompleted(LESSON_ID, true);
+      }
+    });
+
+    const sDepth = createLiveSlider(document.getElementById('mount-depth-slider'), {
+      label: 'Số tầng $L$', min: 1, max: 6, step: 1, initial: logic.state.depth,
+      onChange: (v) => { logic.onUserUpdate({ depth: v }); presets.setActive(null); render(); }
+    });
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      initialActiveId: 'ln_batch2',
+      onPick: (p) => {
+        logic.applyPreset(p.state);
+        sDepth.setValue(logic.state.depth);
+        render();
+      }
+    });
+
+    function bindSeg(id, apply) {
+      document.querySelectorAll(`#${id} button`).forEach(btn => btn.addEventListener('click', () => {
+        logic.onUserUpdate(apply(btn.dataset.v));
+        presets.setActive(null);
+        render();
+      }));
+    }
+    bindSeg('seg-norm', v => ({ norm: v }));
+    bindSeg('seg-batch', v => ({ batchSize: Number(v) }));
+    bindSeg('seg-residual', v => ({ useResidual: v === 'on' }));
+
+    const cell = (v, cls = '') => `<td class="${cls}" style="min-width: 44px; text-align: center;">${v}</td>`;
+    const signCls = v => (v > 0 ? 'pos' : v < 0 ? 'neg' : '');
+
+    function render() {
+      const r = logic.calculate();
+      const s = logic.state;
+
+      document.querySelectorAll('#seg-norm button').forEach(b => b.classList.toggle('active', b.dataset.v === s.norm));
+      document.querySelectorAll('#seg-batch button').forEach(b => b.classList.toggle('active', Number(b.dataset.v) === s.batchSize));
+      document.querySelectorAll('#seg-residual button').forEach(b => b.classList.toggle('active', (b.dataset.v === 'on') === s.useResidual));
+
+      document.getElementById('x-grid').innerHTML = s.X.map((row, i) => {
+        const active = i < s.batchSize;
+        return `<tr>${row.map(v => cell(v, active ? 'hl' : '')).join('')}<td style="font-size: 0.65rem; color: var(--text-dim); border: none;">${active ? `mẫu ${i + 1}` : `mẫu ${i + 1} (vắng)`}</td></tr>`;
+      }).join('');
+
+      document.getElementById('out-grid').innerHTML = r.out.map(row =>
+        `<tr>${row.map(v => cell(v, signCls(v))).join('')}</tr>`
+      ).join('');
+
+      renderMath(document.getElementById('katex-norm'), r.normFormula, { displayMode: true });
+
+      document.getElementById('stats-table').innerHTML = `
+        <tr><td>Mẫu 1 khi chạy một mình (batch=1)</td><td>[${r.rowAtB1.join(', ')}]</td></tr>
+        <tr><td>Mẫu 1 khi chạy cạnh mẫu 2 (batch=2)</td><td>[${r.rowAtB2.join(', ')}]</td></tr>
+        <tr><td>Độ lệch giữa hai lần chạy</td><td>${r.shift}</td></tr>
+      `;
+
+      renderMath(document.getElementById('katex-grad'), r.gradFormula, { displayMode: true });
+      document.getElementById('grad-table').innerHTML = `
+        <tr><td>Không residual $(f')^L$</td><td>${r.gradPlain.toExponential(1)}</td></tr>
+        <tr><td>Có residual $(1 + f')^L$</td><td>${r.gradResid.toFixed(4)}</td></tr>
+      `;
+
+      const verdict = document.getElementById('verdict');
+      verdict.className = `tp-verdict ${r.verdict.type}`;
+      verdict.textContent = r.verdict.text;
+
+      renderAllInlineMath(document.querySelector('.col-telemetry'));
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      sDepth.setValue(logic.state.depth);
+      presets.setActive('ln_batch2');
+      render();
+    });
+
+    renderAllInlineMath(document.querySelector('.col-sandbox'));
+    render();
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

@@ -16,8 +16,8 @@ function findFiles(dir, exts = ['.js', '.html'], out = []) {
 }
 
 describe('KaTeX Syntax Safety Linter', () => {
-  it('Chặn đứng bare _ và \\text{___} trong môi trường toán học của toàn bộ thư mục examples', () => {
-    const files = findFiles('examples', ['.js', '.html']);
+  it('Chặn đứng bare _ và \\text{___} trong môi trường toán học của toàn bộ thư mục lessons', () => {
+    const files = findFiles('lessons', ['.js', '.html']);
     
     files.forEach(filePath => {
       const content = readFileSync(filePath, 'utf-8');

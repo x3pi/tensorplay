@@ -1,0 +1,27 @@
+{
+  "id": "autograd_graph",
+  "title": "Đồ Thị Tính Toán DAG & Sóng Dội Ngược",
+  "summary": "Đồ thị có hướng phi chu trình (DAG). Thứ tự topo (Topological Sort) định đoạt trình tự tính đạo hàm dội ngược trong Autograd Engine.",
+  "topic": "autograd",
+  "tags": [
+    "autograd",
+    "computational-graph",
+    "topological-sort",
+    "dag"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 15,
+  "status": "ready",
+  "prerequisites": [
+    "twolayer_relu_backprop"
+  ],
+  "related": [
+    "reverse_vs_forward_ad",
+    "gradient_check"
+  ],
+  "sources": [],
+  "aliases": [
+    "bai_04_autograd_graph",
+    "autograd_graph"
+  ]
+}

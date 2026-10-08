@@ -1,0 +1,27 @@
+{
+  "id": "flash_attention",
+  "title": "FlashAttention SRAM Tiling & Online Softmax",
+  "summary": "IO-Aware Algorithm: Tại sao không bao giờ ghi ma trận Attention $N \\times N$ xuống HBM? Thuật toán Online Softmax chia khối chạy trọn vẹn trong SRAM GPU.",
+  "topic": "llm-serving",
+  "tags": [
+    "flash-attention",
+    "online-softmax",
+    "io-aware",
+    "kernel-fusion"
+  ],
+  "difficulty": "advanced",
+  "estimatedMinutes": 25,
+  "status": "ready",
+  "prerequisites": [
+    "shared_memory_tiling",
+    "self_attention"
+  ],
+  "related": [
+    "kv_cache_anatomy"
+  ],
+  "sources": [],
+  "aliases": [
+    "bai_15_flash_attention_concept",
+    "flash_attention"
+  ]
+}

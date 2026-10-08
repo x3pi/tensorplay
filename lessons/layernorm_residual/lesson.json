@@ -1,0 +1,26 @@
+{
+  "id": "layernorm_residual",
+  "title": "LayerNorm & Residual — Chuẩn Hóa Theo Mẫu, Cao Tốc Cho Gradient",
+  "summary": "Vì sao Transformer bỏ BatchNorm: khi sinh từng token batch chỉ có 1 mẫu nên phương sai bằng 0. LayerNorm chuẩn hóa theo hàng, còn kết nối residual $y = x + f(x)$ cho gradient một đường đi thẳng $(1 + f')^L$.",
+  "topic": "training-stability",
+  "tags": [
+    "layernorm",
+    "residual",
+    "transformer-block",
+    "vanishing-gradient"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 12,
+  "status": "ready",
+  "prerequisites": [
+    "batch_norm_dynamics"
+  ],
+  "related": [
+    "self_attention",
+    "rnn_bptt"
+  ],
+  "sources": [],
+  "aliases": [
+    "layernorm_residual"
+  ]
+}

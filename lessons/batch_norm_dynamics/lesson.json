@@ -1,0 +1,26 @@
+{
+  "id": "batch_norm_dynamics",
+  "title": "Ổn Định Nội Bộ Với BatchNorm",
+  "summary": "Chuẩn hóa trung bình và phương sai của batch. Hai tham số học $\\gamma$ (phóng đại) và $\\beta$ (dời trục). Phân biệt thống kê khi Train vs Running Stats khi Eval.",
+  "topic": "training-stability",
+  "tags": [
+    "normalization",
+    "batchnorm",
+    "running-stats",
+    "gradient-flow"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 15,
+  "status": "ready",
+  "prerequisites": [
+    "kaiming_init"
+  ],
+  "related": [
+    "layernorm_residual"
+  ],
+  "sources": [],
+  "aliases": [
+    "bai_09_batch_norm_dynamics",
+    "batch_norm_dynamics"
+  ]
+}

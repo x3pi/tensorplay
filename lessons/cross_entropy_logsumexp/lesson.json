@@ -1,0 +1,25 @@
+{
+  "id": "cross_entropy_logsumexp",
+  "title": "Cross-Entropy dạng Log-Sum-Exp — Ổn Định Số Học Cho Hàm Mất Mát",
+  "summary": "Tính Softmax trước rồi lấy log gây sụp đổ số học khi logit chênh lệch lớn. Công thức gộp $\\text{Loss} = \\text{LogSumExp}(z) - z_y$ triệt tiêu phép chia nguy hiểm và bảo toàn gradient.",
+  "topic": "foundations",
+  "tags": [
+    "numerical-stability",
+    "log-sum-exp",
+    "cross-entropy",
+    "loss-function"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 12,
+  "status": "ready",
+  "prerequisites": [
+    "softmax_stability"
+  ],
+  "related": [
+    "softmax_regression"
+  ],
+  "sources": [],
+  "aliases": [
+    "cross_entropy_logsumexp"
+  ]
+}

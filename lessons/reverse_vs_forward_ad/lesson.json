@@ -1,0 +1,26 @@
+{
+  "id": "reverse_vs_forward_ad",
+  "title": "Reverse-mode vs Forward-mode AD",
+  "summary": "So sánh độ phức tạp tính toán giữa Forward AD (thích hợp $f: \\mathbb{R} \\to \\mathbb{R}^m$) và Reverse AD (thích hợp mạng nơ-ron $f: \\mathbb{R}^n \\to \\mathbb{R}$ với hàng triệu tham số).",
+  "topic": "autograd",
+  "tags": [
+    "autograd",
+    "reverse-ad",
+    "forward-ad",
+    "jacobian"
+  ],
+  "difficulty": "advanced",
+  "estimatedMinutes": 15,
+  "status": "ready",
+  "prerequisites": [
+    "autograd_graph"
+  ],
+  "related": [
+    "gradient_check"
+  ],
+  "sources": [],
+  "aliases": [
+    "bai_05_reverse_vs_forward_ad",
+    "reverse_vs_forward_ad"
+  ]
+}

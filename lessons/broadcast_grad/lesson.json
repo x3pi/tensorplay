@@ -1,0 +1,26 @@
+{
+  "id": "broadcast_grad",
+  "title": "Gradient Của Broadcast (Cộng dồn)",
+  "summary": "Một bias được broadcast cho cả batch thì gradient của nó phải cộng dồn theo trục batch. Bắt bug gán đè `=` (lỗi im lặng) và quên `sum()` (lỗi shape).",
+  "topic": "autograd",
+  "tags": [
+    "autograd",
+    "broadcast",
+    "reduction",
+    "backward-bug"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 12,
+  "status": "ready",
+  "prerequisites": [
+    "strides_views",
+    "autograd_graph"
+  ],
+  "related": [
+    "gradient_check"
+  ],
+  "sources": [],
+  "aliases": [
+    "broadcast_grad"
+  ]
+}

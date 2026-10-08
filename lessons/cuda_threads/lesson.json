@@ -1,0 +1,26 @@
+{
+  "id": "cuda_threads",
+  "title": "Phân Cấp Luồng CUDA Grid, Blocks & Threads",
+  "summary": "Ánh xạ thread 2D `(blockIdx, threadIdx)` thành tọa độ ma trận toàn cục `(row, col)`. Hiểu mô hình thực thi song song SPMD (Single Program Multiple Data).",
+  "topic": "gpu",
+  "tags": [
+    "cuda",
+    "gpu-programming",
+    "thread-hierarchy",
+    "spmd"
+  ],
+  "difficulty": "advanced",
+  "estimatedMinutes": 20,
+  "status": "ready",
+  "prerequisites": [
+    "cpp_matmul_loops"
+  ],
+  "related": [
+    "shared_memory_tiling"
+  ],
+  "sources": [],
+  "aliases": [
+    "bai_10_cuda_threads",
+    "cuda_threads"
+  ]
+}

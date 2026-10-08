@@ -1,0 +1,25 @@
+{
+  "id": "gradient_check",
+  "title": "Kiểm Tra Gradient Bằng Số (Gradient Check)",
+  "summary": "So sánh gradient giải tích trong code với sai phân hữu hạn (Finite Difference). Đồ thị sai số chữ V, chọn $\\varepsilon$, và bẫy float32 gây báo động giả.",
+  "topic": "autograd",
+  "tags": [
+    "autograd",
+    "gradient-check",
+    "numerical-methods",
+    "float32"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 12,
+  "status": "ready",
+  "prerequisites": [
+    "autograd_graph"
+  ],
+  "related": [
+    "reverse_vs_forward_ad"
+  ],
+  "sources": [],
+  "aliases": [
+    "gradient_check"
+  ]
+}

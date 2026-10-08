@@ -1,0 +1,25 @@
+{
+  "id": "positional_encoding",
+  "title": "Positional Encoding — Attention Không Biết Thứ Tự",
+  "summary": "\"Chó cắn người\" và \"người cắn chó\" cho cùng một đầu ra khi chỉ có Self-Attention (bất biến hoán vị). Cộng mã vị trí sin/cos $\\text{PE}(i)$ vào embedding để thứ tự từ đi vào điểm số $QK^\\top$.",
+  "topic": "transformer",
+  "tags": [
+    "positional-encoding",
+    "permutation-invariance",
+    "attention",
+    "rope"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 10,
+  "status": "ready",
+  "prerequisites": [
+    "self_attention"
+  ],
+  "related": [
+    "multi_head_attention"
+  ],
+  "sources": [],
+  "aliases": [
+    "positional_encoding"
+  ]
+}

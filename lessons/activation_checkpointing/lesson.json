@@ -1,0 +1,25 @@
+{
+  "id": "activation_checkpointing",
+  "title": "Activation Checkpointing — Đổi 33% Thời Gian Lấy 50% RAM GPU",
+  "summary": "Forward activations chiếm phần lớn VRAM GPU khi train model sâu. Kỹ thuật tái tính toán (recompute) giảm bộ nhớ từ $O(L)$ xuống $O(\\sqrt{L})$ với chi phí chỉ thêm $+33\\%$ thời gian tính.",
+  "topic": "gpu",
+  "tags": [
+    "cuda",
+    "gpu-memory",
+    "activation-checkpointing",
+    "vram-optimization"
+  ],
+  "difficulty": "advanced",
+  "estimatedMinutes": 18,
+  "status": "ready",
+  "prerequisites": [
+    "shared_memory_tiling"
+  ],
+  "related": [
+    "mixed_precision"
+  ],
+  "sources": [],
+  "aliases": [
+    "activation_checkpointing"
+  ]
+}

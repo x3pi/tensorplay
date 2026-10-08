@@ -1,0 +1,27 @@
+{
+  "id": "optimizers",
+  "title": "Động Học Các Bộ Tối Ưu — SGD vs Momentum vs Adam",
+  "summary": "Chạy đua trên hẻm núi dẹt (ill-conditioned valley): SGD dao động ziczac kẹt bước, Momentum tăng tốc dọc rãnh, Adam tự cân bằng tỉ lệ bước nhảy và tầm quan trọng của Bias Correction.",
+  "topic": "training-stability",
+  "tags": [
+    "optimization",
+    "sgd",
+    "momentum",
+    "adam",
+    "ill-conditioned"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 15,
+  "status": "ready",
+  "prerequisites": [
+    "minibatch_sgd"
+  ],
+  "related": [
+    "adamw_weight_decay",
+    "mixed_precision"
+  ],
+  "sources": [],
+  "aliases": [
+    "optimizers"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "id": "shared_memory_tiling",
+  "title": "Tiled MatMul & Shared Memory",
+  "summary": "Shared Memory (SRAM on-chip) nhanh gấp 100 lần Global Memory (DRAM). Kỹ thuật Tiling chia nhỏ ma trận thành khối và đồng bộ `__syncthreads()`.",
+  "topic": "gpu",
+  "tags": [
+    "cuda",
+    "shared-memory",
+    "tiling",
+    "gemm-optimization"
+  ],
+  "difficulty": "advanced",
+  "estimatedMinutes": 22,
+  "status": "ready",
+  "prerequisites": [
+    "cuda_threads"
+  ],
+  "related": [
+    "coalescing_and_banks",
+    "flash_attention"
+  ],
+  "sources": [],
+  "aliases": [
+    "bai_11_shared_memory_tiling",
+    "shared_memory_tiling"
+  ]
+}

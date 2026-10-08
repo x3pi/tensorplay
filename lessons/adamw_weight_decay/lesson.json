@@ -1,0 +1,25 @@
+{
+  "id": "adamw_weight_decay",
+  "title": "Weight Decay — L2 vs AdamW",
+  "summary": "Cộng L2 vào gradient của Adam làm bước chuẩn hóa $1/\\sqrt{\\hat{v}}$ triệt tiêu hệ số $\\lambda$ và teo trọng số gấp 10 lần. Thuật toán AdamW tách rời (decoupled) giải cứu việc huấn luyện Transformer.",
+  "topic": "training-stability",
+  "tags": [
+    "optimizers",
+    "weight-decay",
+    "adamw",
+    "regularization"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 15,
+  "status": "ready",
+  "prerequisites": [
+    "optimizers"
+  ],
+  "related": [
+    "layernorm_residual"
+  ],
+  "sources": [],
+  "aliases": [
+    "adamw_weight_decay"
+  ]
+}

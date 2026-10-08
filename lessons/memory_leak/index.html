@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta name="tp-lesson" content="memory_leak">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Robot Chết Đuối Vì Memory Leak - TensorPlay</title>
+  <meta name="description" content="Bài toán tính lượng RAM bị rò rỉ khi cấp phát bằng new trong vòng lặp C++ mà quên delete. Bản chất quản lý bộ nhớ trong kỹ nghệ AI.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- KaTeX CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <!-- Shared CSS -->
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    
+    <!-- Top Header -->
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">
+          ← Về Danh Mục
+        </a>
+      </div>
+
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step">
+          Track 0: Nền Tảng Tensor & Bộ Nhớ C++
+        </span>
+      </div>
+    </header>
+
+    <!-- Main 3-Zone Grid -->
+    <main class="lab-grid">
+      
+      <!-- CỘT 1: DẪN DẮT SOCRATIC & HỆ THỐNG BÌNH LUẬN KIẾN THỨC -->
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt & Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <!-- CỘT 2: KHÔNG GIAN THỰC NGHIỆM SANDBOX -->
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Thiết Lập Siêu Tham Số & Vá Lỗi</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Đặt Lại</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+          
+          <div id="mount-preset-picker"></div>
+
+          <!-- Nút Công Tắc Vá Lỗi -->
+          <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 1.25rem;">
+            <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+              <div>
+                <div style="font-weight: 700; color: #fff; font-size: var(--text-sm);">🛠️ Cơ Chế Giải Phóng Bộ Nhớ</div>
+                <div style="font-size: var(--text-xs); color: var(--text-muted);">Bật/Tắt câu lệnh <code>delete[] Z;</code> sau mỗi batch</div>
+              </div>
+              <input type="checkbox" id="fix-checkbox" style="width: 20px; height: 20px; accent-color: var(--color-positive); cursor: pointer;" />
+            </label>
+          </div>
+
+          <!-- Các Thanh Trượt Siêu Tham Số -->
+          <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.75rem;">
+              Cấu Hình Huấn Luyện (Hyperparameters)
+            </div>
+            <div id="mount-sliders" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
+          </div>
+
+          <!-- Khối Code C++ Mô Phỏng -->
+          <div style="background: #090e17; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem; font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.7;">
+            <div style="color: #64748b;">// simple_ml_ext.cpp: training loop</div>
+            <div>for (int epoch = 0; epoch &lt; num_epochs; ++epoch) {</div>
+            <div style="padding-left: 14px;">for (int i = 0; i &lt; m; i += batch) {</div>
+            <div style="padding-left: 28px; color: var(--color-warning);">float* Z = new float[batch * k]; <span style="color: #64748b;">// Cấp phát động</span></div>
+            <div style="padding-left: 28px; color: #94a3b8;">// ... Tính Forward &amp; Backward ...</div>
+            <div id="code-delete-line" style="padding-left: 28px; color: var(--color-positive); font-weight: 700;">
+              // [Chưa giải phóng Z!]
+            </div>
+            <div style="padding-left: 14px;">}</div>
+            <div>}</div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- CỘT 3: LIVE MATH INSPECTOR & TELEMETRY -->
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math & Giám Sát RAM</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+          
+          <!-- Phán quyết của Hệ Điều Hành -->
+          <div id="verdict-card" style="border-radius: var(--radius-md); padding: 1rem; border: 1px solid var(--border-strong); transition: all 0.2s ease;">
+            <div id="verdict-title" style="font-weight: 700; font-size: var(--text-sm); margin-bottom: 4px;">Trạng Thái Hệ Thống</div>
+            <div id="verdict-desc" style="font-size: 0.8rem; line-height: 1.5;"></div>
+          </div>
+
+          <!-- Đồng Hồ Đo Lượng RAM Rò Rỉ -->
+          <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 6px;">
+              Tổng Lượng RAM Rò Rỉ (Leaked Memory)
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 1.8rem; font-weight: 800; color: #fff;" id="stat-leak-mb">
+              0.00 MB
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;" id="stat-leak-bytes">
+              0 bytes rò rỉ trong heap
+            </div>
+
+            <!-- Thanh Progress Bar Rò Rỉ -->
+            <div style="width: 100%; height: 8px; background: #090e17; border-radius: 4px; overflow: hidden; margin-top: 10px;">
+              <div id="leak-bar" style="height: 100%; width: 0%; background: var(--color-negative); transition: all 0.3s ease;"></div>
+            </div>
+          </div>
+
+          <!-- Chi tiết từng Batch & Epoch -->
+          <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; color: var(--color-info); margin-bottom: 8px;">
+              Phân Rã Toán Học Theo Từng Tầng Vòng Lặp
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.75rem;">
+              <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 4px;">
+                <span style="color: var(--text-muted);">Mỗi Batch (batch &times; k &times; 4B):</span>
+                <span id="stat-per-batch" style="font-family: var(--font-mono); font-weight: 600; color: #fff;">0 B</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 4px;">
+                <span style="color: var(--text-muted);">Số Batches mỗi Epoch (m / B):</span>
+                <span id="stat-nbatches" style="font-family: var(--font-mono); font-weight: 600; color: #fff;">0</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 4px;">
+                <span style="color: var(--text-muted);">Tích tụ mỗi Epoch:</span>
+                <span id="stat-per-epoch" style="font-family: var(--font-mono); font-weight: 600; color: var(--color-warning);">0 MB</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Math KaTeX -->
+          <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; color: var(--color-warning); margin-bottom: 6px;">
+              Công Thức Tích Lũy Toán Học
+            </div>
+            <div id="math-leak" style="overflow-x: auto; padding: 4px 0;"></div>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script type="module">
+    import { LessonLogic, PRESETS } from './logic.js';
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createLiveSlider } from '../../shared/components/LiveSlider.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { renderMath } from '../../shared/katex-render.js';
+
+    const logic = new LessonLogic();
+    let state = logic.reset();
+
+    // Socratic Steps
+    const STEPS = [
+      {
+        heading: "C++ Không Có Bộ Dọn Rác (No Garbage Collector)",
+        problem: "Trong Python, biến không còn dùng sẽ tự động được giải phóng. Trong C++, ai chịu trách nhiệm dọn dẹp bộ nhớ?",
+        mechanism: "C++ trao toàn quyền kiểm soát phần cứng cho kỹ sư. Mỗi lệnh `new float[N]` trên Heap bắt buộc phải có đúng một lệnh `delete[]` tương ứng để trả lại vùng nhớ.\nVí dụ nhẩm: Mỗi mảng tensor trung gian $16$ số float ngốn $16 \\times 4\\text{B} = 64\\text{B}$. Quên `delete[]` nghĩa là $64\\text{B}$ bị khóa chết trên RAM vĩnh viễn!",
+        action: "👉 Thao tác (Cột 2): Quan sát đoạn mã C++ ở Cột 2 với lệnh cấp phát `new float[16]` nằm lọt thỏm trong vòng lặp batch.\n👁️ Quan sát (Cột 3): Xem dòng ghi nhận rò rỉ tăng từ 0 lên $64\\text{B}$ ngay sau bước đầu tiên!",
+        takeaway: "Nếu quên `delete[]`, con trỏ ra khỏi scope nhưng vùng nhớ trong Heap vẫn bị chiếm giữ vĩnh viễn (Memory Leak)."
+      },
+      {
+        heading: "Hiệu Ứng Tuyết Lăn Qua Các Vòng Lặp",
+        problem: "Mỗi batch chỉ rò rỉ vài chục Byte nhỏ nhoi, liệu có đáng lo ngại đối với hệ thống?",
+        mechanism: "Toán học chu kỳ lặp: Tập dữ liệu 60,000 ảnh với batch 100 nghĩa là 600 batch/epoch. Huấn luyện 50 epoch nghĩa là gọi `new` 30,000 lần mà không giải phóng!\n$$30,000 \\times 64\\text{B} \\approx 1.92\\text{ MB}$$",
+        action: "👉 Thao tác (Cột 2): Bấm nút \"Chạy 10 Batch\" ở Cột 2.\n👁️ Quan sát (Cột 3): Xem thanh đo dung lượng RAM tăng lũy tiến và đồ thị rò rỉ dốc đứng lên!",
+        takeaway: "Khoản rò rỉ nhỏ nhân với hàng chục nghìn bước lặp sẽ nhanh chóng tích tụ thành hàng trăm Megabyte làm sập server."
+      },
+      {
+        heading: "Cơn Thịnh Nộ Của Linux OOM Killer",
+        problem: "Chuyện gì xảy ra nếu tiến trình AI ngốn cạn bộ nhớ RAM vật lý của hệ thống?",
+        mechanism: "Khi RAM cạn kiệt, hệ điều hành Linux Kernel kích hoạt cơ chế bảo vệ khẩn cấp Out-Of-Memory (OOM) Killer gửi tín hiệu `SIGKILL -9` tiêu diệt tiến trình ngay lập tức.",
+        action: "👉 Thao tác (Cột 2): Bấm nút \"Chạy 50 Batch\" liên tục.\n👁️ Quan sát (Cột 3): Mức RAM chạm ngưỡng đỏ và cảnh báo OOM Killer xuất hiện, tiến trình bị khai tử!",
+        takeaway: "Tiến trình bị kill đột ngột, toàn bộ mô hình và checkpoint đang huấn luyện dở dang bị mất trắng!"
+      },
+      {
+        heading: "Giải Pháp Kỹ Nghệ: Vá Lỗi Hoặc Pre-allocation",
+        problem: "Làm thế nào để viết code C++ chuẩn chỉnh và an toàn tuyệt đối trong các hệ thống Deep Learning?",
+        mechanism: "Hai phương án: 1) Chèn `delete[] Z;` cuối mỗi batch (RAII), hoặc 2) Cấp phát một bộ đệm tĩnh (pre-allocated scratchpad buffer) duy nhất lúc khởi tạo và tái sử dụng qua mọi epoch.",
+        action: "👉 Thao tác (Cột 2): Bật công tắc \"🛠️ Cơ Chế Giải Phóng Bộ Nhớ\" ở Cột 2.\n👁️ Quan sát (Cột 3): Xem dung lượng RAM giữ ở mức 0 MB ổn định sau mỗi batch, hệ thống an toàn tuyệt đối!",
+        takeaway: "Tập quán kỹ nghệ tốt nhất trong DL Systems là cấp phát bộ đệm một lần duy nhất lúc khởi tạo để tránh chi phí cấp phát động."
+      }
+    ];
+
+    // Chú giải chuyên gia
+    const COMMENTS = [
+      {
+        id: "c1",
+        stepIndex: 0,
+        author: "Kỹ Sư Hệ Thống Nhúng",
+        badge: "Heap Management",
+        avatar: "💾",
+        content: "Trên các chip AI biên (Edge AI) hoặc robot tự hành với RAM hạn chế (1GB-2GB), Memory Leak là lỗi tử huyệt. Robot đang chạy ngoài đường có thể bị đứng hình và đâm xe chỉ vì một dòng `delete[]` bị bỏ quên!"
+      },
+      {
+        id: "c2",
+        stepIndex: 3,
+        author: "Kiến Trúc Sư C++ Hiện Đại",
+        badge: "RAII Pattern",
+        avatar: "🛡️",
+        content: "Trong C++ hiện đại, người ta dùng cơ chế RAII (`std::unique_ptr` hoặc `std::vector`) để bộ nhớ tự động giải phóng khi rời khỏi scope, loại bỏ hoàn toàn rủi ro quên `delete` bằng tay."
+      }
+    ];
+
+    // Khởi tạo Socratic & Comments
+    createStepWizard(document.getElementById('mount-step-wizard'), { steps: STEPS });
+    createCommentSection(document.getElementById('mount-comment-section'), { comments: COMMENTS });
+
+    // Presets
+    createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      onSelect: (p) => {
+        document.getElementById('fix-checkbox').checked = p.state.isFixed;
+        state = logic.applyPreset(p.state);
+        syncSliders();
+        updateUI();
+      }
+    });
+
+    // Sliders
+    const sliderDefs = [
+      { key: 'm', label: 'Số lượng ảnh ($m$)', min: 1000, max: 100000, step: 1000 },
+      { key: 'batch', label: 'Batch size ($B$)', min: 10, max: 1000, step: 10 },
+      { key: 'num_epochs', label: 'Số Epochs', min: 1, max: 100, step: 1 }
+    ];
+
+    const sliderMount = document.getElementById('mount-sliders');
+    sliderMount.innerHTML = '';
+    const sliderInstances = {};
+
+    sliderDefs.forEach(def => {
+      sliderInstances[def.key] = createLiveSlider(sliderMount, {
+        label: def.label,
+        min: def.min,
+        max: def.max,
+        step: def.step,
+        value: state[def.key],
+        onChange: (v) => {
+          state = logic.onUserUpdate({ [def.key]: v });
+          updateUI();
+        }
+      });
+    });
+
+    function syncSliders() {
+      sliderDefs.forEach(def => {
+        sliderInstances[def.key].setValue(state[def.key]);
+      });
+    }
+
+    // Checkbox Vá Lỗi
+    const fixCheckbox = document.getElementById('fix-checkbox');
+    fixCheckbox.checked = state.isFixed;
+    fixCheckbox.addEventListener('change', (e) => {
+      state = logic.onUserUpdate({ isFixed: e.target.checked });
+      updateUI();
+    });
+
+    // Nút Reset
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      state = logic.reset();
+      fixCheckbox.checked = state.isFixed;
+      syncSliders();
+      updateUI();
+    });
+
+    function updateUI() {
+      // Code line hiển thị
+      const codeLine = document.getElementById('code-delete-line');
+      if (state.isFixed) {
+        codeLine.innerHTML = `delete[] Z; <span style="color: #64748b;">// Đã thu hồi bộ nhớ an toàn!</span>`;
+        codeLine.style.color = 'var(--color-positive)';
+        codeLine.style.background = 'rgba(16, 185, 129, 0.15)';
+      } else {
+        codeLine.innerHTML = `<span style="color: var(--color-negative);">// QUÊN DELETE! Bộ nhớ Z bị rò rỉ!</span>`;
+        codeLine.style.color = 'var(--color-negative)';
+        codeLine.style.background = 'rgba(239, 68, 68, 0.15)';
+      }
+
+      // Phán quyết Verdict Card
+      const card = document.getElementById('verdict-card');
+      const vTitle = document.getElementById('verdict-title');
+      const vDesc = document.getElementById('verdict-desc');
+
+      if (state.isFixed) {
+        card.style.background = 'rgba(16, 185, 129, 0.12)';
+        card.style.borderColor = 'var(--color-positive)';
+        vTitle.style.color = 'var(--color-positive)';
+        vTitle.textContent = '✅ BỘ NHỚ AN TOÀN TUYỆT ĐỐI';
+        vDesc.textContent = 'Mọi ô nhớ cấp phát đều được thu hồi ngay sau khi tính toán xong. Tiến trình chạy bền bỉ vô thời hạn.';
+      } else {
+        card.style.background = 'rgba(239, 68, 68, 0.15)';
+        card.style.borderColor = 'var(--color-negative)';
+        vTitle.style.color = 'var(--color-negative)';
+        vTitle.textContent = '🚨 NGUY HIỂM: RÒ RỈ BỘ NHỚ NGHIÊM TRỌNG';
+        vDesc.textContent = `Rò rỉ ${state.leakMb.toFixed(2)} MB RAM! Trình quản lý bộ nhớ Linux OOM Killer sẽ gửi tín hiệu SIGKILL kết liễu tiến trình.`;
+      }
+
+      // Thông số RAM
+      document.getElementById('stat-leak-mb').textContent = `${state.leakMb.toFixed(2)} MB`;
+      document.getElementById('stat-leak-mb').style.color = state.isFixed ? 'var(--color-positive)' : 'var(--color-negative)';
+      document.getElementById('stat-leak-bytes').textContent = `${state.leakBytes.toLocaleString()} bytes rò rỉ trong heap`;
+
+      // Thanh Bar
+      const bar = document.getElementById('leak-bar');
+      if (state.isFixed) {
+        bar.style.width = '0%';
+        bar.style.background = 'var(--color-positive)';
+      } else {
+        const pct = Math.min(100, (state.leakMb / 150) * 100);
+        bar.style.width = `${pct}%`;
+        bar.style.background = pct > 60 ? 'var(--color-negative)' : 'var(--color-warning)';
+      }
+
+      // Chi tiết thống kê
+      document.getElementById('stat-per-batch').textContent = `${state.bytesPerBatch.toLocaleString()} Bytes`;
+      document.getElementById('stat-nbatches').textContent = state.n_batches.toLocaleString();
+      document.getElementById('stat-per-epoch').textContent = `${state.mbPerEpoch.toFixed(2)} MB`;
+
+      // Live Math
+      const mathLeak = document.getElementById('math-leak');
+      mathLeak.setAttribute('data-tex', state.formulaLeakKaTeX);
+
+      renderMath();
+    }
+
+    updateUI();
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

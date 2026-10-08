@@ -1,0 +1,27 @@
+{
+  "id": "minibatch_sgd",
+  "title": "Xử Lý Mini-batch $B=2$ & Phép Chuyển Vị $X^T$",
+  "summary": "Xử lý song song mini-batch 2 ảnh cùng lúc. Trực giác hình học phép nhân ma trận chuyển vị $X^T G$ để gom gradient toàn batch.",
+  "topic": "foundations",
+  "tags": [
+    "mini-batch",
+    "matrix-multiplication",
+    "parallelism",
+    "optimization"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 12,
+  "status": "ready",
+  "prerequisites": [
+    "twolayer_relu_backprop"
+  ],
+  "related": [
+    "minibatch_assembly",
+    "optimizers"
+  ],
+  "sources": [],
+  "aliases": [
+    "bai_05_minibatch_sgd",
+    "minibatch_sgd"
+  ]
+}

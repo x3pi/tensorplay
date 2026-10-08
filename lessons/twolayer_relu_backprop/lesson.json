@@ -1,0 +1,27 @@
+{
+  "id": "twolayer_relu_backprop",
+  "title": "Mạng Nơ-ron 2 Tầng & Lan Truyền Ngược ReLU",
+  "summary": "Cơ chế phi tuyến tính: Van một chiều ReLU chặn dòng gradient ở nơ-ron âm ($Z_1 \\le 0$). Đạo hàm dội ngược qua tầng ẩn.",
+  "topic": "foundations",
+  "tags": [
+    "deep-learning",
+    "backprop",
+    "relu",
+    "neural-network"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 15,
+  "status": "ready",
+  "prerequisites": [
+    "softmax_regression"
+  ],
+  "related": [
+    "activation_valves",
+    "autograd_graph"
+  ],
+  "sources": [],
+  "aliases": [
+    "bai_04_twolayer_relu_backprop",
+    "twolayer_relu_backprop"
+  ]
+}

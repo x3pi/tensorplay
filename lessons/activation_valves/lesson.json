@@ -1,0 +1,26 @@
+{
+  "id": "activation_valves",
+  "title": "Van Kích Hoạt & Lời Nguyền Trọng Số 0",
+  "summary": "Hiện tượng Symmetry Breaking: Khởi tạo trọng số bằng 0 khiến mọi nơ-ron nhận cùng đạo hàm và chết chìm trong tính đối xứng. So sánh van ReLU, GELU và Sigmoid.",
+  "topic": "training-stability",
+  "tags": [
+    "activations",
+    "symmetry-breaking",
+    "initialization",
+    "gelu"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 12,
+  "status": "ready",
+  "prerequisites": [
+    "twolayer_relu_backprop"
+  ],
+  "related": [
+    "kaiming_init"
+  ],
+  "sources": [],
+  "aliases": [
+    "bai_06_activation_valves",
+    "activation_valves"
+  ]
+}

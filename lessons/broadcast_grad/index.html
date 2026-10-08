@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta name="tp-lesson" content="broadcast_grad">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gradient Của Broadcast — Vì Sao Phải Cộng Dồn - TensorPlay</title>
+  <meta name="description" content="Bias được broadcast cho cả batch thì gradient của nó phải cộng dồn theo trục batch. Trải nghiệm hai lỗi kinh điển: gán đè (lỗi im lặng) và quên sum (lỗi shape).">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">← Về Danh Mục</a>
+      </div>
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step" style="border-color: rgba(139, 92, 246, 0.4);">Track 1: Autograd</span>
+      </div>
+    </header>
+
+    <main class="lab-grid">
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt &amp; Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Bàn Thí Nghiệm Backward</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Đặt Lại</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">🧩 Shape của bias $b$</div>
+            <div class="tp-seg" id="seg-shape">
+              <button data-v="row">Mỗi lớp 1 bias $(1 \times 2)$</button>
+              <button data-v="scalar">1 bias chung $()$</button>
+            </div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">🛠️ Cài đặt backward của BroadcastTo</div>
+            <div class="tp-seg" id="seg-impl">
+              <button data-v="sum">grad += G[i] (cộng dồn)</button>
+              <button data-v="overwrite">grad = G[i] (gán đè)</button>
+              <button data-v="no_reduce">return G (quên sum)</button>
+            </div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">🎯 Nhãn mục tiêu $Y$ (bấm ô để đổi giá trị −1 → 4)</div>
+            <div style="display: flex; justify-content: center; gap: 1.5rem; align-items: center;">
+              <div>
+                <table class="tp-mini-matrix" id="p-grid"></table>
+                <div class="tp-matrix-caption">Điểm số P (cố định)</div>
+              </div>
+              <div>
+                <table class="tp-mini-matrix" id="y-grid"></table>
+                <div class="tp-matrix-caption">Mục tiêu Y</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-ctrl-grid">
+              <div id="mount-lr"></div>
+              <div id="mount-steps"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math &amp; Telemetry</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div class="tp-panel">
+            <div class="tp-panel-title">➡️ Forward: $Z = P + b$ và $G = Z - Y$ (với $b = 0$)</div>
+            <div style="display: flex; justify-content: center; gap: 1.5rem;">
+              <div><table class="tp-mini-matrix" id="z-grid"></table><div class="tp-matrix-caption">Z</div></div>
+              <div><table class="tp-mini-matrix" id="g-grid"></table><div class="tp-matrix-caption">G = ∂L/∂Z</div></div>
+            </div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">⬅️ Gradient của bias</div>
+            <div class="tp-math-box" id="katex-grad"></div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">📉 Loss qua từng bước (đường đứt = mức tối ưu)</div>
+            <div style="position: relative;">
+              <div class="tp-vbars" id="loss-bars"></div>
+              <div id="opt-line" style="position: absolute; left: 0; right: 0; border-top: 2px dashed var(--color-positive); pointer-events: none;"></div>
+            </div>
+            <div class="tp-vbar-labels" id="loss-labels"></div>
+            <table class="tp-kv-table" id="stats-table" style="margin-top: 0.5rem;"></table>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">🐍 Mã backward tương ứng</div>
+            <div class="tp-code-box" id="code-box"></div>
+          </div>
+
+          <div class="tp-verdict" id="verdict"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createLiveSlider } from '../../shared/components/LiveSlider.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
+    import { markCompleted } from '../../shared/progress.js';
+    import { LessonLogic, PRESETS, P } from './logic.js';
+
+    const LESSON_ID = 'broadcast_grad';
+
+    const STEPS = [
+      {
+        step: 1, badge: 'Bước 1 / 5',
+        heading: 'Một bias, cả batch dùng chung',
+        problem: 'Lớp cuối của bộ phân loại biển báo chấm điểm 2 ảnh cho 2 lớp (Ngang, Dọc). Bias $b = [b_0, b_1]$ chỉ có 2 số, nhưng được cộng vào cả 2 hàng của ma trận điểm. Khi lan truyền ngược, $b_0$ nhận gradient từ đâu?',
+        mechanism: '$Z = P + b$ thực chất là $Z_{i,j} = P_{i,j} + b_j$ với mọi ảnh $i$. Vì $b_j$ tham gia vào MỌI hàng, theo quy tắc chuỗi nó nhận gradient từ mọi hàng:\n$$\\frac{\\partial L}{\\partial b_j} = \\sum_i G_{i,j}$$\nVới $G = \\begin{bmatrix} -1 & 0 \\\\ -1 & -1 \\end{bmatrix}$: $\\partial L / \\partial b = [-2, -1]$.',
+        action: '👉 Thao tác (Cột 2): Giữ preset \"Cộng dồn ✅\".\n👁️ Quan sát (Cột 3): Công thức cộng từng cột của G. Tự tính trước rồi so.',
+        takeaway: 'Một tham số được \"nhìn thấy\" ở nhiều vị trí thì gradient của nó là TỔNG gradient tại các vị trí đó.'
+      },
+      {
+        step: 2, badge: 'Bước 2 / 5',
+        heading: 'Cập nhật một bước: loss giảm từ 1.5 xuống 0.25',
+        problem: 'Với learning rate $0.5$, sau một bước thì bias và loss thay đổi ra sao?',
+        mechanism: '$b \\leftarrow b - 0.5 \\cdot [-2, -1] = [1, 0.5]$. Ma trận điểm mới $Z = \\begin{bmatrix} 3 & 0.5 \\\\ 1 & 1.5 \\end{bmatrix}$, loss $L = \\tfrac{1}{2}(0.5^2 + 0.5^2) = 0.25$. Đây cũng là mức tốt nhất có thể đạt được, vì 1 bias không thể khớp hoàn hảo 2 ảnh khác nhau.',
+        action: '👉 Thao tác (Cột 2): Kéo \"Số bước\" lên 5.\n👁️ Quan sát (Cột 3): Cột loss chạm đường đứt (tối ưu) ngay từ bước 1 rồi đứng yên.',
+        takeaway: 'Gradient cộng dồn đúng đưa mô hình tới đúng điểm tối ưu.'
+      },
+      {
+        step: 3, badge: 'Bước 3 / 5',
+        heading: 'Lỗi im lặng: gán đè thay vì cộng dồn',
+        problem: 'Khi tự viết vòng lặp backward bằng C++, chỉ cần gõ nhầm `=` thay cho `+=`. Chương trình không báo lỗi. Hậu quả là gì?',
+        mechanism: 'Mỗi vòng lặp ghi đè kết quả cũ, nên gradient chỉ còn hàng cuối: $[-1, -1]$. Mô hình vẫn học, loss vẫn giảm, nhưng nó chỉ \"nghe\" ảnh cuối batch. Chạy lâu thì $b \\to [1, 1]$ và loss kẹt ở $0.5$, gấp đôi mức tối ưu $0.25$.',
+        action: '👉 Thao tác (Cột 2): Bấm preset \"Bug gán đè\", kéo Số bước lên 10.\n👁️ Quan sát (Cột 3): Loss giảm nhưng dừng ở 0.5, không chạm đường đứt.',
+        takeaway: 'Lỗi nguy hiểm nhất là lỗi không làm crash. Đây là lý do cần kiểm tra gradient bằng số ([[lesson:gradient_check]]).'
+      },
+      {
+        step: 4, badge: 'Bước 4 / 5',
+        heading: 'Lỗi shape: quên gọi summation',
+        problem: 'Nếu backward của BroadcastTo trả nguyên $G$ (shape $2 \\times 2$) cho tham số $b$ (shape $1 \\times 2$) thì sao?',
+        mechanism: 'Optimizer cần `b.grad` cùng shape với `b`. Ma trận $2 \\times 2$ không thể trừ vào vector $1 \\times 2$ mà không broadcast ngược. Lỗi này may mắn: chương trình dừng ngay nên dễ phát hiện.',
+        action: '👉 Thao tác (Cột 2): Bấm preset \"Bug quên sum\".\n👁️ Quan sát (Cột 3): Kết luận đỏ, không có bước cập nhật nào được thực hiện.',
+        takeaway: 'Quy tắc: backward của BroadcastTo = Summation theo các trục đã được mở rộng.'
+      },
+      {
+        step: 5, badge: 'Bước 5 / 5',
+        heading: 'Bias vô hướng: gradient lớn gấp 4, phải chọn lr nhỏ hơn',
+        problem: 'Nếu dùng 1 bias chung cho cả 4 ô thì gradient của nó là tổng của mấy phần tử? Learning rate cũ còn dùng được không?',
+        mechanism: '$\\partial L / \\partial b = -1 + 0 - 1 - 1 = -3$. Với lr $0.5$: $b = 1.5$, vọt qua điểm tối ưu $0.75$ sang phía bên kia, loss vẫn là $1.5$. Với lr $0.25$: $b = 0.75$, loss giảm còn $0.375$.',
+        action: '👉 Thao tác (Cột 2): Bấm lần lượt \"Bias vô hướng, lr 0.5\" rồi \"lr 0.25\".\n👁️ Quan sát (Cột 3): Lần đầu loss đứng yên (b nhảy qua lại giữa 0 và 1.5), lần sau loss giảm.',
+        takeaway: 'Càng nhiều vị trí dùng chung một tham số, gradient tổng càng lớn. Đó là lý do loss thường lấy TRUNG BÌNH theo batch thay vì tổng.'
+      }
+    ];
+
+    const STEP_COMMENTS = {
+      1: [{
+        id: 'bg1', author: 'Nhà Toán Học AI', role: 'Math', avatar: '📐', tag: 'Quy tắc chuỗi', tagType: 'math',
+        content: 'Xem broadcast như một phép \"sao chép\" $b$ thành nhiều bản. Mỗi bản nhận một gradient riêng, và vì tất cả đều là cùng một biến nên gradient phải được gộp lại bằng phép cộng.'
+      }],
+      3: [{
+        id: 'bg3', author: 'Kỹ Sư Backend', role: 'Systems', avatar: '⚙️', tag: 'Lỗi thường gặp', tagType: 'gotcha',
+        content: 'Lỗi này cũng hay xuất hiện ở bước tích lũy gradient trong autograd: khi một node được dùng 2 lần trong đồ thị, phải CỘNG gradient từ 2 nhánh, không được ghi đè.'
+      }],
+      4: [{
+        id: 'bg4', author: 'Kỹ Sư Backend', role: 'Systems', avatar: '⚙️', tag: 'Needle HW1', tagType: 'systems',
+        content: 'Khi cài `BroadcastTo.gradient`, cần tìm các trục đã được thêm mới hoặc mở rộng từ 1 lên n, rồi `summation` theo các trục đó và `reshape` về đúng shape ban đầu.'
+      }],
+      5: [{
+        id: 'bg5', author: 'Nhà Toán Học AI', role: 'Math', avatar: '📐', tag: 'Learning rate', tagType: 'math',
+        content: 'Bias vô hướng có độ cong (đạo hàm bậc hai) bằng 4. Bước tối ưu là $\\text{lr} = 1/4$. Mọi lr lớn hơn $2/4 = 0.5$ sẽ làm loss tăng.'
+      }]
+    };
+
+    const logic = new LessonLogic();
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
+    });
+
+    createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 1,
+      onStepChange: (n) => {
+        comments.setStep(n, STEP_COMMENTS[n] || []);
+        if (n === STEPS.length) markCompleted(LESSON_ID, true);
+      }
+    });
+
+    const sLr = createLiveSlider(document.getElementById('mount-lr'), {
+      label: 'Learning rate', min: 0.05, max: 1, step: 0.05, initial: logic.state.lr,
+      onChange: (v) => { logic.onUserUpdate({ lr: v }); presets.setActive(null); render(); }
+    });
+    const sSteps = createLiveSlider(document.getElementById('mount-steps'), {
+      label: 'Số bước', min: 1, max: 10, step: 1, initial: logic.state.steps,
+      onChange: (v) => { logic.onUserUpdate({ steps: v }); render(); }
+    });
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      initialActiveId: 'row_sum',
+      onPick: (p) => { logic.applyPreset(p.state); sLr.setValue(logic.state.lr); render(); }
+    });
+
+    function bindSeg(id, key) {
+      document.querySelectorAll(`#${id} button`).forEach(btn => btn.addEventListener('click', () => {
+        logic.onUserUpdate({ [key]: btn.dataset.v });
+        presets.setActive(null);
+        render();
+      }));
+    }
+    bindSeg('seg-shape', 'biasShape');
+    bindSeg('seg-impl', 'impl');
+
+    const cls = (v) => (v > 0 ? 'pos' : v < 0 ? 'neg' : '');
+    const matrix = (M, extra = () => '') => M.map((row, i) => `<tr>${row.map((v, j) => `<td class="${cls(v)} ${extra(i, j)}" data-i="${i}" data-j="${j}">${v}</td>`).join('')}</tr>`).join('');
+
+    const CODE = {
+      sum: 'for (int i = 0; i < batch; i++)\n  for (int j = 0; j < classes; j++)\n    grad_b[j] += G[i * classes + j];   // ✅ cộng dồn',
+      overwrite: 'for (int i = 0; i < batch; i++)\n  for (int j = 0; j < classes; j++)\n    grad_b[j] = G[i * classes + j];    // ❌ ghi đè: chỉ còn hàng cuối',
+      no_reduce: 'def gradient(self, out_grad, node):\n    return out_grad   # ❌ quên summation theo trục batch'
+    };
+
+    function render() {
+      const r = logic.calculate();
+      const s = logic.state;
+
+      document.querySelectorAll('#seg-shape button').forEach(b => b.classList.toggle('active', b.dataset.v === s.biasShape));
+      document.querySelectorAll('#seg-impl button').forEach(b => b.classList.toggle('active', b.dataset.v === s.impl));
+
+      document.getElementById('p-grid').innerHTML = matrix(P);
+      const yGrid = document.getElementById('y-grid');
+      yGrid.innerHTML = matrix(s.Y, () => 'clickable');
+      yGrid.querySelectorAll('td').forEach(td => td.addEventListener('click', () => {
+        const i = Number(td.dataset.i), j = Number(td.dataset.j);
+        const Y = s.Y.map(row => [...row]);
+        Y[i][j] = Y[i][j] >= 4 ? -1 : Y[i][j] + 1;
+        logic.onUserUpdate({ Y });
+        render();
+      }));
+
+      document.getElementById('z-grid').innerHTML = matrix(r.Z);
+      document.getElementById('g-grid').innerHTML = matrix(r.G, (i) => (s.impl === 'overwrite' && s.biasShape === 'row' && i === 0 ? 'unused" style="opacity:0.35' : ''));
+
+      renderMath(document.getElementById('katex-grad'), r.gradKaTeX, { displayMode: true });
+
+      // Loss bars
+      const maxL = Math.max(...r.lossHistory, r.lossOpt, 1e-9);
+      const H = 114;
+      document.getElementById('loss-bars').innerHTML = r.lossHistory.map((L, t) => {
+        const cl = t === 0 ? '' : (L <= r.lossOpt + 1e-6 ? 'good' : (s.impl === 'overwrite' ? 'warn' : (L >= r.lossHistory[0] ? 'bad' : '')));
+        return `<div class="tp-vbar ${cl}" style="height:${Math.max(2, (L / maxL) * H)}px" title="L = ${L}"></div>`;
+      }).join('');
+      document.getElementById('loss-labels').innerHTML = r.lossHistory.map((_, t) => `<span>${t}</span>`).join('');
+      const optLine = document.getElementById('opt-line');
+      optLine.style.bottom = `${(r.lossOpt / maxL) * H}px`;
+      optLine.style.display = r.shapeError ? 'none' : 'block';
+
+      const fmtB = (b) => (b === null ? '—' : Array.isArray(b) ? `[${b.join(', ')}]` : String(b));
+      document.getElementById('stats-table').innerHTML = `
+        <tr><td>Loss ban đầu</td><td>${r.loss0}</td></tr>
+        <tr><td>b sau bước 1</td><td>${fmtB(r.firstStepB)}</td></tr>
+        <tr><td>b sau ${s.steps} bước</td><td>${fmtB(r.finalB)}</td></tr>
+        <tr><td>Loss sau ${s.steps} bước</td><td>${r.shapeError ? '—' : r.finalLoss}</td></tr>
+        <tr><td>b tối ưu / loss tối ưu</td><td>${fmtB(r.bOpt)} / ${r.lossOpt}</td></tr>`;
+
+      document.getElementById('code-box').textContent = CODE[s.impl];
+
+      const verdict = document.getElementById('verdict');
+      verdict.className = `tp-verdict ${r.verdict.type}`;
+      verdict.textContent = r.verdict.text;
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      sLr.setValue(logic.state.lr);
+      sSteps.setValue(logic.state.steps);
+      presets.setActive('row_sum');
+      render();
+    });
+
+    renderAllInlineMath(document.querySelector('.col-sandbox'));
+    render();
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

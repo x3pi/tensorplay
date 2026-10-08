@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta name="tp-lesson" content="conv2d_im2col">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conv2D & Thần Chú Im2col - TensorPlay</title>
+  <meta name="description" content="Mở cuộn vùng trượt thành cột ma trận Im2col, biến tích chập không gian thành phép nhân ma trận GEMM siêu tốc.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- KaTeX CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <!-- Shared CSS -->
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+
+  <style>
+    .grid-3x3 {
+      display: grid;
+      grid-template-columns: repeat(3, 44px);
+      gap: 4px;
+      position: relative;
+    }
+    .cell-pixel {
+      width: 44px;
+      height: 44px;
+      background: #090e17;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--text-bright);
+      transition: all 0.2s ease;
+    }
+    .cell-pixel.highlighted {
+      border-color: var(--color-warning);
+      background: rgba(245, 158, 11, 0.2);
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+    }
+    .im2col-table {
+      border-collapse: collapse;
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      width: 100%;
+    }
+    .im2col-table th, .im2col-table td {
+      border: 1px solid var(--border-subtle);
+      padding: 6px 10px;
+      text-align: center;
+    }
+    .im2col-table tr.active-row {
+      background: rgba(6, 182, 212, 0.2);
+      border-color: var(--color-info);
+    }
+  </style>
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    
+    <!-- Top Header -->
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">
+          ← Về Danh Mục
+        </a>
+      </div>
+
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step" style="border-color: rgba(16, 185, 129, 0.4);">
+          Track 2: Modules & Mạng Tích Chập
+        </span>
+      </div>
+    </header>
+
+    <!-- Main 3-Zone Grid -->
+    <main class="lab-grid">
+      
+      <!-- CỘT 1: DẪN DẮT SOCRATIC & HỆ THỐNG BÌNH LUẬN KIẾN THỨC -->
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt & Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <!-- CỘT 2: SÂN CHƠI TƯƠNG TÁC (CANVAS SANDBOX) -->
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Trực Quan Hóa Mở Cuộn Im2col</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Reset</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; align-items: center; gap: 1.25rem;">
+          
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+
+          <!-- Patch Selector Buttons -->
+          <div style="display: flex; gap: 0.5rem; width: 100%; justify-content: center;">
+            <button class="tp-btn tp-btn-primary" id="btn-p0" style="padding: 4px 10px; font-size: var(--text-xs);">Vùng 1 (Trên-Trái)</button>
+            <button class="tp-btn tp-btn-ghost" id="btn-p1" style="padding: 4px 10px; font-size: var(--text-xs);">Vùng 2 (Trên-Phải)</button>
+            <button class="tp-btn tp-btn-ghost" id="btn-p2" style="padding: 4px 10px; font-size: var(--text-xs);">Vùng 3 (Dưới-Trái)</button>
+            <button class="tp-btn tp-btn-ghost" id="btn-p3" style="padding: 4px 10px; font-size: var(--text-xs);">Vùng 4 (Dưới-Phải)</button>
+          </div>
+
+          <!-- Dual Visual Representation: Image vs Im2col Row -->
+          <div style="display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: center; align-items: center; width: 100%;">
+            
+            <!-- Left: 3x3 Input Image -->
+            <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem; text-align: center;">
+              <div style="font-size: var(--text-xs); font-weight: 700; margin-bottom: 0.5rem; color: var(--text-muted);">
+                Ảnh Gốc (3×3)
+              </div>
+              <div class="grid-3x3" id="img-grid">
+                <!-- 9 pixels -->
+              </div>
+            </div>
+
+            <div style="font-size: 1.5rem; color: var(--color-info); font-weight: 700;">⟶</div>
+
+            <!-- Right: Kernel & Output 2x2 -->
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.75rem; text-align: center;">
+                <div style="font-size: var(--text-xs); font-weight: 700; margin-bottom: 0.25rem; color: var(--color-accent);">Kernel (2×2)</div>
+                <div style="display: grid; grid-template-columns: repeat(2, 32px); gap: 4px; justify-content: center;" id="kernel-grid"></div>
+              </div>
+
+              <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.75rem; text-align: center;">
+                <div style="font-size: var(--text-xs); font-weight: 700; margin-bottom: 0.25rem; color: var(--color-positive);">Output (2×2)</div>
+                <div style="display: grid; grid-template-columns: repeat(2, 32px); gap: 4px; justify-content: center;" id="out-grid"></div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Im2col Matrix Table Display -->
+          <div style="width: 100%; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem; overflow-x: auto;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--color-info); margin-bottom: 0.5rem;">
+              Bảng Mở Cuộn Im2col (4 Hàng × 4 Cột)
+            </div>
+            <table class="im2col-table">
+              <thead>
+                <tr style="color: var(--text-dim);">
+                  <th>Vị Trí Patch</th>
+                  <th>Pixel (0,0)</th>
+                  <th>Pixel (0,1)</th>
+                  <th>Pixel (1,0)</th>
+                  <th>Pixel (1,1)</th>
+                  <th>Nhân Kernel</th>
+                </tr>
+              </thead>
+              <tbody id="im2col-tbody">
+                <!-- Rows injected by JS -->
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- CỘT 3: LIVE MATH & TELEMETRY C++ -->
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math & Phân Tích</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+          
+          <!-- Im2col Formula -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
+              📐 Biến Đổi Ma Trận Im2col
+            </div>
+            <div id="katex-im2col-mount" style="min-height: 48px; background: #090d15; border-radius: var(--radius-sm); padding: 0.5rem; display: flex; align-items: center; justify-content: center; overflow-x: auto;"></div>
+          </div>
+
+          <!-- GEMM Output Formula -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
+              📐 Nhân GEMM & Reshape 2×2
+            </div>
+            <div id="katex-out-mount" style="min-height: 48px; background: #090d15; border-radius: var(--radius-sm); padding: 0.5rem; display: flex; align-items: center; justify-content: center; overflow-x: auto;"></div>
+          </div>
+
+          <!-- Verification Card -->
+          <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid var(--color-positive); border-radius: var(--radius-md); padding: 1rem; font-size: var(--text-xs); line-height: 1.6; color: var(--color-positive);">
+            <div style="font-weight: 700; margin-bottom: 4px;">✓ Khớp 100% Tuyệt Đối</div>
+            Kết quả của phép nhân ma trận <code>Im2col &times; W</code> hoàn toàn trùng khớp với việc trượt kernel Conv2D từng ô, nhưng tận dụng được 100% thư viện tăng tốc phần cứng BLAS/cuBLAS!
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath } from '../../shared/katex-render.js';
+    import { LessonLogic, PRESETS } from './logic.js';
+
+    const STEPS = [
+      {
+        heading: "Nút Thắt Cổ Chai Của Vòng Lặp Conv2D",
+        problem: "Thuật toán tích chập thông thường phải lồng 6 vòng for liên tiếp (Batch, Kênh vào, Kênh ra, Cao, Rộng, Kernel). Vòng lặp này cực kỳ chậm trên CPU/GPU vì bộ nhớ bị phân mảnh.",
+        challenge: "Nhấn các nút 'Vùng 1', 'Vùng 2', 'Vùng 3', 'Vùng 4' để quan sát từng cửa sổ trượt.",
+        takeaway: "Mỗi vị trí trượt là một vùng đón nhận (Receptive Field) độc lập."
+      },
+      {
+        heading: "Thần Chú Im2col: Duỗi Thẳng Không Gian",
+        problem: "Làm sao để biến tích chập thành phép nhân ma trận thông thường mà GPU có thể chạy ở tốc độ hàng chục TFLOPs?",
+        challenge: "Quan sát bảng Im2col: mỗi hàng chính là 4 pixel của 1 vùng trượt được duỗi thẳng.",
+        takeaway: "Im2col (Image to Column/Row) sao chép các vùng trượt thành các hàng/cột của ma trận 2D."
+      },
+      {
+        heading: "Một Lệnh GEMM Duy Nhất",
+        problem: "Sau khi mở cuộn xong, phép tích chập diễn ra như thế nào?",
+        challenge: "Xem công thức Live Math: chỉ cần nhân ma trận Im2col với Kernel rồi Reshape lại thành ảnh 2×2.",
+        takeaway: "Tất cả các thư viện Deep Learning (PyTorch, cuDNN, Needle) đều dùng im2col hoặc Winograd để chạy Conv2D."
+      }
+    ];
+
+    const CURATED_COMMENTS = [
+      {
+        id: "c1",
+        stepIndex: 1,
+        author: "Kỹ Sư cuDNN NVIDIA",
+        badge: "Bộ Nhớ vs Tốc Độ",
+        content: "Im2col đánh đổi một phần dung lượng RAM (vì các pixel trùng lặp giữa các patch được copy nhiều lần) để đổi lấy tốc độ cực hạn của kernel GEMM (cuBLAS) chạy bão hòa Tensor Cores!"
+      },
+      {
+        id: "c2",
+        stepIndex: 2,
+        author: "Kỹ Sư Hệ Thống AI",
+        badge: "Framework Engine",
+        content: "Trong các framework học sâu thuần túy, hàm `Conv` cài đặt bằng cách gọi `im2col()` trên tensor đầu vào, sau đó gọi `matmul()`. Lúc backward thì dùng `col2im()` để gom gradient trở lại kích thước ảnh ban đầu."
+      }
+    ];
+
+    const logic = new LessonLogic();
+
+    const wizard = createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 0,
+      onStepChange: (idx) => comments.setStep(idx)
+    });
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: 'conv2d_im2col',
+      initialStep: 0,
+      curatedComments: CURATED_COMMENTS,
+      allowUserNotes: true
+    });
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      onPick: (preset) => {
+        logic.applyPreset(preset.state);
+        updateUI();
+      }
+    });
+
+    const imgGrid = document.getElementById('img-grid');
+    const kernelGrid = document.getElementById('kernel-grid');
+    const outGrid = document.getElementById('out-grid');
+    const im2colTbody = document.getElementById('im2col-tbody');
+    const katexIm2col = document.getElementById('katex-im2col-mount');
+    const katexOut = document.getElementById('katex-out-mount');
+
+    const patchIndices = [
+      [0, 1, 3, 4], // P0
+      [1, 2, 4, 5], // P1
+      [3, 4, 6, 7], // P2
+      [4, 5, 7, 8]  // P3
+    ];
+
+    const patchButtons = [
+      document.getElementById('btn-p0'),
+      document.getElementById('btn-p1'),
+      document.getElementById('btn-p2'),
+      document.getElementById('btn-p3')
+    ];
+
+    patchButtons.forEach((btn, idx) => {
+      btn.addEventListener('click', () => {
+        logic.onUserUpdate({ selectedPatch: idx });
+        patchButtons.forEach((b, i) => {
+          b.className = i === idx ? 'tp-btn tp-btn-primary' : 'tp-btn tp-btn-ghost';
+        });
+        updateUI();
+      });
+    });
+
+    function updateUI() {
+      const res = logic.calculate();
+      const currentPatch = res.selectedPatch;
+      const highlightedPixels = patchIndices[currentPatch];
+
+      // 1. Render 3x3 image
+      imgGrid.innerHTML = '';
+      res.image.forEach((val, i) => {
+        const cell = document.createElement('div');
+        cell.className = `cell-pixel ${highlightedPixels.includes(i) ? 'highlighted' : ''}`;
+        cell.textContent = val;
+        imgGrid.appendChild(cell);
+      });
+
+      // 2. Render 2x2 kernel
+      kernelGrid.innerHTML = '';
+      res.kernel.forEach(val => {
+        const cell = document.createElement('div');
+        cell.className = 'cell-pixel';
+        cell.style.width = '32px';
+        cell.style.height = '32px';
+        cell.style.fontSize = '0.75rem';
+        cell.textContent = val;
+        kernelGrid.appendChild(cell);
+      });
+
+      // 3. Render 2x2 output
+      outGrid.innerHTML = '';
+      res.gemmOutputs.forEach((val, i) => {
+        const cell = document.createElement('div');
+        cell.className = `cell-pixel ${i === currentPatch ? 'highlighted' : ''}`;
+        cell.style.width = '32px';
+        cell.style.height = '32px';
+        cell.style.fontSize = '0.75rem';
+        cell.style.borderColor = i === currentPatch ? 'var(--color-positive)' : 'var(--border-subtle)';
+        cell.textContent = val;
+        outGrid.appendChild(cell);
+      });
+
+      // 4. Render Im2col table rows
+      im2colTbody.innerHTML = '';
+      res.im2colMatrix.forEach((row, i) => {
+        const tr = document.createElement('tr');
+        if (i === currentPatch) tr.className = 'active-row';
+        tr.innerHTML = `
+          <td style="font-weight: 700;">Vùng #${i + 1}</td>
+          <td>${row[0]}</td>
+          <td>${row[1]}</td>
+          <td>${row[2]}</td>
+          <td>${row[3]}</td>
+          <td style="color: var(--color-positive); font-weight: 700;">${res.gemmOutputs[i]}</td>
+        `;
+        im2colTbody.appendChild(tr);
+      });
+
+      renderMath(katexIm2col, res.formulaIm2colKaTeX, { displayMode: true });
+      renderMath(katexOut, res.formulaOutKaTeX, { displayMode: true });
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      patchButtons.forEach((b, i) => {
+        b.className = i === 0 ? 'tp-btn tp-btn-primary' : 'tp-btn tp-btn-ghost';
+      });
+      updateUI();
+    });
+
+    updateUI();
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

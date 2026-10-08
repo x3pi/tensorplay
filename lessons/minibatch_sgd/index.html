@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta name="tp-lesson" content="minibatch_sgd">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xử Lý Mini-batch B=2 & Phép Chuyển Vị X^T - TensorPlay</title>
+  <meta name="description" content="Huấn luyện 2 ảnh cùng lúc. Bản chất ma trận chuyển vị X^T giúp tổng hợp Gradient từ nhiều ảnh trong một phép nhân ma trận duy nhất.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- KaTeX CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <!-- Shared CSS -->
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    
+    <!-- Top Header -->
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">
+          ← Về Danh Mục
+        </a>
+      </div>
+
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step">
+          Track 0: Nền Tảng Tensor & Bộ Nhớ C++
+        </span>
+      </div>
+    </header>
+
+    <!-- Main 3-Zone Grid -->
+    <main class="lab-grid">
+      
+      <!-- CỘT 1: DẪN DẮT SOCRATIC & HỆ THỐNG BÌNH LUẬN KIẾN THỨC -->
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt & Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <!-- CỘT 2: KHÔNG GIAN THỰC NGHIỆM SANDBOX -->
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Bảng Điều Khiển Lô Ảnh & Trọng Số</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Đặt Lại</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+          
+          <div id="mount-preset-picker"></div>
+
+          <!-- Nút Chạy SGD -->
+          <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 1rem; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div style="font-weight: 700; color: #fff; font-size: var(--text-sm);">⚡ Cập Nhật Trọng Số Mini-batch (SGD)</div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted);">$\theta \leftarrow \theta - \alpha \cdot (X^T G)$ (Tốc độ học $\alpha = 0.2$)</div>
+            </div>
+            <button id="btn-sgd-step" class="tp-btn tp-btn-primary" style="padding: 8px 16px;">Chạy 1 Bước ▶</button>
+          </div>
+
+          <!-- Trực quan hóa Lô 2 Ảnh Đầu Vào -->
+          <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.75rem;">
+              1. Lô Dữ Liệu Đầu Vào $X \in \mathbb{R}^{2 \times 2}$ ($B=2$ ảnh, $n=2$ pixel)
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              
+              <!-- Ảnh 1 -->
+              <div style="background: #090e17; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.75rem; text-align: center;">
+                <div style="font-size: 0.75rem; font-weight: 700; color: var(--color-warning); margin-bottom: 6px;">Ảnh 1: Biển DỪNG (y = 0)</div>
+                <div style="font-family: var(--font-mono); font-size: 0.85rem; color: #fff;">
+                  x₀₀ = <span id="val-x00">1.0</span>, x₀₁ = <span id="val-x01">0.0</span>
+                </div>
+                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px;">Vector [1.0, 0.0]</div>
+              </div>
+
+              <!-- Ảnh 2 -->
+              <div style="background: #090e17; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.75rem; text-align: center;">
+                <div style="font-size: 0.75rem; font-weight: 700; color: var(--color-info); margin-bottom: 6px;">Ảnh 2: Biển ĐI THẲNG (y = 1)</div>
+                <div style="font-family: var(--font-mono); font-size: 0.85rem; color: #fff;">
+                  x₁₀ = <span id="val-x10">0.0</span>, x₁₁ = <span id="val-x11">1.0</span>
+                </div>
+                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px;">Vector [0.0, 1.0]</div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Thanh Trượt Trọng Số Theta -->
+          <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.75rem;">
+              2. Ma Trận Trọng Số $\theta \in \mathbb{R}^{2 \times 2}$
+            </div>
+            <div id="mount-sliders" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- CỘT 3: LIVE MATH INSPECTOR & TELEMETRY -->
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math & Phép Chuyển Vị $X^T$</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+          
+          <!-- Bước 1: Logits Z (Batch) -->
+          <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; color: var(--color-info); margin-bottom: 6px;">
+              1. Điểm Số Logits $Z = X \theta$ ($B \times k = 2 \times 2$)
+            </div>
+            <div id="math-z" style="overflow-x: auto; padding: 4px 0;"></div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">
+              Hàng 0 = Điểm Ảnh 1 [Dừng, Đi]; Hàng 1 = Điểm Ảnh 2 [Dừng, Đi].
+            </div>
+          </div>
+
+          <!-- Bước 2: Sai Số G = (P - Iy) / B -->
+          <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; color: var(--color-warning); margin-bottom: 6px;">
+              2. Sai Số Trung Bình $G = \frac{1}{B}(P - I_y)$
+            </div>
+            <div id="math-g" style="overflow-x: auto; padding: 4px 0;"></div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">
+              Chia đều cho $B=2$ giúp gradient ổn định khi gom nhiều ảnh.
+            </div>
+          </div>
+
+          <!-- Bước 3: Gradient dW = X^T * G -->
+          <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 1rem; border-left: 3px solid var(--color-info);">
+            <div style="font-size: var(--text-xs); font-weight: 700; color: var(--color-info); margin-bottom: 6px;">
+              3. Gradient Ma Trận $\nabla_\theta L = X^T \cdot G$
+            </div>
+            <div id="math-grad" style="overflow-x: auto; padding: 4px 0;"></div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">
+              Phép xoay $X^T$ tự động ghép pixel của từng ảnh với sai số tương ứng rồi cộng dồn lại!
+            </div>
+          </div>
+
+          <!-- Bảng Độ Tự Tin Đoán Batch -->
+          <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.5rem;">
+              4. Xác Suất Softmax $P$ Của Lô Ảnh
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.75rem;">
+              <div style="display: flex; justify-content: space-between;">
+                <span>Ảnh 1 (DỪNG):</span>
+                <span id="p-img0" style="font-family: var(--font-mono); font-weight: 700; color: var(--color-positive);">50.0%</span>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span>Ảnh 2 (ĐI THẲNG):</span>
+                <span id="p-img1" style="font-family: var(--font-mono); font-weight: 700; color: var(--color-positive);">50.0%</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script type="module">
+    import { LessonLogic, PRESETS } from './logic.js';
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createLiveSlider } from '../../shared/components/LiveSlider.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { renderMath } from '../../shared/katex-render.js';
+
+    const logic = new LessonLogic();
+    let state = logic.reset();
+
+    // Socratic Steps
+    const STEPS = [
+      {
+        heading: "Tại Sao Phải Gom Lô (Batching $B=2$)?",
+        problem: "Huấn luyện từng ảnh đơn lẻ ($B=1$) khiến GPU phải load trọng số liên tục từ RAM, gây nghẽn băng thông và gradient bị rung lắc dữ dội.",
+        mechanism: "Gom lô ($B=2$ ảnh) biến các phép nhân vector rời rạc (SGEMV) thành phép nhân ma trận - ma trận (SGEMM), tận dụng tối đa hàng nghìn nhân tính toán song song:\n$$X = \\begin{bmatrix} 1 & 0 \\\\ 0 & 1 \\end{bmatrix} \\implies Z = X \\cdot \\theta$$\nCả 2 ảnh được xử lý đồng thời trong một chu kỳ tính toán duy nhất!",
+        action: "👉 Thao tác (Cột 2): Quan sát ma trận lô dữ liệu $X$ gồm 2 ảnh (2 hàng) và bấm nút \"Chạy 1 Bước ▶\".\n👁️ Quan sát (Cột 3): Hai ảnh được tính song song bằng một phép nhân ma trận $X \\cdot \\theta$, tiết kiệm một nửa số chu kỳ nạp bộ nhớ!",
+        takeaway: "Mini-batch vừa tăng tốc phần cứng theo cấp số nhân, vừa làm mượt hướng dốc gradient để hội tụ ổn định."
+      },
+      {
+        heading: "Điểm Số $Z = X \\theta$ & Softmax $P$",
+        problem: "Mỗi hàng trong ma trận $Z$ đại diện cho điểm số thô của một ảnh trong batch. Làm sao chuyển thành xác suất hợp lệ?",
+        mechanism: "Hàm Softmax được tính độc lập trên từng hàng: Hàng 0 chuẩn hóa điểm số cho Ảnh 1, Hàng 1 chuẩn hóa cho Ảnh 2 mà không hề bị can nhiễu lẫn nhau.\nVí dụ nhẩm: Ảnh 1 có $Z_0 = [1.0, 0.0] \\implies P_0 = [0.73, 0.27]$. Ảnh 2 có $Z_1 = [0.0, 1.0] \\implies P_1 = [0.27, 0.73]$. Tổng mỗi hàng luôn đúng bằng $100\\%$.",
+        action: "👉 Thao tác (Cột 2): Xem bảng xác suất $P$ tại Cột 2.\n👁️ Quan sát (Cột 3): Xem bảng độ tự tin: Ảnh 1 và Ảnh 2 giữ nguyên dự đoán độc lập, xác suất không bị trộn lẫn vào nhau!",
+        takeaway: "Cấu trúc ma trận bảo toàn tính độc lập của từng mẫu trong khi vẫn tận dụng được tốc độ xử lý song song."
+      },
+      {
+        heading: "Sai Số Trung Bình $G = (P - I_y) / B$",
+        problem: "Nếu gom 100 ảnh mà không chia trung bình, lực gradient sẽ vọt lên gấp 100 lần gây bùng nổ số học (Gradient Explosion).",
+        mechanism: "Chia cho kích thước batch $1/B$: Mỗi mẫu đóng góp $1/B$ lực sai số, giữ cho biên độ gradient luôn ổn định bất kể batch lớn hay nhỏ.\nVí dụ nhẩm với $B=2$: Nếu sai số của Ảnh 1 là $[-0.27, +0.27]$ và Ảnh 2 là $[+0.27, -0.27]$, chia cho $B=2$ sẽ giúp lực kéo gradient giữ đúng thang đo an toàn.",
+        action: "👉 Thao tác (Cột 2): Quan sát ma trận sai số $G$ ở Cột 2 có cùng kích thước $(B \\times k)$ với ma trận điểm số $Z$.\n👁️ Quan sát (Cột 3): Xem giá trị gradient không bị vọt lên gấp đôi dù xử lý đồng thời 2 mẫu!",
+        takeaway: "Hệ số $1/B$ là quy ước bắt buộc trong mọi thuật toán tối ưu học sâu (SGD, Adam, RMSprop)."
+      },
+      {
+        heading: "Bản Chất Phép Chuyển Vị $X^T \\cdot G$",
+        problem: "Làm sao gom sai số của nhiều ảnh khác nhau để cập nhật một bộ trọng số $\\theta$ duy nhất?",
+        mechanism: "Phép nhân ma trận chuyển vị $X^T \\cdot G$: Lấy pixel thứ $j$ của mọi ảnh trong batch nhân với sai số tương ứng của lớp $c$, rồi tự động cộng dồn lại:\n$$\\nabla_\\theta L = X^T \\cdot G = \\sum_{i=1}^B X_i^T G_i$$\nXoay $X$ thành $X^T$ chính là bí quyết toán học để gộp gradient song song mà không cần bất kỳ vòng lặp thủ công nào!",
+        action: "👉 Thao tác (Cột 2): Bấm nút \"Chạy 5 Bước ▶\" liên tiếp.\n👁️ Quan sát (Cột 3): Ma trận $\\theta$ tự điều chỉnh mượt mà, độ tự tin của cả 2 ảnh cùng lúc tăng lên và thanh Loss trung bình giảm rõ rệt!",
+        takeaway: "Phép nhân ma trận chuyển vị $X^T G$ là trái tim của mọi framework học sâu (PyTorch, TensorFlow) khi xử lý mini-batch."
+      }
+    ];
+
+    // Chú giải chuyên gia
+    const COMMENTS = [
+      {
+        id: "c1",
+        stepIndex: 0,
+        author: "Kỹ Sư Hệ Thống AI",
+        badge: "GEMM Batching",
+        avatar: "⚡",
+        content: "Trong thư viện BLAS, phép nhân ma trận $B=1$ là SGEMV (bị nghẽn băng thông bộ nhớ RAM), còn $B \\ge 2$ trở thành SGEMM (bão hòa năng lực tính toán của ALU). Gom batch là chìa khóa để GPU đạt 90%+ hiệu suất lý thuyết!"
+      },
+      {
+        id: "c2",
+        stepIndex: 3,
+        author: "Toán Học Đạo Hàm",
+        badge: "Matrix Transpose",
+        avatar: "📐",
+        content: "Đừng sợ ký hiệu $X^T$. Bản chất của $X^T G$ là: lấy pixel thứ $j$ của mọi ảnh trong batch nhân với sai số tương ứng của lớp $c$, rồi cộng dồn lại: $\\sum_{i=1}^B X_{i, j} \\cdot G_{i, c}$."
+      }
+    ];
+
+    // Khởi tạo Socratic & Comments
+    createStepWizard(document.getElementById('mount-step-wizard'), { steps: STEPS });
+    createCommentSection(document.getElementById('mount-comment-section'), { comments: COMMENTS });
+
+    // Presets
+    createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      onSelect: (p) => {
+        state = logic.applyPreset(p.state);
+        updateUI();
+      }
+    });
+
+    // Sliders cho Theta
+    const sliderDefs = [
+      { key: 't00', label: '$\\theta_{00}$ (Pixel 0 $\\to$ Dừng)', min: -1, max: 1, step: 0.05 },
+      { key: 't01', label: '$\\theta_{01}$ (Pixel 0 $\\to$ Đi)', min: -1, max: 1, step: 0.05 },
+      { key: 't10', label: '$\\theta_{10}$ (Pixel 1 $\\to$ Dừng)', min: -1, max: 1, step: 0.05 },
+      { key: 't11', label: '$\\theta_{11}$ (Pixel 1 $\\to$ Đi)', min: -1, max: 1, step: 0.05 }
+    ];
+
+    const sliderMount = document.getElementById('mount-sliders');
+    sliderMount.innerHTML = '';
+    const sliderInstances = {};
+
+    sliderDefs.forEach(def => {
+      sliderInstances[def.key] = createLiveSlider(sliderMount, {
+        label: def.label,
+        min: def.min,
+        max: def.max,
+        step: def.step,
+        value: state[def.key],
+        onChange: (v) => {
+          state = logic.onUserUpdate({ [def.key]: v });
+          updateUI();
+        }
+      });
+    });
+
+    // Nút SGD Step
+    document.getElementById('btn-sgd-step').addEventListener('click', () => {
+      state = logic.stepSGD();
+      Object.keys(sliderInstances).forEach(k => {
+        sliderInstances[k].setValue(state[k]);
+      });
+      updateUI();
+    });
+
+    // Nút Reset
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      state = logic.reset();
+      Object.keys(sliderInstances).forEach(k => {
+        sliderInstances[k].setValue(state[k]);
+      });
+      updateUI();
+    });
+
+    function updateUI() {
+      // Cập nhật giá trị hiển thị Lô ảnh
+      document.getElementById('val-x00').textContent = state.x00.toFixed(1);
+      document.getElementById('val-x01').textContent = state.x01.toFixed(1);
+      document.getElementById('val-x10').textContent = state.x10.toFixed(1);
+      document.getElementById('val-x11').textContent = state.x11.toFixed(1);
+
+      // Cập nhật Live Math KaTeX
+      const mathZ = document.getElementById('math-z');
+      mathZ.setAttribute('data-tex', state.formulaZKaTeX);
+
+      const mathG = document.getElementById('math-g');
+      mathG.setAttribute('data-tex', state.formulaGKaTeX);
+
+      const mathGrad = document.getElementById('math-grad');
+      mathGrad.setAttribute('data-tex', state.formulaGradKaTeX);
+
+      // Xác suất
+      const p0 = state.p00 * 100;
+      const p1 = state.p11 * 100;
+      document.getElementById('p-img0').textContent = `${p0.toFixed(1)}% (Nhãn đúng)`;
+      document.getElementById('p-img1').textContent = `${p1.toFixed(1)}% (Nhãn đúng)`;
+
+      renderMath();
+    }
+
+    updateUI();
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

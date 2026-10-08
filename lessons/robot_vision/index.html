@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta name="tp-lesson" content="robot_vision">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Robot Vision & Vector Dot Product - TensorPlay</title>
+  <meta name="description" content="Trực quan hóa ma trận 2x2, tích vô hướng và kỹ nghệ mảng 1D C++ qua bài toán nhận diện mắt robot.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- KaTeX CDN (Pin v0.16.21) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <!-- Shared CSS -->
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    
+    <!-- Top Header -->
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">
+          ← Về Danh Mục
+        </a>
+      </div>
+
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step" style="border-color: rgba(6, 182, 212, 0.4);">
+          Track 0: Nền Tảng Tensor & Bộ Nhớ C++
+        </span>
+      </div>
+    </header>
+
+    <!-- Main 3-Zone Grid -->
+    <main class="lab-grid">
+      
+      <!-- CỘT 1: DẪN DẮT SOCRATIC & HỆ THỐNG BÌNH LUẬN KIẾN THỨC -->
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt & Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <!-- StepWizard Mount Point -->
+          <div id="mount-step-wizard"></div>
+
+          <!-- Reusable Comment & Knowledge Section Mount Point -->
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <!-- CỘT 2: SÂN CHƠI TƯƠNG TÁC (CANVAS SANDBOX) -->
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Sân Chơi Tương Tác</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Reset</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; align-items: center; gap: 1.25rem;">
+          
+          <!-- PresetPicker Mount Point -->
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+
+          <!-- Interactive Matrices -->
+          <div style="display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: center; align-items: center; width: 100%;">
+            <!-- Input Grid X -->
+            <div id="mount-grid-x"></div>
+
+            <div style="font-size: 2rem; font-weight: 800; color: var(--color-info);">·</div>
+
+            <!-- Weight Grid W with Multi-class Template Switcher -->
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 0.6rem;">
+              <div style="display: flex; align-items: center; gap: 0.35rem; background: rgba(0,0,0,0.35); padding: 3px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+                <button type="button" id="btn-tmpl-horiz" style="padding: 4px 10px; font-size: 0.72rem; font-weight: 600; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.4); cursor: pointer; background: var(--color-brand); color: #fff; transition: all 0.2s ease;">
+                  🛑 Khuôn Ngang (W₁)
+                </button>
+                <button type="button" id="btn-tmpl-vert" style="padding: 4px 10px; font-size: 0.72rem; font-weight: 600; border-radius: 4px; border: 1px solid transparent; cursor: pointer; background: transparent; color: var(--text-muted); transition: all 0.2s ease;">
+                  ⬆️ Khuôn Dọc (W₂)
+                </button>
+              </div>
+              <div id="mount-grid-w"></div>
+            </div>
+          </div>
+
+          <div style="font-size: var(--text-xs); color: var(--text-dim); text-align: center; max-width: 440px; line-height: 1.6;">
+            💡 <strong>Mẹo:</strong> Đổi photon ảnh X (1 &rarr; 0 &rarr; 0.5); Chọn tab <strong>Khuôn Ngang (W₁)</strong> hoặc <strong>Khuôn Dọc (W₂)</strong> để tương tác và chỉnh trọng số (+1 &rarr; -1 &rarr; 0).
+          </div>
+        </div>
+      </section>
+
+      <!-- CỘT 3: LIVE MATH & TELEMETRY C++ -->
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math & Telemetry C++</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+          
+          <!-- Live Math Formula Card -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.85rem 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.4rem;">
+              📐 Công Thức Toán Sống
+            </div>
+            <div id="katex-formula-mount" style="min-height: 44px; background: #090d15; border-radius: var(--radius-sm); padding: 0.4rem 0.6rem; display: flex; align-items: center; justify-content: center; overflow-x: auto;">
+              <!-- Formula rendered here -->
+            </div>
+          </div>
+
+          <!-- Classification Scores -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted);">
+                📊 Điểm Số Khớp Mẫu (Logits Z)
+              </div>
+              <span style="font-size: 0.68rem; color: var(--color-info); background: rgba(56, 189, 248, 0.1); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.2);">
+                Ngưỡng an toàn: Z &gt; 1.0
+              </span>
+            </div>
+            <div id="mount-score-horiz"></div>
+            <div id="mount-score-vert"></div>
+
+            <div id="verdict-banner" style="margin-top: 0.75rem; padding: 8px 12px; border-radius: var(--radius-sm); font-size: var(--text-xs); font-weight: 600;">
+              <!-- Verdict banner rendered here -->
+            </div>
+
+            <!-- Curriculum Bridge to Next Lesson -->
+            <div style="font-size: 0.72rem; color: var(--text-dim); background: rgba(56, 189, 248, 0.05); border: 1px dashed rgba(56, 189, 248, 0.2); border-radius: var(--radius-sm); padding: 8px 10px; margin-top: 0.75rem; line-height: 1.5;">
+              💡 <strong>Cầu nối tiếp theo:</strong> Điểm số thô $Z \in [-2, +2]$ này được gọi là <em>Logits</em>. Trong [[lesson:softmax_stability]], bạn sẽ học cách hàm <strong>Softmax</strong> biến đổi các số $Z$ này thành phần trăm xác suất $P \in [0\%, 100\%]$!
+            </div>
+          </div>
+
+          <!-- 1D RAM Memory Visualizer -->
+          <div>
+            <div id="mount-memory-tape"></div>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Lesson Logic & Component Wiring -->
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createValueGrid } from '../../shared/components/ValueGrid.js';
+    import { createMemoryTape } from '../../shared/components/MemoryTape.js';
+    import { createScoreBar } from '../../shared/components/ScoreBar.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath } from '../../shared/katex-render.js';
+    import { markCompleted } from '../../shared/progress.js';
+    import { LessonLogic, PRESETS } from './logic.js';
+
+    // 1. Socratic Steps Narrative
+    const STEPS = [
+      {
+        step: 1,
+        badge: 'Bước 1 / 8',
+        heading: 'Máy tính đọc ảnh như thế nào?',
+        problem: 'Camera robot thu nhận photon ánh sáng từ biển báo. Nhưng robot không có "mắt" sinh học — nó làm cách nào chuyển hình ảnh thị giác thành dữ liệu để xử lý?',
+        mechanism: 'Ảnh được số hóa thành lưới $2 \\times 2$ ô vuông ($1$: sáng, $0$: tối). Trong RAM máy tính, lưới này được trải phẳng (flatten) thành một vector gồm 4 số liên tục: $X = [x_0, x_1, x_2, x_3]$.',
+        action: '👉 Thao tác (Cột 2 & Cột 3): Nhấp vào các ô pixel của Ảnh X hoặc nhấp trực tiếp vào các ô `[0]`, `[1]`, `[2]`, `[3]` trên dải Contiguous 1D RAM bên phải.\n👁️ Quan sát (Cột 3): Sự liên kết 2 chiều đồng bộ: mỗi ô pixel 2D `(hàng r, cột c)` lập tức được trải phẳng thành 1 ô nhớ tuần tự `[index]` trong RAM!',
+        takeaway: 'Mọi hình ảnh thị giác máy tính thực chất là một Tensor số học. Việc nhận diện ảnh bản chất là thao tác đại số trên vector $X$.'
+      },
+      {
+        step: 2,
+        badge: 'Bước 2 / 8',
+        heading: 'Khuôn dập điểm: Phép nhân vô hướng (Dot Product)',
+        problem: 'Robot đang có ảnh $X$. Làm sao biết ảnh này là Biển Dừng (Gạch Ngang) hay Biển Khác? Cần một cơ chế chấm điểm tương quan hình học.',
+        mechanism: 'Áp một "khuôn dập mẫu chuẩn" $W$. Lấy từng pixel nhân với trọng số tương ứng rồi cộng dồn lại (Tích vô hướng $Z = X \\cdot W$):\n$$Z = (x_0 w_0) + (x_1 w_1) + (x_2 w_2) + (x_3 w_3)$$\nKhi khớp chuẩn: $Z = (1 \\times 1) + (1 \\times 1) + (0 \\times 0) + (0 \\times 0) = +2.0$ điểm.',
+        action: '👉 Thao tác (Cột 2): Nhấp tắt thử 1 ô pixel của $X$ về 0.\n👁️ Quan sát (Cột 3): Xem thẻ "Công Thức Toán Sống", điểm $Z$ tụt từ $+2.0$ xuống $+1.0$ tương ứng chính xác với phép nhân tay!',
+        takeaway: 'Phép nhân vô hướng $X \\cdot W$ là thước đo tương đồng hình học cơ bản nhất: điểm càng cao, ảnh càng giống mẫu chuẩn!'
+      },
+      {
+        step: 3,
+        badge: 'Bước 3 / 8',
+        heading: 'Thử thách thực tế: Ống kính dính bụi',
+        problem: 'Trên đường chạy thực tế, một hạt bụi bám vào camera khiến pixel bị mờ xám ($0.5$). Liệu robot có bị "mù" và phán đoán sai lệch không?',
+        mechanism: 'Mô hình đặt ngưỡng quyết định an toàn ($Z > 1.0$). Khi dính bụi nhẹ, điểm số chỉ giảm một phần ($Z = 1 + 1 + 0.5 \\times 0 = 2.0$ hoặc $Z = 1 + 0.5 = 1.5$), vẫn vượt ngưỡng nhận diện.',
+        action: '👉 Thao tác (Cột 2): Bấm nút thử nhanh "Ảnh Dính Bụi" ở đầu Cột 2.\n👁️ Quan sát (Cột 3): Điểm số $Z = 1.5$ vẫn $> 1.0$ (vượt ngưỡng an toàn), robot vẫn nhận diện chuẩn xác dù camera bị mờ nhẹ!',
+        takeaway: 'Độ bền vững (Robustness) trước nhiễu hạt là thước đo sống còn để phân biệt AI lý thuyết và AI chạy trên xe tự hành thực tế.'
+      },
+      {
+        step: 4,
+        badge: 'Bước 4 / 8',
+        heading: 'Thảm họa đèn pha: Lỗ hổng của trọng số dương',
+        problem: 'Xe tải đối diện bật đèn pha cực mạnh, rọi sáng cả 4 ô pixel ($X = [1, 1, 1, 1]$). Nếu khuôn chỉ có số dương $[1, 1, 0, 0]$, điều gì thảm khốc sẽ xảy ra?',
+        mechanism: 'Lỗ hổng chết người: Tích $Z = (1 \\times 1) + (1 \\times 1) + (1 \\times 0) + (1 \\times 0) = +2.0$ điểm tối đa! Robot tưởng nhầm vệt đèn pha là biển báo và phanh gấp giữa đường!',
+        action: '👉 Thao tác (Cột 2): Bấm nút "Đèn Pha Chói Lóa" để bật sáng cả 4 ô.\n👁️ Quan sát (Cột 3): Điểm $Z$ vẫn đạt $+2.0$, AI bị đánh lừa $100\\%$ vì khuôn chỉ đo "có sáng hay không" chứ không biết phân biệt hình dạng!',
+        takeaway: 'Chỉ có bằng chứng ủng hộ (trọng số dương) là chưa đủ! Một hệ thống AI an toàn bắt buộc phải có cơ chế bác bỏ thông tin giả mạo.'
+      },
+      {
+        step: 5,
+        badge: 'Bước 5 / 8',
+        heading: 'Vũ khí bí mật: Trọng số âm (Bằng chứng bác bỏ)',
+        problem: 'Biển Gạch Ngang chuẩn bắt buộc 2 ô bên dưới phải tối đen. Nếu 2 ô dưới sáng lên, làm sao để robot tự động trừ điểm và loại trừ nguồn sáng giả?',
+        mechanism: 'Gán trọng số âm $-1$ vào 2 ô bên dưới ($W = [1, 1, -1, -1]$). Khi đèn pha rọi sáng cả 4 ô, điểm phạt kích hoạt:\n$$Z = (1 \\times 1) + (1 \\times 1) + (1 \\times -1) + (1 \\times -1) = 2 - 2 = 0.0$$',
+        action: '👉 Thao tác (Cột 2): Click vào 2 ô dưới của khuôn $W$ để đổi thành $-1$ (màu đỏ).\n👁️ Quan sát (Cột 3): Điểm số của Đèn Pha lập tức bị triệt tiêu từ $+2.0$ về $0.0$, vệt đèn pha bị vô hiệu hóa hoàn toàn!',
+        takeaway: 'Trọng số dương là bằng chứng ủng hộ, trọng số âm chính là "bằng chứng bác bỏ" để triệt tiêu các mẫu giả mạo!'
+      },
+      {
+        step: 6,
+        badge: 'Bước 6 / 8',
+        heading: 'Kiểm chứng độ bền vững',
+        problem: 'Sau khi gán trọng số âm ở 2 ô dưới, liệu biển Gạch Ngang thật sự có bị trừ điểm oan uổng không?',
+        mechanism: 'Khi gặp biển chuẩn, 2 ô dưới tối đen ($x_2 = 0, x_3 = 0$), tích phạt bằng $0$:\n$$0 \\times (-1) = 0$$\nTrọng số âm chỉ phạt khi photon xuất hiện sai vị trí, hoàn toàn không làm giảm điểm biển chuẩn!',
+        action: '👉 Thao tác (Cột 2): Bấm lại nút "Ảnh Chuẩn (Gạch Ngang)".\n👁️ Quan sát (Cột 3): Kiểm tra lại điểm số $Z$ vẫn đạt điểm tối đa $+2.0$, bộ lọc hoạt động hoàn hảo!',
+        takeaway: 'Toán học trọng số âm hoạt động như một màng lọc hình học thông minh: bảo toàn biển thật, triệt tiêu nguồn sáng giả.'
+      },
+      {
+        step: 7,
+        badge: 'Bước 7 / 8',
+        heading: 'Cuộc chiến phân loại: Biển Ngang vs Biển Dọc',
+        problem: 'Nếu trên đường có thêm Biển Đi Thẳng (Gạch Dọc), làm thế nào để mạng nơ-ron cùng lúc phân biệt được cả 2 biển báo này?',
+        mechanism: 'Mỗi lớp phân loại cần một vector khuôn dập riêng. Ghép 2 vector thành ma trận trọng số $W_{4 \\times 2} = [W_{\\text{ngang}} \\mid W_{\\text{dọc}}]$. Phép nhân ma trận $Z = X \\cdot W$ sẽ tính song song 2 điểm số thô (Logits):\n$$Z = [Z_{\\text{ngang}}, \\; Z_{\\text{dọc}}]$$',
+        action: '👉 Thao tác (Cột 2): Bấm nút "Ảnh Gạch Dọc" ở trên, sau đó bấm tab chuyển giữa `[🛑 Khuôn Ngang]` và `[⬆️ Khuôn Dọc]` để xem và chỉnh sửa từng khuôn mẫu dập!\n👁️ Quan sát (Cột 3): Xem điểm số $Z_{\\text{dọc}} = +2.0$ vượt trội so với $Z_{\\text{ngang}} = 0.0$, robot tự tin đưa ra quyết định đi thẳng!',
+        takeaway: 'Tầng tuyến tính (Linear Layer) trong Deep Learning tính song song điểm số Z cho mọi lớp bằng phép nhân ma trận Z = X · W. Lớp có điểm số Z cao nhất sẽ chiến thắng.'
+      },
+      {
+        step: 8,
+        badge: 'Bước 8 / 8',
+        heading: 'Kỹ nghệ C++: Trải phẳng bộ nhớ (Row-major)',
+        problem: 'Trong C/C++, ma trận 2D được cấp phát dưới dạng mảng 1D liên tục `float* ptr` trong RAM. Làm sao máy tính truy cập đúng pixel ở hàng $r$, cột $c$?',
+        mechanism: 'Công thức ánh xạ Row-Major: Địa chỉ con trỏ được tính bằng công thức bù bước nhảy:\n$$\\text{index} = r \\times N + c$$\n(với $N = 2$ là số cột). Giúp CPU đọc tuần tự từ trái qua phải, tận dụng tối đa L1 Cache.',
+        action: '👉 Thao tác (Cột 2 & Cột 3): Nhấp vào từng ô của dải 1D RAM bên phải hoặc ảnh X bên trái để kiểm tra liên kết 2 chiều.\n👁️ Quan sát (Cột 3): Thẻ RAM tự động mở rộng và sáng rực (Trọng tâm C++). Xem công thức `index = r * 2 + c` và địa chỉ con trỏ `*(ptr + index)` tự động nhảy nhịp nhàng tương ứng với từng byte trong RAM!',
+        takeaway: 'Mọi phép toán Tensor nhiều chiều trong C++/CUDA bản chất là các phép tính offset con trỏ trên mảng 1D liên tục: index = r * N + c.'
+      }
+    ];
+
+    // 2. Curated Expert Knowledge Comments (Per Step)
+    const STEP_COMMENTS = {
+      1: [
+        {
+          id: 'c1_1',
+          author: 'Kỹ Sư Hệ Thống C++',
+          role: 'Systems Engineer',
+          avatar: '⚙️',
+          tag: 'Kỹ nghệ RAM',
+          tagType: 'systems',
+          content: 'Bộ nhớ RAM máy tính chỉ có một chiều. Khi bạn khai báo `float img[2][2]`, compiler sẽ xếp hàng 0 tiếp giáp hàng 1 (Row-major order). Do đó việc trải phẳng (flatten) thành vector $X$ không tốn thêm 1 byte sao chép bộ nhớ nào cả!'
+        }
+      ],
+      2: [
+        {
+          id: 'c2_1',
+          author: 'Nhà Toán Học AI',
+          role: 'Math Advisor',
+          avatar: '📐',
+          tag: 'Trực giác Toán',
+          tagType: 'math',
+          content: 'Tích vô hướng $Z = X \\cdot W = \\|X\\| \\|W\\| \\cos(\\theta)$. Khi hướng của ảnh $X$ trùng khít với hướng của khuôn $W$ ($\theta = 0$), giá trị $\\cos(\\theta) = 1$ đạt cực đại!'
+        }
+      ],
+      4: [
+        {
+          id: 'c4_1',
+          author: 'Kỹ Sư An Toàn Xe Tự Hành',
+          role: 'Robotics Safety',
+          avatar: '⚠️',
+          tag: 'Bẫy Thực Tế (Gotcha)',
+          tagType: 'gotcha',
+          content: 'Hiện tượng "Phanh Ma" (Phantom Braking) trên xe tự hành đời đầu xảy ra chính vì mô hình chỉ học nhận dạng đặc trưng sáng mà không có cơ chế phạt đối với vùng sáng tràn!'
+        }
+      ],
+      5: [
+        {
+          id: 'c5_1',
+          author: 'Giáo Sư Học Sâu',
+          role: 'DL Researcher',
+          avatar: '🎓',
+          tag: 'Trực giác Nơ-ron',
+          tagType: 'math',
+          content: 'Trong sinh học, đây chính là cơ chế ức chế bên (lateral inhibition) của võng mạc mắt: các tế bào thần kinh xung quanh sẽ gửi tín hiệu ức chế (âm) để làm sắc nét biên độ ảnh!'
+        }
+      ],
+      7: [
+        {
+          id: 'c7_1',
+          author: 'Kỹ Sư Deep Learning',
+          role: 'AI Researcher',
+          avatar: '🧠',
+          tag: 'Tầng Tuyến Tính',
+          tagType: 'systems',
+          content: 'Phép nhân ma trận $Z = X \\cdot W$ với $W_{4 \\times 2}$ gom toàn bộ các phép tích vô hướng vào một lời gọi hàm tăng tốc GPU (GEMM). Đầu ra là vector các điểm số thô (Logits) $Z$. Trong [[lesson:softmax_stability]], chúng ta sẽ học cách hàm Softmax biến vector Logits này thành phân phối xác suất!'
+        }
+      ],
+      8: [
+        {
+          id: 'c8_1',
+          author: 'Chuyên Gia Lập Trình CUDA',
+          role: 'GPU Architect',
+          avatar: '⚡',
+          tag: 'Tối ưu CUDA',
+          tagType: 'systems',
+          content: 'Trong CUDA Kernel, công thức `index = r * N + c` cho phép các thread trong cùng 1 warp nạp bộ nhớ liên tục (Coalesced Memory Access). Nếu bạn truy cập theo cột `c * N + r`, GPU sẽ bị nghẽn băng thông nghiêm trọng!'
+        }
+      ]
+    };
+
+    // 3. Initialize Logic & URL State
+    const logic = new LessonLogic();
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialStep = parseInt(urlParams.get('step'), 10) || 1;
+    const initialPreset = urlParams.get('preset') || null;
+
+    if (initialPreset) {
+      const p = PRESETS.find(pr => pr.id === initialPreset);
+      if (p) logic.applyPreset(p.state);
+    }
+
+    // 4. Mount Components
+    let memoryTape = null;
+
+    // 4.1 StepWizard
+    const wizard = createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: initialStep,
+      onStepChange: (stepNum, stepData) => {
+        syncUrl(stepNum, null);
+        comments.setStep(stepNum, STEP_COMMENTS[stepNum] || []);
+        if (stepNum === STEPS.length) markCompleted('robot_vision', true);
+
+        // Ngữ cảnh thông minh (Contextual Focus):
+        // Bước 1 (Trải phẳng ảnh) & Bước 8 (Row-Major Order): Mở rộng đầy đủ và tập trung
+        // Các bước 2-7 (Tích vô hướng Z=X·W, Bụi, Đèn pha, Phân loại): Tự động thu gọn
+        if (memoryTape) {
+          if (stepNum === 1 || stepNum === 8) {
+            memoryTape.setCollapsed(false);
+            memoryTape.setFocused(true);
+          } else {
+            memoryTape.setCollapsed(true);
+            memoryTape.setFocused(false);
+          }
+        }
+      }
+    });
+
+    // 4.2 Reusable CommentSection
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: 'robot_vision',
+      initialStep: initialStep,
+      curatedComments: STEP_COMMENTS[initialStep] || [],
+      allowUserNotes: true
+    });
+
+    // 4.3 PresetPicker
+    const presetsBar = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      initialActiveId: initialPreset || 'horizontal_sign',
+      onPick: (p) => {
+        const calcRes = logic.applyPreset(p.state);
+        gridX.setValues(logic.state.pixels);
+        syncUrl(wizard.getStep(), p.id);
+        updateTelemetry(calcRes);
+      }
+    });
+
+    // 4.4 ValueGrid for Input X
+    const gridX = createValueGrid(document.getElementById('mount-grid-x'), {
+      title: '📷 Ảnh Đầu Vào X',
+      rows: 2,
+      cols: 2,
+      initial: logic.state.pixels,
+      variant: 'pixel',
+      cycleValues: [1, 0, 0.5],
+      onChange: (pixels, activeCell) => {
+        const calcRes = logic.onUserUpdate({ pixels, activeIndex: activeCell.index });
+        if (memoryTape) {
+          memoryTape.setValues(pixels);
+          memoryTape.setHighlight(activeCell.index);
+        }
+        updateTelemetry(calcRes);
+      }
+    });
+
+    // 4.5 ValueGrid for Weight Stamp W
+    const gridW = createValueGrid(document.getElementById('mount-grid-w'), {
+      title: '🛑 Khuôn Ngang ($W_{\\text{ngang}}$)',
+      rows: 2,
+      cols: 2,
+      initial: logic.state.weights,
+      variant: 'weight',
+      cycleValues: [1, -1, 0],
+      onChange: (newWeights) => {
+        const updatePayload = logic.state.activeTemplate === 'vertical'
+          ? { verticalWeights: newWeights }
+          : { weights: newWeights };
+        const calcRes = logic.onUserUpdate(updatePayload);
+        updateTelemetry(calcRes);
+      }
+    });
+
+    // Multi-class Template Switcher Wiring
+    const btnTmplHoriz = document.getElementById('btn-tmpl-horiz');
+    const btnTmplVert = document.getElementById('btn-tmpl-vert');
+
+    function setActiveTemplateTab(tmpl) {
+      if (tmpl === 'vertical') {
+        if (btnTmplVert) {
+          btnTmplVert.style.background = 'var(--color-brand)';
+          btnTmplVert.style.color = '#fff';
+          btnTmplVert.style.borderColor = 'rgba(56, 189, 248, 0.4)';
+        }
+        if (btnTmplHoriz) {
+          btnTmplHoriz.style.background = 'transparent';
+          btnTmplHoriz.style.color = 'var(--text-muted)';
+          btnTmplHoriz.style.borderColor = 'transparent';
+        }
+        gridW.setTitle('⬆️ Khuôn Dọc ($W_{\\text{dọc}}$)');
+        gridW.setValues(logic.state.verticalWeights);
+        const res = logic.onUserUpdate({ activeTemplate: 'vertical' });
+        updateTelemetry(res);
+      } else {
+        if (btnTmplHoriz) {
+          btnTmplHoriz.style.background = 'var(--color-brand)';
+          btnTmplHoriz.style.color = '#fff';
+          btnTmplHoriz.style.borderColor = 'rgba(56, 189, 248, 0.4)';
+        }
+        if (btnTmplVert) {
+          btnTmplVert.style.background = 'transparent';
+          btnTmplVert.style.color = 'var(--text-muted)';
+          btnTmplVert.style.borderColor = 'transparent';
+        }
+        gridW.setTitle('🛑 Khuôn Ngang ($W_{\\text{ngang}}$)');
+        gridW.setValues(logic.state.weights);
+        const res = logic.onUserUpdate({ activeTemplate: 'horizontal' });
+        updateTelemetry(res);
+      }
+    }
+
+    if (btnTmplHoriz && btnTmplVert) {
+      btnTmplHoriz.addEventListener('click', () => setActiveTemplateTab('horizontal'));
+      btnTmplVert.addEventListener('click', () => setActiveTemplateTab('vertical'));
+    }
+
+    // 4.6 ScoreBars for Telemetry
+    const scoreHoriz = createScoreBar(document.getElementById('mount-score-horiz'), {
+      label: '🛑 Biển Dừng ($Z_{\\text{ngang}}$)',
+      value: 2.0,
+      min: -2,
+      max: 2,
+      variant: 'reward',
+      showPercentage: false
+    });
+
+    const scoreVert = createScoreBar(document.getElementById('mount-score-vert'), {
+      label: '⬆️ Biển Đi Thẳng ($Z_{\\text{dọc}}$)',
+      value: 0.0,
+      min: -2,
+      max: 2,
+      variant: 'neutral',
+      showPercentage: false
+    });
+
+    // 4.7 MemoryTape for C++ RAM with Bidirectional Linking
+    memoryTape = createMemoryTape(document.getElementById('mount-memory-tape'), {
+      arrayName: 'X_flat',
+      initialValues: logic.state.pixels,
+      highlightIndex: 0,
+      cols: 2,
+      initiallyCollapsed: initialStep !== 1 && initialStep !== 8,
+      onCellClick: (idx, coords) => {
+        // Tương tác 2 chiều: Click ô trên RAM -> đồng bộ highlight trên Lưới ảnh X
+        gridX.setActiveIndex(idx);
+        logic.onUserUpdate({ activeIndex: idx });
+      }
+    });
+
+    if (initialStep === 1 || initialStep === 8) {
+      memoryTape.setFocused(true);
+    }
+
+    // 5. Telemetry Updater
+    function updateTelemetry(result) {
+      // Live Math Formula: Matrix dot product + Active template dot product
+      const formulaEl = document.getElementById('katex-formula-mount');
+      if (formulaEl) {
+        formulaEl.innerHTML = `
+          <div style="width: 100%; display: flex; flex-direction: column; gap: 0.4rem; text-align: center; padding: 2px 0;">
+            <div class="math-matrix-row" style="color: var(--color-brand); font-weight: 600; font-size: 0.95rem;"></div>
+            <div class="math-active-row" style="font-size: 0.88rem; color: var(--text-main);"></div>
+          </div>
+        `;
+        renderMath(formulaEl.querySelector('.math-matrix-row'), result.formulaMatrixKaTeX);
+        renderMath(formulaEl.querySelector('.math-active-row'), result.formulaKaTeX);
+      }
+
+      // Score bars: pure dot product scores Z in [-2, +2]
+      scoreHoriz.setValue(result.score, '🛑 Biển Dừng ($Z_{\\text{ngang}}$)');
+      scoreHoriz.setVariant(result.score >= 1.5 ? 'reward' : (result.score <= 0 ? 'penalty' : 'neutral'));
+
+      scoreVert.setValue(result.scoreVertical, '⬆️ Biển Đi Thẳng ($Z_{\\text{dọc}}$)');
+      scoreVert.setVariant(result.scoreVertical >= 1.5 ? 'reward' : (result.scoreVertical <= 0 ? 'penalty' : 'neutral'));
+
+      // Verdict Banner
+      const banner = document.getElementById('verdict-banner');
+      if (banner && result.verdict) {
+        banner.textContent = result.verdict.text;
+        if (result.verdict.type === 'success') {
+          banner.style.backgroundColor = 'var(--color-positive-bg)';
+          banner.style.color = 'var(--color-positive)';
+          banner.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+        } else if (result.verdict.type === 'warning') {
+          banner.style.backgroundColor = 'var(--color-warning-bg)';
+          banner.style.color = 'var(--color-warning)';
+          banner.style.border = '1px solid rgba(245, 158, 11, 0.3)';
+        } else {
+          banner.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+          banner.style.color = 'var(--text-muted)';
+          banner.style.border = '1px solid var(--border-subtle)';
+        }
+      }
+    }
+
+    function syncUrl(step, preset) {
+      const p = new URLSearchParams();
+      if (step > 1) p.set('step', step);
+      if (preset) p.set('preset', preset);
+      const str = p.toString();
+      history.replaceState(null, '', str ? `?${str}` : window.location.pathname);
+    }
+
+    // Reset button
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      const res = logic.reset();
+      setActiveTemplateTab('horizontal');
+      gridX.setValues(logic.state.pixels);
+      gridX.setActiveIndex(0);
+      if (memoryTape) {
+        memoryTape.setValues(logic.state.pixels);
+        memoryTape.setHighlight(0);
+      }
+      presetsBar.setActive('horizontal_sign');
+      updateTelemetry(res);
+      syncUrl(wizard.getStep(), null);
+    });
+
+    // Run initial calculate
+    updateTelemetry(logic.calculate());
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

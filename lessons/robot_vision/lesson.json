@@ -1,0 +1,25 @@
+{
+  "id": "robot_vision",
+  "title": "Robot Vision & Tích Vô Hướng Vector",
+  "summary": "Nhận diện biển báo $2 \\times 2$. Trọng số âm làm \"bằng chứng bác bỏ\" triệt tiêu đèn pha chói lóa. Trải phẳng 2D $\\to$ 1D, công thức $\\text{offset} = r \\times N + c$.",
+  "topic": "foundations",
+  "tags": [
+    "computer-vision",
+    "linear-algebra",
+    "dot-product",
+    "c-plus-plus-memory"
+  ],
+  "difficulty": "beginner",
+  "estimatedMinutes": 8,
+  "status": "ready",
+  "prerequisites": [],
+  "related": [
+    "cpp_matmul_loops",
+    "softmax_stability"
+  ],
+  "sources": [],
+  "aliases": [
+    "bai_01_robot_vision",
+    "robot_vision"
+  ]
+}

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="tp-lesson" content="{{SLUG}}">
+  <title>{{TITLE}} - TensorPlay</title>
+  <meta name="description" content="{{SUMMARY}}">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- KaTeX Pin v0.16.21 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <!-- Shared CSS -->
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    
+    <!-- Top Header -->
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+          <span style="background: linear-gradient(135deg, var(--color-info), var(--color-purple)); color: #fff; font-size: 0.65rem; font-weight: 800; padding: 1px 6px; border-radius: 4px;">LAB</span>
+        </a>
+      </div>
+      <div class="lab-header-right">
+        <span style="font-size: var(--text-xs); color: var(--text-muted);">
+          {{TITLE}}
+        </span>
+      </div>
+    </header>
+
+    <!-- 3-Column Workspace -->
+    <main class="lab-workspace">
+      
+      <!-- Cột 1: Hướng Dẫn & Lý Thuyết -->
+      <section class="workspace-col workspace-col1" id="col-guide">
+        <div class="col-content">
+          <div class="theory-card">
+            <h2 class="theory-title">{{TITLE}}</h2>
+            <p class="theory-desc">{{SUMMARY}}</p>
+          </div>
+          <div id="mount-wizard"></div>
+        </div>
+      </section>
+
+      <div class="col-resizer" id="resizer-1"></div>
+
+      <!-- Cột 2: Trực Quan Tương Tác (Sandbox) -->
+      <section class="workspace-col workspace-col2" id="col-sandbox">
+        <div class="col-content">
+          <div class="sandbox-panel">
+            <h3 class="panel-title">Mô Phỏng Trực Quan</h3>
+            <div id="mount-sandbox"></div>
+          </div>
+        </div>
+      </section>
+
+      <div class="col-resizer" id="resizer-2"></div>
+
+      <!-- Cột 3: Chỉ Số & Đo Đạc Hệ Thống -->
+      <section class="workspace-col workspace-col3" id="col-telemetry">
+        <div class="col-content">
+          <div class="telemetry-panel">
+            <h3 class="panel-title">Chỉ Số & Phân Tích</h3>
+            <div id="mount-telemetry"></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- Component & Logic Modules -->
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+  <script type="module">
+    import { computeStep } from './logic.js';
+    import { StepWizard } from '../../shared/components/StepWizard.js';
+    import { renderMath } from '../../shared/katex-render.js';
+
+    const STEPS = [
+      {
+        badge: 'Bước 1',
+        title: 'Khám Phá Khái Niệm',
+        desc: 'Quan sát và tương tác để hiểu bản chất.'
+      }
+    ];
+
+    const wizard = new StepWizard({
+      mount: '#mount-wizard',
+      steps: STEPS,
+      lessonId: '{{SLUG}}',
+      onStepChange: (step) => {
+        renderMath();
+      }
+    });
+
+    renderMath();
+  </script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "id": "minibatch_assembly",
+  "title": "Băng Chuyền Mini-Batching Assembly Line",
+  "summary": "Dataloader đa tiến trình: Cân đối giữa Worker CPU tiền xử lý và GPU nạp dữ liệu. Hiện tượng Starvation (GPU đói dữ liệu) khi I/O tắc nghẽn.",
+  "topic": "cnn-data",
+  "tags": [
+    "dataloader",
+    "multiprocessing",
+    "data-pipeline",
+    "gpu-feeding"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 12,
+  "status": "ready",
+  "prerequisites": [
+    "minibatch_sgd"
+  ],
+  "related": [
+    "conv2d_im2col"
+  ],
+  "sources": [],
+  "aliases": [
+    "bai_07_minibatch_assembly",
+    "minibatch_assembly"
+  ]
+}

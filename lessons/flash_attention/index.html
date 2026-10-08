@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta name="tp-lesson" content="flash_attention">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlashAttention SRAM Tiling & Online Softmax - TensorPlay</title>
+  <meta name="description" content="Kỹ thuật chia khối Tiling vào SRAM và thuật toán Online Softmax; triệt tiêu ma trận N×N trên HBM, tăng tốc LLM gấp 2-4 lần.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- KaTeX CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <!-- Shared CSS -->
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+
+  <style>
+    .architecture-comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      width: 100%;
+    }
+    .arch-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .matrix-box {
+      width: 80px;
+      height: 80px;
+      background: rgba(239, 68, 68, 0.2);
+      border: 2px solid var(--color-negative);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #fca5a5;
+      margin: 0.75rem 0;
+    }
+    .sram-tile-stream {
+      display: flex;
+      gap: 6px;
+      margin: 0.75rem 0;
+    }
+    .sram-chunk {
+      width: 38px;
+      height: 38px;
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid var(--color-positive);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--color-positive);
+    }
+  </style>
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    
+    <!-- Top Header -->
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">
+          ← Về Danh Mục
+        </a>
+      </div>
+
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step" style="border-color: rgba(236, 72, 153, 0.4);">
+          Track 4: Transformer & Hệ Thống LLM
+        </span>
+      </div>
+    </header>
+
+    <!-- Main 3-Zone Grid -->
+    <main class="lab-grid">
+      
+      <!-- CỘT 1: DẪN DẮT SOCRATIC & HỆ THỐNG BÌNH LUẬN KIẾN THỨC -->
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt & Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <!-- CỘT 2: SÂN CHƠI TƯƠNG TÁC (CANVAS SANDBOX) -->
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • So Sánh Kiến Trúc Bộ Nhớ GPU</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Reset</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; align-items: center; gap: 1.25rem;">
+          
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+
+          <!-- Side-by-side Architectural Comparison -->
+          <div class="architecture-comparison">
+            <!-- 1. Standard Attention -->
+            <div class="arch-card" style="border-color: rgba(239, 68, 68, 0.3);">
+              <div style="font-size: var(--text-xs); font-weight: 700; color: #f87171;">
+                1. Standard Attention
+              </div>
+              <div class="matrix-box">
+                N × N<br>trong HBM
+              </div>
+              <div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-negative);" id="txt-hbm-standard">
+                512 Bytes ($O(N^2)$)
+              </div>
+              <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 4px;">
+                Ghi & đọc ma trận $N \times N$ ra DRAM/HBM chậm chạp
+              </div>
+            </div>
+
+            <!-- 2. FlashAttention -->
+            <div class="arch-card" style="border-color: rgba(16, 185, 129, 0.4);">
+              <div style="font-size: var(--text-xs); font-weight: 700; color: var(--color-positive);">
+                2. FlashAttention
+              </div>
+              <div class="sram-tile-stream">
+                <div class="sram-chunk">$B_1$</div>
+                <div class="sram-chunk">$B_2$</div>
+                <div class="sram-chunk">SRAM</div>
+              </div>
+              <div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-positive);" id="txt-hbm-flash">
+                4,096 Bytes ($O(N)$)
+              </div>
+              <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 4px;">
+                Chỉ tính trong SRAM on-chip, không ghi N×N ra HBM!
+              </div>
+            </div>
+          </div>
+
+          <!-- Online Softmax Dynamic State Card -->
+          <div style="width: 100%; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <span style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--color-info);">
+                Thuật Toán Online Softmax Cập Nhật Động
+              </span>
+              <button class="tp-btn tp-btn-primary" id="btn-next-block" style="padding: 2px 10px; font-size: var(--text-xs);">
+                🔄 Bước Khối Tiếp
+              </button>
+            </div>
+
+            <div style="font-family: var(--font-mono); font-size: var(--text-xs); line-height: 1.8; color: var(--text-bright);">
+              <div>Khối 1: $m^{(1)} = 4.0$, $\ell^{(1)} = 1.135$</div>
+              <div>Khối 2: $m^{(2)} = 5.0 \to$ Hệ số co dãn: $\alpha = e^{4-5} = <strong>0.368</strong></div>
+              <div style="color: var(--color-positive);">Hợp nhất: $m_{\text{new}} = 5.0$, $\ell_{\text{new}} = <strong>1.553</strong></div>
+            </div>
+          </div>
+
+          <!-- Slider SeqLen -->
+          <div style="width: 100%; display: flex; flex-direction: column; gap: 0.75rem;">
+            <div id="mount-slider-seq"></div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- CỘT 3: LIVE MATH & TELEMETRY C++ -->
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math & Phân Tích</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+          
+          <!-- HBM Traffic Formula -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
+              📐 Lưu Lượng Truy Cập HBM (Bytes)
+            </div>
+            <div id="katex-hbm-mount" style="min-height: 48px; background: #090d15; border-radius: var(--radius-sm); padding: 0.5rem; display: flex; align-items: center; justify-content: center; overflow-x: auto;"></div>
+          </div>
+
+          <!-- Online Softmax Formula -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
+              📐 Công Thức Online Softmax Rescale
+            </div>
+            <div id="katex-online-mount" style="min-height: 48px; background: #090d15; border-radius: var(--radius-sm); padding: 0.5rem; display: flex; align-items: center; justify-content: center; overflow-x: auto;"></div>
+          </div>
+
+          <!-- Victory Card -->
+          <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid var(--color-positive); border-radius: var(--radius-md); padding: 1rem; font-size: var(--text-xs); line-height: 1.6; color: var(--color-positive);">
+            <div style="font-weight: 700; margin-bottom: 4px;">🏆 Đột Phá Triệu Token:</div>
+            Bằng cách kết hợp <strong>Tiling SRAM</strong> và <strong>Online Softmax</strong>, FlashAttention cho phép các LLM ngày nay mở rộng context length từ 2K lên tới 128K hay 1 Triệu token mà không bị bùng nổ bộ nhớ!
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createLiveSlider } from '../../shared/components/LiveSlider.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath } from '../../shared/katex-render.js';
+    import { LessonLogic, PRESETS } from './logic.js';
+
+    const STEPS = [
+      {
+        heading: "Nghẽn Băng Thông Của Standard Attention",
+        problem: "Mô hình Attention truyền thống bắt buộc phải tính ma trận điểm S = QKᵀ kích thước N×N, ghi nó ra HBM (DRAM), rồi đọc lại để tính Softmax. Với N = 4096, ma trận này ngốn hàng Gigabyte!",
+        challenge: "Xem thẻ 'Standard Attention': Lưu lượng HBM tăng theo hàm bậc hai O(N²).",
+        takeaway: "Đây là nguyên nhân khiến việc tăng độ dài ngữ cảnh ngữ nghĩa trong LLM từng là nhiệm vụ bất khả thi."
+      },
+      {
+        heading: "Bí Mật Của Tri Tri Dao: Online Softmax",
+        problem: "Hàm Softmax bình thường bắt buộc phải biết giá trị Max của toàn bộ hàng thì mới chia được. Làm sao tính Softmax theo từng mẩu nhỏ mà không cần đợi cả hàng?",
+        challenge: "Bấm 'Bước Khối Tiếp' để quan sát hệ số co dãn alpha bù trừ cho sai lệch giữa max cũ và max mới.",
+        takeaway: "Online Softmax nhân hệ số co dãn exp(m_old - m_new) vào tổng tích lũy trước đó, cho ra kết quả chuẩn xác 100% về mặt toán học!"
+      },
+      {
+        heading: "Đỉnh Cao FlashAttention: Triệt Tiêu Ma Trận N×N",
+        problem: "Khi không bao giờ cần ghi ma trận N×N ra HBM nữa, chuyện gì xảy ra với tốc độ?",
+        challenge: "Kéo độ dài ngữ cảnh N lên 128 và xem FlashAttention tiết kiệm lưu lượng I/O vượt trội.",
+        takeaway: "FlashAttention chạy nhanh hơn 2-4 lần và trở thành tiêu chuẩn cốt lõi trên toàn bộ các GPU hiện đại (A100, H100)."
+      }
+    ];
+
+    const CURATED_COMMENTS = [
+      {
+        id: "c1",
+        stepIndex: 1,
+        author: "Tri Dao (Tác Giả FlashAttention)",
+        badge: "Paper NeurIPS 2022",
+        content: "FlashAttention là một thuật toán nhận biết phần cứng (IO-aware). Chúng tôi không thay đổi công thức toán của Attention, mà thay đổi cách thức sắp xếp luồng dữ liệu giữa SRAM và HBM trên chip GPU!"
+      },
+      {
+        id: "c2",
+        stepIndex: 2,
+        author: "Kiến Trúc Sư AI Systems",
+        badge: "Tương Lai LLM",
+        content: "Sự ra đời của FlashAttention (v1, v2, v3) là nền móng trực tiếp giúp Claude, Gemini và Llama-3 đạt được cửa sổ ngữ cảnh khổng lồ từ 128k đến 1 triệu token ngày nay."
+      }
+    ];
+
+    const logic = new LessonLogic();
+
+    const wizard = createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 0,
+      onStepChange: (idx) => comments.setStep(idx)
+    });
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: 'flash_attention',
+      initialStep: 0,
+      curatedComments: CURATED_COMMENTS,
+      allowUserNotes: true
+    });
+
+    const sliderSeq = createLiveSlider(document.getElementById('mount-slider-seq'), {
+      min: 4,
+      max: 128,
+      step: 4,
+      initial: logic.state.seqLen,
+      label: "Độ dài ngữ cảnh (Sequence Length N)",
+      onChange: (val) => {
+        logic.onUserUpdate({ seqLen: val });
+        updateUI();
+      }
+    });
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      onPick: (preset) => {
+        logic.applyPreset(preset.state);
+        sliderSeq.setValue(preset.state.seqLen ?? logic.state.seqLen);
+        updateUI();
+      }
+    });
+
+    document.getElementById('btn-next-block').addEventListener('click', () => {
+      const cur = logic.state.currentBlockStep;
+      logic.onUserUpdate({ currentBlockStep: cur === 1 ? 2 : 1 });
+      updateUI();
+    });
+
+    const txtHbmStandard = document.getElementById('txt-hbm-standard');
+    const txtHbmFlash = document.getElementById('txt-hbm-flash');
+    const katexHbm = document.getElementById('katex-hbm-mount');
+    const katexOnline = document.getElementById('katex-online-mount');
+
+    function updateUI() {
+      const res = logic.calculate();
+
+      txtHbmStandard.textContent = `${res.standardHbmBytes.toLocaleString()} Bytes (O(N²))`;
+      txtHbmFlash.textContent = `${res.flashHbmBytes.toLocaleString()} Bytes (O(N))`;
+
+      renderMath(katexHbm, res.formulaHbmKaTeX, { displayMode: true });
+      renderMath(katexOnline, res.formulaOnlineSoftmaxKaTeX, { displayMode: true });
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      sliderSeq.setValue(logic.state.seqLen);
+      updateUI();
+    });
+
+    updateUI();
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

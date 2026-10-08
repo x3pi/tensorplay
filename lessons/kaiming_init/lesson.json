@@ -1,0 +1,26 @@
+{
+  "id": "kaiming_init",
+  "title": "Khởi Tạo Kaiming — Giữ Tín Hiệu Qua Mạng Sâu",
+  "summary": "Mỗi tầng nhân năng lượng tín hiệu với $g = n \\sigma^2 k$. Vì sao Kaiming chọn phương sai $2/n$ cho mạng ReLU để ngăn chặn bùng nổ / tiêu biến qua 20 tầng.",
+  "topic": "training-stability",
+  "tags": [
+    "initialization",
+    "kaiming",
+    "variance-scaling",
+    "deep-networks"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 12,
+  "status": "ready",
+  "prerequisites": [
+    "activation_valves"
+  ],
+  "related": [
+    "batch_norm_dynamics",
+    "dropout"
+  ],
+  "sources": [],
+  "aliases": [
+    "kaiming_init"
+  ]
+}

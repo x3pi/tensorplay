@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TensorPlay - Phòng Thí Nghiệm Trực Quan Hóa Hệ Thống Học Sâu (DLSys Visual Lab)</title>
-  <meta name="description" content="Danh mục các bài học nhỏ tương tác trực quan hóa toán học & kỹ nghệ hệ thống học sâu (Deep Learning Systems). Mỗi bài là một sandbox độc lập dễ hiểu.">
+  <title>TensorPlay - Thư Viện Học Sâu Tương Tác (Deep Learning Systems Visual Lab)</title>
+  <meta name="description" content="Thư viện bài học trực quan tương tác về toán học và kỹ nghệ hệ thống học sâu (Deep Learning Systems). Mỗi bài là một sandbox độc lập khám phá sâu từ bản chất.">
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- KaTeX CDN (Pin v0.16.21 + auto-render) -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
@@ -23,13 +23,13 @@
   <style>
     .catalog-container {
       width: 100%;
+      max-width: 1400px;
       margin: 0 auto;
-      padding: 2.5rem 3rem;
+      padding: 2rem 2.5rem 4rem;
       overflow-y: auto;
-      height: calc(100vh - var(--header-height));
+      min-height: calc(100vh - var(--header-height));
     }
 
-    /* Tùy chỉnh thanh cuộn siêu mượt (Webkit) */
     .catalog-container::-webkit-scrollbar {
       width: 8px;
     }
@@ -40,73 +40,239 @@
       background: rgba(255, 255, 255, 0.15);
       border-radius: 4px;
     }
-    .catalog-container::-webkit-scrollbar-thumb:hover {
-      background: rgba(255, 255, 255, 0.3);
-    }
 
     .hero-section {
       text-align: center;
-      margin-bottom: 2.5rem;
+      margin-bottom: 2rem;
+      position: relative;
     }
 
     .hero-title {
       font-size: 2.6rem;
       font-weight: 800;
       letter-spacing: -0.02em;
-      margin-bottom: 0.85rem;
+      margin-bottom: 0.6rem;
       background: linear-gradient(135deg, #ffffff 40%, var(--color-info) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
 
     .hero-subtitle {
-      font-size: 1.15rem;
+      font-size: 1.05rem;
       color: var(--text-muted);
-      max-width: 720px;
-      margin: 0 auto;
-      line-height: 1.7;
+      max-width: 760px;
+      margin: 0 auto 1.5rem;
+      line-height: 1.6;
     }
 
-    .track-filters {
+    /* Path Selector Tabs */
+    .path-selector-bar {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
       gap: 0.6rem;
+      margin-bottom: 1.8rem;
+    }
+
+    .path-tab-btn {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-strong);
+      color: var(--text-dim);
+      padding: 8px 18px;
+      border-radius: var(--radius-full);
+      font-size: 0.86rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .path-tab-btn:hover {
+      color: var(--text-main);
+      border-color: var(--color-info);
+      background: var(--bg-surface-hover);
+    }
+
+    .path-tab-btn.active {
+      background: var(--color-info-bg);
+      border-color: var(--color-info);
+      color: var(--color-info);
+      box-shadow: 0 0 14px var(--color-info-glow);
+    }
+
+    .path-info-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.4rem;
+      margin-bottom: 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .path-info-text {
+      flex: 1;
+      min-width: 280px;
+    }
+
+    .path-info-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 0.25rem;
+    }
+
+    .path-info-desc {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+    }
+
+    .path-progress-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .path-progress-meter {
+      width: 140px;
+      height: 8px;
+      background: var(--bg-surface-elevated);
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .path-progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--color-info), var(--color-positive));
+      transition: width 0.3s ease;
+    }
+
+    /* Controls: Search and Topic Filter */
+    .controls-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
       margin-bottom: 2rem;
     }
 
-    .track-filter-btn {
-      background-color: var(--bg-surface-elevated);
+    .search-input-box {
+      position: relative;
+      max-width: 480px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .search-input {
+      width: 100%;
+      background: var(--bg-surface-elevated);
       border: 1px solid var(--border-strong);
-      color: var(--text-muted);
-      padding: 8px 18px;
       border-radius: var(--radius-full);
-      font-size: var(--text-sm);
-      font-weight: 600;
+      padding: 10px 18px 10px 40px;
+      font-size: 0.88rem;
+      color: var(--text-main);
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .search-input:focus {
+      border-color: var(--color-info);
+      box-shadow: 0 0 12px var(--color-info-glow);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      font-size: 0.95rem;
+      pointer-events: none;
+    }
+
+    .topic-filters {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .topic-chip {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-dim);
+      padding: 5px 12px;
+      border-radius: var(--radius-full);
+      font-size: 0.76rem;
+      font-weight: 500;
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       transition: all 0.15s ease;
     }
 
-    .track-filter-btn:hover {
+    .topic-chip:hover {
       color: var(--text-main);
-      border-color: var(--color-info);
+      border-color: var(--border-strong);
     }
 
-    .track-filter-btn.active {
-      background-color: var(--color-info-bg);
+    .topic-chip.active {
+      background: var(--bg-surface-elevated);
       border-color: var(--color-info);
-      color: var(--color-info);
-      box-shadow: 0 0 12px var(--color-info-glow);
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    .topic-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    /* Section & Cards */
+    .section-block {
+      margin-bottom: 2.5rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 1.2rem;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 0.6rem;
+    }
+
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-count {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
     }
 
     .cards-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
       gap: 1.5rem;
     }
 
     .catalog-card {
-      background-color: var(--bg-card);
+      background: var(--bg-card);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-lg);
       padding: 1.5rem;
@@ -116,13 +282,16 @@
       transition: all 0.2s ease;
       box-shadow: var(--card-shadow);
       position: relative;
-      overflow: hidden;
     }
 
     .catalog-card:hover {
-      border-color: rgba(6, 182, 212, 0.4);
+      border-color: rgba(56, 189, 248, 0.4);
       transform: translateY(-2px);
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+    }
+
+    .catalog-card.completed {
+      border-left: 3px solid var(--color-positive);
     }
 
     .card-top {
@@ -134,154 +303,127 @@
       align-items: center;
       justify-content: space-between;
       margin-bottom: 0.75rem;
+      gap: 8px;
+    }
+
+    .card-topic-pill {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
     }
 
     .card-title {
-      font-size: 1.25rem;
+      font-size: 1.18rem;
       font-weight: 700;
       color: #ffffff;
-      margin-bottom: 0.6rem;
+      margin-bottom: 0.55rem;
       line-height: 1.4;
     }
 
-    .card-title .katex {
-      font-size: 1.25em;
-      font-weight: 600;
-      color: #ffffff;
+    .card-title a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .card-title a:hover {
+      color: var(--color-info);
     }
 
     .card-summary {
-      font-size: var(--text-base);
+      font-size: 0.86rem;
       color: var(--text-muted);
-      line-height: 1.65;
-      margin-bottom: 1rem;
+      line-height: 1.55;
+      margin-bottom: 0.8rem;
     }
 
-    .card-summary .katex {
-      font-size: 1.2em;
-      font-weight: 500;
-      color: #ffffff;
+    .card-prereqs {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.74rem;
+      color: var(--text-dim);
+      margin-bottom: 0.8rem;
+    }
+
+    .prereq-link {
+      color: var(--color-info);
+      text-decoration: none;
+      background: var(--bg-surface-elevated);
+      padding: 1px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .prereq-link:hover {
+      border-color: var(--color-info);
     }
 
     .card-tags {
       display: flex;
       flex-wrap: wrap;
       gap: 0.4rem;
-      margin-bottom: 1.25rem;
+      margin-bottom: 1rem;
     }
 
-    .card-action {
+    .card-bottom {
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 0.85rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border-subtle);
+      gap: 8px;
+    }
+
+    .card-badges-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.74rem;
+      color: var(--text-dim);
     }
 
     .btn-launch {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: linear-gradient(135deg, #0284c7, var(--color-info));
-      color: #ffffff;
-      text-decoration: none;
-      padding: 9px 18px;
-      border-radius: var(--radius-sm);
-      font-size: var(--text-sm);
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(56, 189, 248, 0.05));
+      color: var(--color-info);
+      border: 1px solid var(--color-info);
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 0.78rem;
       font-weight: 600;
-      transition: all 0.15s ease;
-      box-shadow: 0 4px 12px var(--color-info-glow);
+      text-decoration: none;
+      transition: all 0.2s ease;
     }
 
     .btn-launch:hover {
-      filter: brightness(1.15);
-      transform: translateY(-1px);
+      background: var(--color-info);
+      color: #04131f;
+      box-shadow: 0 0 14px var(--color-info-glow);
     }
 
     .btn-launch.disabled {
       background: var(--bg-surface-elevated);
       color: var(--text-dim);
-      box-shadow: none;
+      border-color: var(--border-subtle);
       cursor: not-allowed;
-      pointer-events: none;
-      border: 1px solid var(--border-subtle);
     }
 
-    /* Mobile & Tablet Optimizations for Catalog */
     @media (max-width: 768px) {
-      .lab-header {
-        height: 52px;
-        min-height: 52px;
-        padding: 0 0.85rem;
-      }
-
-      .lab-header-right {
-        display: none !important;
-      }
-
-      .lab-header-title {
-        font-size: 1.1rem;
-      }
-
       .catalog-container {
-        padding: 1.25rem 0.85rem 3rem 0.85rem;
-        height: calc(100vh - 52px);
+        padding: 1.25rem 1rem 3rem;
       }
-
-      .hero-section {
-        margin-bottom: 1.5rem;
-      }
-
       .hero-title {
-        font-size: 1.65rem;
-        letter-spacing: -0.01em;
-        margin-bottom: 0.5rem;
+        font-size: 1.9rem;
       }
-
-      .hero-subtitle {
-        font-size: 0.9rem;
-        line-height: 1.55;
-        padding: 0 0.25rem;
-      }
-
-      .track-filters {
-        flex-wrap: nowrap;
-        justify-content: flex-start;
-        overflow-x: auto;
-        gap: 0.45rem;
-        padding-bottom: 0.6rem;
-        margin-bottom: 1.25rem;
-        scrollbar-width: none;
-        -webkit-overflow-scrolling: touch;
-      }
-
-      .track-filters::-webkit-scrollbar {
-        display: none;
-      }
-
-      .track-filter-btn {
-        padding: 6px 13px;
-        font-size: 0.78rem;
-        white-space: nowrap;
-        flex-shrink: 0;
-      }
-
       .cards-grid {
         grid-template-columns: 1fr;
-        gap: 1rem;
-      }
-
-      .catalog-card {
-        padding: 1.15rem;
-      }
-
-      .card-title {
-        font-size: 1.12rem;
-      }
-
-      .card-summary {
-        font-size: 0.85rem;
-        line-height: 1.5;
       }
     }
   </style>
@@ -312,23 +454,44 @@
       <div class="hero-section">
         <h1 class="hero-title">Khám Phá Bản Chất Hệ Thống AI</h1>
         <p class="hero-subtitle">
-          Mỗi bài học là một <strong>Sandbox tương tác độc lập</strong>. Không cần cài đặt cồng kềnh, không phụ thuộc cứng vào bài trước — mở thẳng ví dụ để chạm tay vào toán học và kỹ nghệ bộ nhớ. Học lần đầu thì nên đi theo thứ tự Bài 01 → 34.
+          Mỗi bài học là một <strong>Sandbox trực quan độc lập</strong>. Không cần cài đặt cồng kềnh, chạm tay trực tiếp vào toán học, cấu trúc dữ liệu và tối ưu bộ nhớ GPU/CPU. Lựa chọn lộ trình học phù hợp với mục tiêu của bạn.
         </p>
       </div>
 
-      <!-- Track Filters -->
-      <div class="track-filters" id="track-filters">
-        <button class="track-filter-btn active" data-track="all">Tất Cả Track</button>
-        <button class="track-filter-btn" data-track="hw0">Track 0: Tensor & C++ RAM</button>
-        <button class="track-filter-btn" data-track="hw1">Track 1: Autograd Engine</button>
-        <button class="track-filter-btn" data-track="hw2">Track 2: Modules & Conv2D</button>
-        <button class="track-filter-btn" data-track="hw3">Track 3: GPU CUDA</button>
-        <button class="track-filter-btn" data-track="hw4">Track 4: Transformers & LLMs</button>
+      <!-- Path Selector Tabs -->
+      <div class="path-selector-bar" id="path-tabs">
+        <!-- Rendered dynamically -->
       </div>
 
-      <!-- Cards Grid Mount -->
-      <div class="cards-grid" id="cards-grid">
-        <!-- Rendered dynamically from catalog.json -->
+      <!-- Path Details Banner -->
+      <div class="path-info-card" id="path-info-card">
+        <div class="path-info-text">
+          <div class="path-info-title" id="path-info-title">Lộ trình</div>
+          <div class="path-info-desc" id="path-info-desc">Mô tả</div>
+        </div>
+        <div class="path-progress-box">
+          <div class="path-progress-meter">
+            <div class="path-progress-bar" id="path-progress-bar" style="width: 0%;"></div>
+          </div>
+          <span id="path-progress-label" style="font-size: 0.78rem; color: var(--text-dim); font-family: var(--font-mono);">0/0 bài</span>
+        </div>
+      </div>
+
+      <!-- Controls: Search & Topic Filter -->
+      <div class="controls-wrapper">
+        <div class="search-input-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="catalog-search" class="search-input" placeholder="Tìm theo tên bài học, thẻ tag, hoặc khái niệm toán..." autocomplete="off">
+        </div>
+
+        <div class="topic-filters" id="topic-filters">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Content Mount -->
+      <div id="catalog-content">
+        <!-- Rendered dynamically -->
       </div>
 
     </div>
@@ -336,110 +499,299 @@
   </div>
 
   <script type="module">
+    import { loadCatalog } from './shared/curriculum.js';
     import { isLessonCompleted } from './shared/progress.js';
     import { renderMath, renderInlineMath } from './shared/katex-render.js';
 
-    async function initCatalog() {
-      const gridEl = document.getElementById('cards-grid');
-      const filterBtns = document.querySelectorAll('.track-filter-btn');
+    const STORAGE_PATH_KEY = 'tp_active_path';
 
-      try {
-        const res = await fetch('./examples/catalog.json');
-        const catalog = await res.json();
+    async function initCatalogPage() {
+      const catalog = await loadCatalog('./curriculum/catalog.json');
+      if (!catalog) return;
 
-        function renderCards(selectedTrack) {
-          const filtered = selectedTrack === 'all'
-            ? catalog
-            : catalog.filter(c => c.track === selectedTrack);
+      const pathTabsEl = document.getElementById('path-tabs');
+      const pathTitleEl = document.getElementById('path-info-title');
+      const pathDescEl = document.getElementById('path-info-desc');
+      const progressBarEl = document.getElementById('path-progress-bar');
+      const progressLabelEl = document.getElementById('path-progress-label');
+      const topicFiltersEl = document.getElementById('topic-filters');
+      const searchInputEl = document.getElementById('catalog-search');
+      const contentMountEl = document.getElementById('catalog-content');
 
-          gridEl.innerHTML = filtered.map(item => {
-            const isDone = isLessonCompleted(item.id);
-            const isReady = item.status === 'ready';
-            const trackMap = { hw0: 'Track 0', hw1: 'Track 1', hw2: 'Track 2', hw3: 'Track 3', hw4: 'Track 4' };
-            const trackLabel = trackMap[item.track] || item.track.toUpperCase();
+      const urlParams = new URLSearchParams(window.location.search);
+      let activePathId = urlParams.get('path') || localStorage.getItem(STORAGE_PATH_KEY) || 'main';
+      if (!catalog.paths.some(p => p.id === activePathId)) {
+        activePathId = 'main';
+      }
 
-            return `
-              <div class="catalog-card">
-                <div class="card-top">
-                  <div class="card-meta">
-                    <span class="tp-badge tp-badge-step" style="border-color: rgba(6, 182, 212, 0.3);">
-                      ${trackLabel} • ${item.title.split(':')[0]}
-                    </span>
-                    ${isDone ? `<span style="font-size: 0.75rem; color: var(--color-positive); font-weight: 700;">✓ Hoàn thành</span>` : ''}
-                  </div>
+      let activeTopic = 'all';
+      let searchQuery = '';
 
-                  <h3 class="card-title">${renderInlineMath(item.title)}</h3>
-                  <p class="card-summary">${renderInlineMath(item.summary)}</p>
+      // Map topics by id
+      const topicMap = {};
+      (catalog.topics || []).forEach(t => {
+        topicMap[t.id] = t;
+      });
+
+      // Render Path Tabs
+      const paths = catalog.paths || [];
+      pathTabsEl.innerHTML = paths.map(p => {
+        const isPlanned = p.status === 'planned';
+        const icon = p.id === 'main' ? '🧭' : p.id === 'llm-systems' ? '⚡' : p.id === 'cpp-memory' ? '💾' : '🎓';
+        return `
+          <button class="path-tab-btn ${p.id === activePathId ? 'active' : ''}" data-path="${p.id}">
+            <span>${icon}</span>
+            <span>${p.title}</span>
+            ${isPlanned ? '<span style="font-size: 0.68rem; opacity: 0.6;">(Sắp có)</span>' : ''}
+          </button>
+        `;
+      }).join('');
+
+      // Render Topic Filter Chips
+      const topicChips = [
+        { id: 'all', label: 'Tất cả chủ đề', color: '#94a3b8' },
+        ...(catalog.topics || [])
+      ];
+
+      topicFiltersEl.innerHTML = topicChips.map(t => `
+        <button class="topic-chip ${t.id === activeTopic ? 'active' : ''}" data-topic="${t.id}">
+          <span class="topic-dot" style="background: ${t.color};"></span>
+          <span>${t.label}</span>
+        </button>
+      `).join('');
+
+      function getPathLessons(pathId) {
+        const pathObj = paths.find(p => p.id === pathId);
+        if (!pathObj || !pathObj.sections) return [];
+        return pathObj.sections.flatMap(s => (s.lessons || []).map(slug => ({
+          slug,
+          sectionTitle: s.title
+        })));
+      }
+
+      function updatePathBanner() {
+        const pathObj = paths.find(p => p.id === activePathId) || paths[0];
+        pathTitleEl.textContent = pathObj.title;
+        pathDescEl.textContent = pathObj.description;
+
+        const pathLessons = getPathLessons(activePathId);
+        const total = pathLessons.length;
+        const done = pathLessons.filter(item => isLessonCompleted(item.slug)).length;
+        const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+
+        progressBarEl.style.width = `${pct}%`;
+        progressLabelEl.textContent = `${done}/${total} bài hoàn thành (${pct}%)`;
+      }
+
+      function renderCard(slug, lesson) {
+        if (!lesson) return '';
+        const isDone = isLessonCompleted(slug);
+        const isReady = lesson.status === 'ready';
+        const topic = topicMap[lesson.topic] || { label: lesson.topic || 'Hệ thống', color: '#38bdf8' };
+
+        const diffBadge = lesson.difficulty === 'beginner'
+          ? '<span style="color: #4ade80;">★ Cơ bản</span>'
+          : lesson.difficulty === 'intermediate'
+          ? '<span style="color: #38bdf8;">★★ Trung bình</span>'
+          : '<span style="color: #f43f5e;">★★★ Nâng cao</span>';
+
+        const prereqs = lesson.prerequisites || [];
+        const prereqsHtml = prereqs.length > 0 ? `
+          <div class="card-prereqs">
+            <span>Tiên quyết:</span>
+            ${prereqs.map(reqSlug => {
+              const reqLesson = catalog.lessons[reqSlug];
+              const reqTitle = reqLesson ? reqLesson.title.split(/ — |: /)[0] : reqSlug;
+              return `<a href="./lessons/${reqSlug}/?path=${activePathId}" class="prereq-link">«${reqTitle}»</a>`;
+            }).join(' ')}
+          </div>
+        ` : '';
+
+        return `
+          <div class="catalog-card ${isDone ? 'completed' : ''}">
+            <div class="card-top">
+              <div class="card-meta">
+                <span class="card-topic-pill" style="background: ${topic.color}20; color: ${topic.color}; border: 1px solid ${topic.color}40;">
+                  <span class="topic-dot" style="background: ${topic.color}; width:6px; height:6px;"></span>
+                  ${topic.label}
+                </span>
+                ${isDone ? `<span style="font-size: 0.75rem; color: var(--color-positive); font-weight: 700;">✓ Đã học</span>` : ''}
+              </div>
+
+              <h3 class="card-title">
+                <a href="./lessons/${slug}/?path=${activePathId}">${renderInlineMath(lesson.title)}</a>
+              </h3>
+              <p class="card-summary">${renderInlineMath(lesson.summary || '')}</p>
+
+              ${prereqsHtml}
+            </div>
+
+            <div>
+              <div class="card-tags">
+                ${(lesson.tags || []).map(t => `<span class="tp-badge tp-badge-tag">#${t}</span>`).join('')}
+              </div>
+
+              <div class="card-bottom">
+                <div class="card-badges-left">
+                  <span>${diffBadge}</span>
+                  <span>⏱️ ~${lesson.estimatedMinutes}m</span>
                 </div>
 
-                <div>
-                  <div class="card-tags">
-                    ${(item.tags || []).map(t => `<span class="tp-badge tp-badge-tag">#${t}</span>`).join('')}
-                  </div>
+                ${isReady ? `
+                  <a href="./lessons/${slug}/?path=${activePathId}" class="btn-launch">
+                    Trải Nghiệm ▶
+                  </a>
+                ` : `
+                  <span class="btn-launch disabled">Sắp ra mắt</span>
+                `}
+              </div>
+            </div>
+          </div>
+        `;
+      }
 
-                  <div class="card-action">
-                    <span style="font-size: var(--text-xs); color: var(--text-dim);">
-                      ⏱️ ~${item.estimatedMinutes} phút
-                    </span>
+      function renderView() {
+        const query = searchQuery.trim().toLowerCase();
+        const hasFilter = activeTopic !== 'all' || query.length > 0;
 
-                    ${isReady ? `
-                      <a href="${item.path}" class="btn-launch">
-                        Trải Nghiệm Ngay ▶
-                      </a>
-                    ` : `
-                      <span class="btn-launch disabled">
-                        Đang Phát Triển...
-                      </span>
-                    `}
+        if (hasFilter) {
+          // Flattened filtered view
+          const allSlugs = Object.keys(catalog.lessons || {});
+          const matched = allSlugs.filter(slug => {
+            const lesson = catalog.lessons[slug];
+            if (!lesson) return false;
+
+            if (activeTopic !== 'all' && lesson.topic !== activeTopic) {
+              return false;
+            }
+
+            if (query) {
+              const text = [
+                lesson.title,
+                lesson.summary,
+                slug,
+                ...(lesson.tags || [])
+              ].join(' ').toLowerCase();
+              if (!text.includes(query)) return false;
+            }
+
+            return true;
+          });
+
+          if (matched.length === 0) {
+            contentMountEl.innerHTML = `
+              <div style="text-align: center; padding: 4rem 1rem; color: var(--text-dim);">
+                <div style="font-size: 2.2rem; margin-bottom: 0.8rem;">🔍</div>
+                <div style="font-size: 1.1rem; color: var(--text-main); margin-bottom: 0.4rem;">Không tìm thấy bài học phù hợp</div>
+                <div style="font-size: 0.85rem;">Thử thay đổi từ khóa tìm kiếm hoặc chọn lại chủ đề "Tất cả".</div>
+              </div>
+            `;
+            return;
+          }
+
+          contentMountEl.innerHTML = `
+            <div class="section-block">
+              <div class="section-header">
+                <div class="section-title">Kết quả lọc (${matched.length} bài học)</div>
+              </div>
+              <div class="cards-grid">
+                ${matched.map(slug => renderCard(slug, catalog.lessons[slug])).join('')}
+              </div>
+            </div>
+          `;
+        } else {
+          // Render by sections in current path
+          const pathObj = paths.find(p => p.id === activePathId) || paths[0];
+          const sections = pathObj.sections || [];
+
+          if (sections.length === 0) {
+            contentMountEl.innerHTML = `
+              <div style="text-align: center; padding: 4rem 1rem; color: var(--text-dim);">
+                <div style="font-size: 2.2rem; margin-bottom: 0.8rem;">⏳</div>
+                <div style="font-size: 1.1rem; color: var(--text-main); margin-bottom: 0.4rem;">Lộ trình đang được biên soạn</div>
+                <div style="font-size: 0.85rem;">Vui lòng chuyển sang "Lộ trình đầy đủ" hoặc "Chuyên sâu LLM".</div>
+              </div>
+            `;
+            return;
+          }
+
+          contentMountEl.innerHTML = sections.map((sec, idx) => {
+            const secLessons = sec.lessons || [];
+            return `
+              <div class="section-block">
+                <div class="section-header">
+                  <div class="section-title">
+                    <span>${sec.title}</span>
                   </div>
+                  <div class="section-count">${secLessons.length} bài</div>
+                </div>
+                <div class="cards-grid">
+                  ${secLessons.map(slug => renderCard(slug, catalog.lessons[slug])).join('')}
                 </div>
               </div>
             `;
           }).join('');
-
-          // Kích hoạt render công thức toán học KaTeX trong các thẻ
-          if (window.renderMathInElement) {
-            window.renderMathInElement(gridEl, {
-              delimiters: [
-                { left: '$$', right: '$$', display: true },
-                { left: '$', right: '$', display: false }
-              ],
-              throwOnError: false
-            });
-          }
-          renderMath();
         }
 
-        renderCards('all');
-
-        // Bổ sung listener: nếu KaTeX CDN tải xong sau khi cards đã render
-        window.addEventListener('load', () => {
-          if (window.renderMathInElement) {
-            window.renderMathInElement(gridEl, {
-              delimiters: [
-                { left: '$$', right: '$$', display: true },
-                { left: '$', right: '$', display: false }
-              ],
-              throwOnError: false
-            });
-          }
-          renderMath();
-        });
-
-        filterBtns.forEach(btn => {
-          btn.addEventListener('click', () => {
-            filterBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            renderCards(btn.getAttribute('data-track'));
+        // Auto trigger KaTeX render
+        if (window.renderMathInElement) {
+          window.renderMathInElement(contentMountEl, {
+            delimiters: [
+              { left: '$$', right: '$$', display: true },
+              { left: '$', right: '$', display: false }
+            ],
+            throwOnError: false
           });
-        });
-
-      } catch (e) {
-        gridEl.innerHTML = `<div style="color: var(--color-negative); padding: 2rem;">Lỗi tải catalog.json: ${e.message}</div>`;
+        }
+        renderMath();
       }
+
+      // Event Listeners
+      pathTabsEl.querySelectorAll('.path-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          pathTabsEl.querySelectorAll('.path-tab-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          activePathId = btn.getAttribute('data-path');
+          try {
+            localStorage.setItem(STORAGE_PATH_KEY, activePathId);
+          } catch {}
+          updatePathBanner();
+          renderView();
+        });
+      });
+
+      topicFiltersEl.querySelectorAll('.topic-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          topicFiltersEl.querySelectorAll('.topic-chip').forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          activeTopic = chip.getAttribute('data-topic');
+          renderView();
+        });
+      });
+
+      searchInputEl.addEventListener('input', (e) => {
+        searchQuery = e.target.value;
+        renderView();
+      });
+
+      window.addEventListener('load', () => {
+        if (window.renderMathInElement) {
+          window.renderMathInElement(contentMountEl, {
+            delimiters: [
+              { left: '$$', right: '$$', display: true },
+              { left: '$', right: '$', display: false }
+            ],
+            throwOnError: false
+          });
+        }
+        renderMath();
+      });
+
+      updatePathBanner();
+      renderView();
     }
 
-    initCatalog();
+    initCatalogPage();
   </script>
   <script type="module" src="./shared/components/AiTutor.js"></script>
 </body>

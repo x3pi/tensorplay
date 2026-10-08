@@ -1,0 +1,26 @@
+{
+  "id": "mixed_precision",
+  "title": "Mixed Precision — FP16, BF16 & Loss Scaling",
+  "summary": "Gradient $10^{-8}$ lưu bằng FP16 bị làm tròn thành 0 mà không báo lỗi. Loss Scaling dời gradient vào dải biểu diễn được, scale quá tay thì tràn $\\infty$; BF16 giữ dải mũ của FP32 nên khỏi cần scale.",
+  "topic": "gpu",
+  "tags": [
+    "fp16",
+    "bf16",
+    "loss-scaling",
+    "numerical-stability",
+    "gpu-memory"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 12,
+  "status": "ready",
+  "prerequisites": [
+    "optimizers"
+  ],
+  "related": [
+    "activation_checkpointing"
+  ],
+  "sources": [],
+  "aliases": [
+    "mixed_precision"
+  ]
+}

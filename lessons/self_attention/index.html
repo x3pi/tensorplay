@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta name="tp-lesson" content="self_attention">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scaled Dot-Product Self-Attention - TensorPlay</title>
+  <meta name="description" content="Trực quan hóa cơ chế Self-Attention: Bảng điểm Query/Key, vai trò của hệ số chia sqrt(d_k), và mặt nạ nhân quả Causal Mask trong LLM.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- KaTeX CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <!-- Shared CSS -->
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+
+  <style>
+    .token-bar {
+      display: flex;
+      gap: 0.5rem;
+      width: 100%;
+      justify-content: center;
+    }
+    .token-btn {
+      padding: 6px 14px;
+      font-size: var(--text-xs);
+      font-weight: 700;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-card);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .token-btn.active {
+      border-color: var(--color-info);
+      background: rgba(6, 182, 212, 0.2);
+      color: var(--color-info);
+      box-shadow: 0 0 10px rgba(6, 182, 212, 0.4);
+    }
+    .attn-matrix {
+      display: grid;
+      grid-template-columns: repeat(3, 56px);
+      gap: 6px;
+      justify-content: center;
+    }
+    .attn-cell {
+      width: 56px;
+      height: 56px;
+      background: #090e17;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      transition: all 0.2s ease;
+    }
+  </style>
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    
+    <!-- Top Header -->
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">
+          ← Về Danh Mục
+        </a>
+      </div>
+
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step" style="border-color: rgba(236, 72, 153, 0.4);">
+          Track 4: Transformer & Hệ Thống LLM
+        </span>
+      </div>
+    </header>
+
+    <!-- Main 3-Zone Grid -->
+    <main class="lab-grid">
+      
+      <!-- CỘT 1: DẪN DẮT SOCRATIC & HỆ THỐNG BÌNH LUẬN KIẾN THỨC -->
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt & Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <!-- CỘT 2: SÂN CHƠI TƯƠNG TÁC (CANVAS SANDBOX) -->
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Spotlight Chú Ý & Heatmap 3×3</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Reset</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; align-items: center; gap: 1.25rem;">
+          
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+
+          <!-- Token Selector Bar -->
+          <div style="width: 100%; text-align: center;">
+            <div style="font-size: var(--text-xs); color: var(--text-muted); margin-bottom: 6px;">
+              Chọn Token làm Query để soi đèn chú ý (Spotlight):
+            </div>
+            <div class="token-bar">
+              <button class="token-btn" id="btn-tok-0">1. Deep</button>
+              <button class="token-btn active" id="btn-tok-1">2. Learning</button>
+              <button class="token-btn" id="btn-tok-2">3. Systems</button>
+            </div>
+          </div>
+
+          <!-- Feature Toggles -->
+          <div style="display: flex; gap: 0.75rem; width: 100%; justify-content: center;">
+            <button class="tp-btn tp-btn-primary" id="btn-toggle-mask" style="padding: 4px 12px; font-size: var(--text-xs);">
+              🛡️ Causal Mask: BẬT
+            </button>
+            <button class="tp-btn tp-btn-primary" id="btn-toggle-scale" style="padding: 4px 12px; font-size: var(--text-xs);">
+              ⚖️ Scale √d_k: BẬT
+            </button>
+          </div>
+
+          <!-- Attention Heatmap Matrix (3x3) -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1.25rem; text-align: center;">
+            <div style="font-size: var(--text-xs); font-weight: 700; color: var(--color-info); margin-bottom: 0.75rem; text-transform: uppercase;">
+              Ma Trận Trọng Số Chú Ý P = Softmax(QKᵀ / √d_k + M)
+            </div>
+            <div class="attn-matrix" id="attn-grid">
+              <!-- 9 cells injected by JS -->
+            </div>
+          </div>
+
+          <!-- Active Attention Distribution Bar -->
+          <div style="width: 100%; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; color: var(--text-bright); margin-bottom: 0.5rem;" id="txt-active-token">
+              Phân Phối Chú Ý Của Token "Learning":
+            </div>
+            <div id="mount-score-dist"></div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- CỘT 3: LIVE MATH & TELEMETRY C++ -->
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math & Phân Tích</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+          
+          <!-- Scale KaTeX -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
+              📐 1. Hệ Số Co Dãn Kích Thước
+            </div>
+            <div id="katex-scale-mount" style="min-height: 44px; background: #090d15; border-radius: var(--radius-sm); padding: 0.5rem; display: flex; align-items: center; justify-content: center; overflow-x: auto;"></div>
+          </div>
+
+          <!-- Mask KaTeX -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
+              📐 2. Mặt Nạ Nhân Quả (Causal Mask)
+            </div>
+            <div id="katex-mask-mount" style="min-height: 44px; background: #090d15; border-radius: var(--radius-sm); padding: 0.5rem; display: flex; align-items: center; justify-content: center; overflow-x: auto;"></div>
+          </div>
+
+          <!-- Systems Insight -->
+          <div style="background: #090e17; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem; font-size: var(--text-xs); line-height: 1.6; color: var(--text-dim);">
+            <div style="font-weight: 700; color: var(--color-warning); margin-bottom: 4px;">💡 Trực giác Attention trong LLM:</div>
+            Query là câu hỏi của token hiện tại, Key là nhãn nội dung của các token trước đó, và Value là thông tin thực tế được truyền đi. Causal Mask đảm bảo mô hình không bao giờ 'nhìn trộm bài kiểm tra' ở tương lai!
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createScoreBar } from '../../shared/components/ScoreBar.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath } from '../../shared/katex-render.js';
+    import { LessonLogic, PRESETS } from './logic.js';
+
+    const STEPS = [
+      {
+        heading: "Cơ Chế Query - Key - Value",
+        problem: "Làm sao để một từ hiểu được ngữ cảnh của các từ xung quanh nó trong câu?",
+        challenge: "Click vào từng token 'Deep', 'Learning', 'Systems' để xem góc nhìn chú ý thay đổi như thế nào.",
+        takeaway: "Tích vô hướng giữa vector Query của từ này và vector Key của từ khác tạo ra điểm tương quan."
+      },
+      {
+        heading: "Hệ Số Chia Cứu Mạng: 1 / √d_k",
+        problem: "Khi số chiều d_k của vector tăng lên (ví dụ 128 trong GPT-4), tích vô hướng QKᵀ trở nên cực lớn khiến hàm Softmax bị bão hòa và gradient biến mất!",
+        challenge: "Nhấn nút 'Scale √d_k' để bật/tắt phép chia và quan sát sự cân bằng xác suất.",
+        takeaway: "Chia cho căn bậc hai của d_k giữ cho phương sai bằng 1, giúp gradient ổn định khi huấn luyện mạng lớn."
+      },
+      {
+        heading: "Mặt Nạ Nhân Quả: Causal Mask",
+        problem: "Khi sinh từ tự hồi quy (Autoregressive), từ hiện tại có được phép nhìn thấy các từ sắp được sinh ra ở tương lai không?",
+        challenge: "Bật/Tắt Causal Mask. Khi bật, nửa trên của ma trận bị gán -Infinity khiến xác suất Softmax rơi về đúng 0.0!",
+        takeaway: "Causal Mask là bức tường ngăn cách tương lai bắt buộc phải có trong mọi mô hình GPT/Llama."
+      }
+    ];
+
+    const CURATED_COMMENTS = [
+      {
+        id: "c1",
+        stepIndex: 1,
+        author: "Vaswani et al. (Attention Is All You Need)",
+        badge: "Paper 2017",
+        content: "Chúng tôi nhận thấy với d_k lớn, tích vô hướng tăng độ lớn đáng kể, đẩy hàm softmax vào vùng có đạo hàm cực nhỏ. Vì vậy chúng tôi nhân thêm hệ số 1/sqrt(d_k) để chống lại hiệu ứng này."
+      },
+      {
+        id: "c2",
+        stepIndex: 2,
+        author: "Học Viên DL Systems",
+        badge: "HW4 Attention",
+        content: "Trong HW4, khi code `softmax(scores + mask)`, hãy cẩn thận với giá trị gán cho mask: Dùng `-1e9` hoặc `-inf` an toàn số học để exp(-inf) = 0 mà không gây NaN!"
+      }
+    ];
+
+    const logic = new LessonLogic();
+
+    const wizard = createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 0,
+      onStepChange: (idx) => comments.setStep(idx)
+    });
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: 'self_attention',
+      initialStep: 0,
+      curatedComments: CURATED_COMMENTS,
+      allowUserNotes: true
+    });
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      onPick: (preset) => {
+        logic.applyPreset(preset.state);
+        updateButtons();
+        updateUI();
+      }
+    });
+
+    const tokBtns = [
+      document.getElementById('btn-tok-0'),
+      document.getElementById('btn-tok-1'),
+      document.getElementById('btn-tok-2')
+    ];
+
+    tokBtns.forEach((btn, idx) => {
+      btn.addEventListener('click', () => {
+        logic.onUserUpdate({ selectedTokenIdx: idx });
+        tokBtns.forEach((b, i) => b.className = i === idx ? 'token-btn active' : 'token-btn');
+        updateUI();
+      });
+    });
+
+    const btnMask = document.getElementById('btn-toggle-mask');
+    const btnScale = document.getElementById('btn-toggle-scale');
+
+    btnMask.addEventListener('click', () => {
+      logic.onUserUpdate({ isCausalMask: !logic.state.isCausalMask });
+      updateButtons();
+      updateUI();
+    });
+
+    btnScale.addEventListener('click', () => {
+      logic.onUserUpdate({ isScaled: !logic.state.isScaled });
+      updateButtons();
+      updateUI();
+    });
+
+    function updateButtons() {
+      btnMask.textContent = logic.state.isCausalMask ? "🛡️ Causal Mask: BẬT" : "🌐 Causal Mask: TẮT";
+      btnMask.className = logic.state.isCausalMask ? "tp-btn tp-btn-primary" : "tp-btn tp-btn-ghost";
+
+      btnScale.textContent = logic.state.isScaled ? "⚖️ Scale √d_k: BẬT" : "⚠️ Scale: TẮT (Nguy hiểm)";
+      btnScale.className = logic.state.isScaled ? "tp-btn tp-btn-primary" : "tp-btn tp-btn-ghost";
+    }
+
+    const attnGrid = document.getElementById('attn-grid');
+    const txtActiveToken = document.getElementById('txt-active-token');
+    const katexScale = document.getElementById('katex-scale-mount');
+    const katexMask = document.getElementById('katex-mask-mount');
+
+    const scoreMount = document.getElementById('mount-score-dist');
+    const scoreBars = [
+      createScoreBar(scoreMount, { label: "1. Deep", value: 0.33, min: 0, max: 1, variant: "neutral" }),
+      createScoreBar(scoreMount, { label: "2. Learning", value: 0.33, min: 0, max: 1, variant: "neutral" }),
+      createScoreBar(scoreMount, { label: "3. Systems", value: 0.33, min: 0, max: 1, variant: "neutral" })
+    ];
+
+    function updateUI() {
+      const res = logic.calculate();
+
+      txtActiveToken.textContent = `Phân Phối Chú Ý Của Token "${res.tokens[res.selectedTokenIdx]}":`;
+
+      // Render 3x3 Heatmap
+      attnGrid.innerHTML = '';
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          const val = res.attentionMatrix[i][j];
+          const cell = document.createElement('div');
+          cell.className = 'attn-cell';
+          const isMasked = res.isCausalMask && j > i;
+
+          if (isMasked) {
+            cell.style.background = 'rgba(239, 68, 68, 0.1)';
+            cell.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+            cell.style.color = 'var(--text-dim)';
+            cell.innerHTML = `<span>0.00</span><span style="font-size: 0.6rem; color: #f87171;">Mask</span>`;
+          } else {
+            const alpha = Math.max(0.1, val);
+            cell.style.background = `rgba(6, 182, 212, ${alpha * 0.4})`;
+            cell.style.borderColor = i === res.selectedTokenIdx ? 'var(--color-info)' : 'var(--border-subtle)';
+            cell.style.color = val > 0.4 ? 'var(--color-info)' : 'var(--text-bright)';
+            cell.innerHTML = `<span>${val.toFixed(2)}</span>`;
+          }
+          attnGrid.appendChild(cell);
+        }
+      }
+
+      // Update ScoreBars
+      scoreBars.forEach((sb, idx) => {
+        sb.setValue(res.activeWeights[idx] || 0);
+      });
+
+      renderMath(katexScale, res.formulaScaleKaTeX, { displayMode: true });
+      renderMath(katexMask, res.formulaMaskKaTeX, { displayMode: true });
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      tokBtns.forEach((b, i) => b.className = i === 1 ? 'token-btn active' : 'token-btn');
+      updateButtons();
+      updateUI();
+    });
+
+    updateUI();
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

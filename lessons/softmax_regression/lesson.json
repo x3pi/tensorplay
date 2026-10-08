@@ -1,0 +1,27 @@
+{
+  "id": "softmax_regression",
+  "title": "Chu Trình Softmax Regression (Ma trận)",
+  "summary": "Làm chủ đạo hàm ma trận: Từ Forward $Z = X \\theta \\to$ Softmax $P \\to$ Loss $\\to$ Gradient $\\nabla_\\theta = X^T G \\to$ Cập nhật SGD.",
+  "topic": "foundations",
+  "tags": [
+    "linear-algebra",
+    "gradient-descent",
+    "softmax",
+    "backprop"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 15,
+  "status": "ready",
+  "prerequisites": [
+    "softmax_stability"
+  ],
+  "related": [
+    "twolayer_relu_backprop",
+    "minibatch_sgd"
+  ],
+  "sources": [],
+  "aliases": [
+    "bai_03_softmax_regression",
+    "softmax_regression"
+  ]
+}

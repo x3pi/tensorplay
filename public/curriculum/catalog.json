@@ -1,5 +1,928 @@
 {
-  "lessons": {},
+  "lessons": {
+    "activation_checkpointing": {
+      "id": "activation_checkpointing",
+      "title": "Activation Checkpointing — Đổi 33% Thời Gian Lấy 50% RAM GPU",
+      "summary": "Forward activations chiếm phần lớn VRAM GPU khi train model sâu. Kỹ thuật tái tính toán (recompute) giảm bộ nhớ từ $O(L)$ xuống $O(\\sqrt{L})$ với chi phí chỉ thêm $+33\\%$ thời gian tính.",
+      "topic": "gpu",
+      "tags": [
+        "cuda",
+        "gpu-memory",
+        "activation-checkpointing",
+        "vram-optimization"
+      ],
+      "difficulty": "advanced",
+      "estimatedMinutes": 18,
+      "status": "ready",
+      "prerequisites": [
+        "shared_memory_tiling"
+      ],
+      "related": [
+        "mixed_precision"
+      ],
+      "sources": [],
+      "aliases": [
+        "activation_checkpointing"
+      ],
+      "path": "lessons/activation_checkpointing/index.html"
+    },
+    "activation_valves": {
+      "id": "activation_valves",
+      "title": "Van Kích Hoạt & Lời Nguyền Trọng Số 0",
+      "summary": "Hiện tượng Symmetry Breaking: Khởi tạo trọng số bằng 0 khiến mọi nơ-ron nhận cùng đạo hàm và chết chìm trong tính đối xứng. So sánh van ReLU, GELU và Sigmoid.",
+      "topic": "training-stability",
+      "tags": [
+        "activations",
+        "symmetry-breaking",
+        "initialization",
+        "gelu"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 12,
+      "status": "ready",
+      "prerequisites": [
+        "twolayer_relu_backprop"
+      ],
+      "related": [
+        "kaiming_init"
+      ],
+      "sources": [],
+      "aliases": [
+        "bai_06_activation_valves",
+        "activation_valves"
+      ],
+      "path": "lessons/activation_valves/index.html"
+    },
+    "adamw_weight_decay": {
+      "id": "adamw_weight_decay",
+      "title": "Weight Decay — L2 vs AdamW",
+      "summary": "Cộng L2 vào gradient của Adam làm bước chuẩn hóa $1/\\sqrt{\\hat{v}}$ triệt tiêu hệ số $\\lambda$ và teo trọng số gấp 10 lần. Thuật toán AdamW tách rời (decoupled) giải cứu việc huấn luyện Transformer.",
+      "topic": "training-stability",
+      "tags": [
+        "optimizers",
+        "weight-decay",
+        "adamw",
+        "regularization"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 15,
+      "status": "ready",
+      "prerequisites": [
+        "optimizers"
+      ],
+      "related": [
+        "layernorm_residual"
+      ],
+      "sources": [],
+      "aliases": [
+        "adamw_weight_decay"
+      ],
+      "path": "lessons/adamw_weight_decay/index.html"
+    },
+    "autograd_graph": {
+      "id": "autograd_graph",
+      "title": "Đồ Thị Tính Toán DAG & Sóng Dội Ngược",
+      "summary": "Đồ thị có hướng phi chu trình (DAG). Thứ tự topo (Topological Sort) định đoạt trình tự tính đạo hàm dội ngược trong Autograd Engine.",
+      "topic": "autograd",
+      "tags": [
+        "autograd",
+        "computational-graph",
+        "topological-sort",
+        "dag"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 15,
+      "status": "ready",
+      "prerequisites": [
+        "twolayer_relu_backprop"
+      ],
+      "related": [
+        "reverse_vs_forward_ad",
+        "gradient_check"
+      ],
+      "sources": [],
+      "aliases": [
+        "bai_04_autograd_graph",
+        "autograd_graph"
+      ],
+      "path": "lessons/autograd_graph/index.html"
+    },
+    "batch_norm_dynamics": {
+      "id": "batch_norm_dynamics",
+      "title": "Ổn Định Nội Bộ Với BatchNorm",
+      "summary": "Chuẩn hóa trung bình và phương sai của batch. Hai tham số học $\\gamma$ (phóng đại) và $\\beta$ (dời trục). Phân biệt thống kê khi Train vs Running Stats khi Eval.",
+      "topic": "training-stability",
+      "tags": [
+        "normalization",
+        "batchnorm",
+        "running-stats",
+        "gradient-flow"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 15,
+      "status": "ready",
+      "prerequisites": [
+        "kaiming_init"
+      ],
+      "related": [
+        "layernorm_residual"
+      ],
+      "sources": [],
+      "aliases": [
+        "bai_09_batch_norm_dynamics",
+        "batch_norm_dynamics"
+      ],
+      "path": "lessons/batch_norm_dynamics/index.html"
+    },
+    "broadcast_grad": {
+      "id": "broadcast_grad",
+      "title": "Gradient Của Broadcast (Cộng dồn)",
+      "summary": "Một bias được broadcast cho cả batch thì gradient của nó phải cộng dồn theo trục batch. Bắt bug gán đè `=` (lỗi im lặng) và quên `sum()` (lỗi shape).",
+      "topic": "autograd",
+      "tags": [
+        "autograd",
+        "broadcast",
+        "reduction",
+        "backward-bug"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 12,
+      "status": "ready",
+      "prerequisites": [
+        "strides_views",
+        "autograd_graph"
+      ],
+      "related": [
+        "gradient_check"
+      ],
+      "sources": [],
+      "aliases": [
+        "broadcast_grad"
+      ],
+      "path": "lessons/broadcast_grad/index.html"
+    },
+    "cache_locality": {
+      "id": "cache_locality",
+      "title": "Row-Major vs Col-Major Cache Locality",
+      "summary": "Trực quan hóa CPU Cache L1/L2. Đọc theo dòng (Row-Major) tận dụng Cache Line vs Đọc theo cột (Col-Major) gây nhảy cóc Cache Miss làm tụt hiệu năng gấp 10 lần.",
+      "topic": "memory-systems",
+      "tags": [
+        "hardware",
+        "cpu-cache",
+        "row-major",
+        "memory-access"
+      ],
+      "difficulty": "advanced",
+      "estimatedMinutes": 15,
+      "status": "ready",
+      "prerequisites": [
+        "cpp_matmul_loops"
+      ],
+      "related": [
+        "strides_views"
+      ],
+      "sources": [],
+      "aliases": [
+        "bai_03_cache_locality",
+        "cache_locality"
+      ],
+      "path": "lessons/cache_locality/index.html"
+    },
+    "coalescing_and_banks": {
+      "id": "coalescing_and_banks",
+      "title": "Memory Coalescing & Bank Conflicts",
+      "summary": "Warp 32 luồng đọc bộ nhớ gộp (Coalesced 128-byte transaction). Cơn ác mộng Bank Conflict trong 32 banks Shared Memory và kỹ thuật đệm Padding.",
+      "topic": "gpu",
+      "tags": [
+        "cuda",
+        "coalescing",
+        "bank-conflicts",
+        "warp-level"
+      ],
+      "difficulty": "advanced",
+      "estimatedMinutes": 20,
+      "status": "ready",
+      "prerequisites": [
+        "shared_memory_tiling"
+      ],
+      "related": [
+        "flash_attention"
+      ],
+      "sources": [],
+      "aliases": [
+        "bai_12_coalescing_and_banks",
+        "coalescing_and_banks"
+      ],
+      "path": "lessons/coalescing_and_banks/index.html"
+    },
+    "conv2d_im2col": {
+      "id": "conv2d_im2col",
+      "title": "Conv2D & Thần Chú Im2col",
+      "summary": "Phép cuộn 2D trượt cửa sổ. Kỹ thuật Im2col biến đổi ảnh và bộ lọc thành ma trận 2D khổng lồ để tận dụng tối đa nhân phần cứng GEMM (BLAS/cuBLAS).",
+      "topic": "cnn-data",
+      "tags": [
+        "convolution",
+        "im2col",
+        "gemm",
+        "image-processing"
+      ],
+      "difficulty": "advanced",
+      "estimatedMinutes": 18,
+      "status": "ready",
+      "prerequisites": [
+        "strides_views"
+      ],
+      "related": [
+        "minibatch_assembly"
+      ],
+      "sources": [],
+      "aliases": [
+        "bai_08_conv2d_im2col",
+        "conv2d_im2col"
+      ],
+      "path": "lessons/conv2d_im2col/index.html"
+    },
+    "cpp_matmul_loops": {
+      "id": "cpp_matmul_loops",
+      "title": "Dò Tay Vòng Lặp Nhân Ma Trận C++",
+      "summary": "Dò từng bước 3 vòng lặp `for (i, j, k)` trong C++. Hiểu cơ chế tính toán offset 1D: `A[i * K + k]` và `B[k * N + j]`.",
+      "topic": "memory-systems",
+      "tags": [
+        "c-plus-plus",
+        "pointers",
+        "loops",
+        "memory-offset"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 12,
+      "status": "ready",
+      "prerequisites": [
+        "robot_vision"
+      ],
+      "related": [
+        "cache_locality",
+        "memory_leak",
+        "cuda_threads"
+      ],
+      "sources": [],
+      "aliases": [
+        "bai_06a_cpp_matmul_loops",
+        "cpp_matmul_loops"
+      ],
+      "path": "lessons/cpp_matmul_loops/index.html"
+    },
+    "cross_entropy_logsumexp": {
+      "id": "cross_entropy_logsumexp",
+      "title": "Cross-Entropy dạng Log-Sum-Exp — Ổn Định Số Học Cho Hàm Mất Mát",
+      "summary": "Tính Softmax trước rồi lấy log gây sụp đổ số học khi logit chênh lệch lớn. Công thức gộp $\\text{Loss} = \\text{LogSumExp}(z) - z_y$ triệt tiêu phép chia nguy hiểm và bảo toàn gradient.",
+      "topic": "foundations",
+      "tags": [
+        "numerical-stability",
+        "log-sum-exp",
+        "cross-entropy",
+        "loss-function"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 12,
+      "status": "ready",
+      "prerequisites": [
+        "softmax_stability"
+      ],
+      "related": [
+        "softmax_regression"
+      ],
+      "sources": [],
+      "aliases": [
+        "cross_entropy_logsumexp"
+      ],
+      "path": "lessons/cross_entropy_logsumexp/index.html"
+    },
+    "cuda_threads": {
+      "id": "cuda_threads",
+      "title": "Phân Cấp Luồng CUDA Grid, Blocks & Threads",
+      "summary": "Ánh xạ thread 2D `(blockIdx, threadIdx)` thành tọa độ ma trận toàn cục `(row, col)`. Hiểu mô hình thực thi song song SPMD (Single Program Multiple Data).",
+      "topic": "gpu",
+      "tags": [
+        "cuda",
+        "gpu-programming",
+        "thread-hierarchy",
+        "spmd"
+      ],
+      "difficulty": "advanced",
+      "estimatedMinutes": 20,
+      "status": "ready",
+      "prerequisites": [
+        "cpp_matmul_loops"
+      ],
+      "related": [
+        "shared_memory_tiling"
+      ],
+      "sources": [],
+      "aliases": [
+        "bai_10_cuda_threads",
+        "cuda_threads"
+      ],
+      "path": "lessons/cuda_threads/index.html"
+    },
+    "dropout": {
+      "id": "dropout",
+      "title": "Dropout — Phá Vỡ Co-Adaptation & Kỹ Thuật Inverted Scaling",
+      "summary": "Tắt ngẫu nhiên nơ-ron để ép học đặc trưng độc lập. Sự khác biệt giữa Train và Eval, bẫy quên scale $\\frac{1}{1-p}$ và dòng gradient dội ngược qua mặt nạ.",
+      "topic": "training-stability",
+      "tags": [
+        "regularization",
+        "dropout",
+        "inverted-scaling",
+        "ensemble"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 12,
+      "status": "ready",
+      "prerequisites": [
+        "kaiming_init"
+      ],
+      "related": [
+        "layernorm_residual"
+      ],
+      "sources": [],
+      "aliases": [
+        "dropout"
+      ],
+      "path": "lessons/dropout/index.html"
+    },
+    "flash_attention": {
+      "id": "flash_attention",
+      "title": "FlashAttention SRAM Tiling & Online Softmax",
+      "summary": "IO-Aware Algorithm: Tại sao không bao giờ ghi ma trận Attention $N \\times N$ xuống HBM? Thuật toán Online Softmax chia khối chạy trọn vẹn trong SRAM GPU.",
+      "topic": "llm-serving",
+      "tags": [
+        "flash-attention",
+        "online-softmax",
+        "io-aware",
+        "kernel-fusion"
+      ],
+      "difficulty": "advanced",
+      "estimatedMinutes": 25,
+      "status": "ready",
+      "prerequisites": [
+        "shared_memory_tiling",
+        "self_attention"
+      ],
+      "related": [
+        "kv_cache_anatomy"
+      ],
+      "sources": [],
+      "aliases": [
+        "bai_15_flash_attention_concept",
+        "flash_attention"
+      ],
+      "path": "lessons/flash_attention/index.html"
+    },
+    "gradient_check": {
+      "id": "gradient_check",
+      "title": "Kiểm Tra Gradient Bằng Số (Gradient Check)",
+      "summary": "So sánh gradient giải tích trong code với sai phân hữu hạn (Finite Difference). Đồ thị sai số chữ V, chọn $\\varepsilon$, và bẫy float32 gây báo động giả.",
+      "topic": "autograd",
+      "tags": [
+        "autograd",
+        "gradient-check",
+        "numerical-methods",
+        "float32"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 12,
+      "status": "ready",
+      "prerequisites": [
+        "autograd_graph"
+      ],
+      "related": [
+        "reverse_vs_forward_ad"
+      ],
+      "sources": [],
+      "aliases": [
+        "gradient_check"
+      ],
+      "path": "lessons/gradient_check/index.html"
+    },
+    "kaiming_init": {
+      "id": "kaiming_init",
+      "title": "Khởi Tạo Kaiming — Giữ Tín Hiệu Qua Mạng Sâu",
+      "summary": "Mỗi tầng nhân năng lượng tín hiệu với $g = n \\sigma^2 k$. Vì sao Kaiming chọn phương sai $2/n$ cho mạng ReLU để ngăn chặn bùng nổ / tiêu biến qua 20 tầng.",
+      "topic": "training-stability",
+      "tags": [
+        "initialization",
+        "kaiming",
+        "variance-scaling",
+        "deep-networks"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 12,
+      "status": "ready",
+      "prerequisites": [
+        "activation_valves"
+      ],
+      "related": [
+        "batch_norm_dynamics",
+        "dropout"
+      ],
+      "sources": [],
+      "aliases": [
+        "kaiming_init"
+      ],
+      "path": "lessons/kaiming_init/index.html"
+    },
+    "kv_cache_anatomy": {
+      "id": "kv_cache_anatomy",
+      "title": "Giải Phẫu KV-Cache Trong LLM Serving",
+      "summary": "Suy diễn tự hồi quy (Autoregressive Generation): Tại sao phải lưu bộ nhớ đệm KV? Ước tính dung lượng RAM GPU của KV Cache theo batch size và độ dài sinh token.",
+      "topic": "llm-serving",
+      "tags": [
+        "llm-serving",
+        "kv-cache",
+        "autoregressive",
+        "memory-budget"
+      ],
+      "difficulty": "advanced",
+      "estimatedMinutes": 18,
+      "status": "ready",
+      "prerequisites": [
+        "self_attention"
+      ],
+      "related": [
+        "flash_attention"
+      ],
+      "sources": [],
+      "aliases": [
+        "bai_14_kv_cache_anatomy",
+        "kv_cache_anatomy"
+      ],
+      "path": "lessons/kv_cache_anatomy/index.html"
+    },
+    "layernorm_residual": {
+      "id": "layernorm_residual",
+      "title": "LayerNorm & Residual — Chuẩn Hóa Theo Mẫu, Cao Tốc Cho Gradient",
+      "summary": "Vì sao Transformer bỏ BatchNorm: khi sinh từng token batch chỉ có 1 mẫu nên phương sai bằng 0. LayerNorm chuẩn hóa theo hàng, còn kết nối residual $y = x + f(x)$ cho gradient một đường đi thẳng $(1 + f')^L$.",
+      "topic": "training-stability",
+      "tags": [
+        "layernorm",
+        "residual",
+        "transformer-block",
+        "vanishing-gradient"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 12,
+      "status": "ready",
+      "prerequisites": [
+        "batch_norm_dynamics"
+      ],
+      "related": [
+        "self_attention",
+        "rnn_bptt"
+      ],
+      "sources": [],
+      "aliases": [
+        "layernorm_residual"
+      ],
+      "path": "lessons/layernorm_residual/index.html"
+    },
+    "memory_leak": {
+      "id": "memory_leak",
+      "title": "Robot Chết Đuối Vì Memory Leak",
+      "summary": "Mô phỏng rò rỉ bộ nhớ qua từng mini-batch. Quên lệnh `free(grad)` hoặc `delete[]` khiến RAM đầy tràn và hệ điều hành tiêu diệt tiến trình (OOM Killer).",
+      "topic": "memory-systems",
+      "tags": [
+        "c-plus-plus",
+        "memory-leak",
+        "valgrind",
+        "systems"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 10,
+      "status": "ready",
+      "prerequisites": [
+        "cpp_matmul_loops"
+      ],
+      "related": [
+        "cache_locality"
+      ],
+      "sources": [],
+      "aliases": [
+        "bai_03b_memory_leak",
+        "memory_leak"
+      ],
+      "path": "lessons/memory_leak/index.html"
+    },
+    "minibatch_assembly": {
+      "id": "minibatch_assembly",
+      "title": "Băng Chuyền Mini-Batching Assembly Line",
+      "summary": "Dataloader đa tiến trình: Cân đối giữa Worker CPU tiền xử lý và GPU nạp dữ liệu. Hiện tượng Starvation (GPU đói dữ liệu) khi I/O tắc nghẽn.",
+      "topic": "cnn-data",
+      "tags": [
+        "dataloader",
+        "multiprocessing",
+        "data-pipeline",
+        "gpu-feeding"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 12,
+      "status": "ready",
+      "prerequisites": [
+        "minibatch_sgd"
+      ],
+      "related": [
+        "conv2d_im2col"
+      ],
+      "sources": [],
+      "aliases": [
+        "bai_07_minibatch_assembly",
+        "minibatch_assembly"
+      ],
+      "path": "lessons/minibatch_assembly/index.html"
+    },
+    "minibatch_sgd": {
+      "id": "minibatch_sgd",
+      "title": "Xử Lý Mini-batch $B=2$ & Phép Chuyển Vị $X^T$",
+      "summary": "Xử lý song song mini-batch 2 ảnh cùng lúc. Trực giác hình học phép nhân ma trận chuyển vị $X^T G$ để gom gradient toàn batch.",
+      "topic": "foundations",
+      "tags": [
+        "mini-batch",
+        "matrix-multiplication",
+        "parallelism",
+        "optimization"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 12,
+      "status": "ready",
+      "prerequisites": [
+        "twolayer_relu_backprop"
+      ],
+      "related": [
+        "minibatch_assembly",
+        "optimizers"
+      ],
+      "sources": [],
+      "aliases": [
+        "bai_05_minibatch_sgd",
+        "minibatch_sgd"
+      ],
+      "path": "lessons/minibatch_sgd/index.html"
+    },
+    "mixed_precision": {
+      "id": "mixed_precision",
+      "title": "Mixed Precision — FP16, BF16 & Loss Scaling",
+      "summary": "Gradient $10^{-8}$ lưu bằng FP16 bị làm tròn thành 0 mà không báo lỗi. Loss Scaling dời gradient vào dải biểu diễn được, scale quá tay thì tràn $\\infty$; BF16 giữ dải mũ của FP32 nên khỏi cần scale.",
+      "topic": "gpu",
+      "tags": [
+        "fp16",
+        "bf16",
+        "loss-scaling",
+        "numerical-stability",
+        "gpu-memory"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 12,
+      "status": "ready",
+      "prerequisites": [
+        "optimizers"
+      ],
+      "related": [
+        "activation_checkpointing"
+      ],
+      "sources": [],
+      "aliases": [
+        "mixed_precision"
+      ],
+      "path": "lessons/mixed_precision/index.html"
+    },
+    "multi_head_attention": {
+      "id": "multi_head_attention",
+      "title": "Multi-Head Attention — Nhiều Cặp Mắt Cùng Nhìn",
+      "summary": "Chia $d_{model}$ thành $h$ đầu để mỗi đầu học một kiểu quan hệ khác nhau, số tham số vẫn là $4d^2$. Đánh đổi: đầu quá hẹp ($d_k = 1$) mất khả năng phân biệt; nền tảng của MQA/GQA giảm KV-Cache.",
+      "topic": "transformer",
+      "tags": [
+        "multi-head",
+        "attention",
+        "kv-cache",
+        "gqa"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 12,
+      "status": "ready",
+      "prerequisites": [
+        "self_attention"
+      ],
+      "related": [
+        "kv_cache_anatomy"
+      ],
+      "sources": [],
+      "aliases": [
+        "multi_head_attention"
+      ],
+      "path": "lessons/multi_head_attention/index.html"
+    },
+    "optimizers": {
+      "id": "optimizers",
+      "title": "Động Học Các Bộ Tối Ưu — SGD vs Momentum vs Adam",
+      "summary": "Chạy đua trên hẻm núi dẹt (ill-conditioned valley): SGD dao động ziczac kẹt bước, Momentum tăng tốc dọc rãnh, Adam tự cân bằng tỉ lệ bước nhảy và tầm quan trọng của Bias Correction.",
+      "topic": "training-stability",
+      "tags": [
+        "optimization",
+        "sgd",
+        "momentum",
+        "adam",
+        "ill-conditioned"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 15,
+      "status": "ready",
+      "prerequisites": [
+        "minibatch_sgd"
+      ],
+      "related": [
+        "adamw_weight_decay",
+        "mixed_precision"
+      ],
+      "sources": [],
+      "aliases": [
+        "optimizers"
+      ],
+      "path": "lessons/optimizers/index.html"
+    },
+    "positional_encoding": {
+      "id": "positional_encoding",
+      "title": "Positional Encoding — Attention Không Biết Thứ Tự",
+      "summary": "\"Chó cắn người\" và \"người cắn chó\" cho cùng một đầu ra khi chỉ có Self-Attention (bất biến hoán vị). Cộng mã vị trí sin/cos $\\text{PE}(i)$ vào embedding để thứ tự từ đi vào điểm số $QK^\\top$.",
+      "topic": "transformer",
+      "tags": [
+        "positional-encoding",
+        "permutation-invariance",
+        "attention",
+        "rope"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 10,
+      "status": "ready",
+      "prerequisites": [
+        "self_attention"
+      ],
+      "related": [
+        "multi_head_attention"
+      ],
+      "sources": [],
+      "aliases": [
+        "positional_encoding"
+      ],
+      "path": "lessons/positional_encoding/index.html"
+    },
+    "reverse_vs_forward_ad": {
+      "id": "reverse_vs_forward_ad",
+      "title": "Reverse-mode vs Forward-mode AD",
+      "summary": "So sánh độ phức tạp tính toán giữa Forward AD (thích hợp $f: \\mathbb{R} \\to \\mathbb{R}^m$) và Reverse AD (thích hợp mạng nơ-ron $f: \\mathbb{R}^n \\to \\mathbb{R}$ với hàng triệu tham số).",
+      "topic": "autograd",
+      "tags": [
+        "autograd",
+        "reverse-ad",
+        "forward-ad",
+        "jacobian"
+      ],
+      "difficulty": "advanced",
+      "estimatedMinutes": 15,
+      "status": "ready",
+      "prerequisites": [
+        "autograd_graph"
+      ],
+      "related": [
+        "gradient_check"
+      ],
+      "sources": [],
+      "aliases": [
+        "bai_05_reverse_vs_forward_ad",
+        "reverse_vs_forward_ad"
+      ],
+      "path": "lessons/reverse_vs_forward_ad/index.html"
+    },
+    "rnn_bptt": {
+      "id": "rnn_bptt",
+      "title": "RNN & BPTT — Vì Sao Cần Transformer?",
+      "summary": "Lan truyền ngược qua thời gian (BPTT). Hiện tượng tiêu biến và bùng nổ gradient trong chuỗi tuần hoàn, đường cao tốc LSTM và bước chuyển dịch sang Self-Attention.",
+      "topic": "transformer",
+      "tags": [
+        "rnn",
+        "bptt",
+        "vanishing-gradient",
+        "lstm",
+        "transformer-motivation"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 15,
+      "status": "ready",
+      "prerequisites": [
+        "autograd_graph"
+      ],
+      "related": [
+        "self_attention"
+      ],
+      "sources": [],
+      "aliases": [
+        "rnn_bptt"
+      ],
+      "path": "lessons/rnn_bptt/index.html"
+    },
+    "robot_vision": {
+      "id": "robot_vision",
+      "title": "Robot Vision & Tích Vô Hướng Vector",
+      "summary": "Nhận diện biển báo $2 \\times 2$. Trọng số âm làm \"bằng chứng bác bỏ\" triệt tiêu đèn pha chói lóa. Trải phẳng 2D $\\to$ 1D, công thức $\\text{offset} = r \\times N + c$.",
+      "topic": "foundations",
+      "tags": [
+        "computer-vision",
+        "linear-algebra",
+        "dot-product",
+        "c-plus-plus-memory"
+      ],
+      "difficulty": "beginner",
+      "estimatedMinutes": 8,
+      "status": "ready",
+      "prerequisites": [],
+      "related": [
+        "cpp_matmul_loops",
+        "softmax_stability"
+      ],
+      "sources": [],
+      "aliases": [
+        "bai_01_robot_vision",
+        "robot_vision"
+      ],
+      "path": "lessons/robot_vision/index.html"
+    },
+    "self_attention": {
+      "id": "self_attention",
+      "title": "Scaled Dot-Product Self-Attention",
+      "summary": "Cơ chế $Q, K, V$. Tại sao phải chia cho $\\sqrt{d_k}$ (bảo toàn phương sai tránh bão hòa Softmax). Trực quan hóa ma trận trọng số tương quan Attention Map.",
+      "topic": "transformer",
+      "tags": [
+        "transformer",
+        "self-attention",
+        "scaling-factor",
+        "softmax-saturation"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 15,
+      "status": "ready",
+      "prerequisites": [
+        "rnn_bptt"
+      ],
+      "related": [
+        "positional_encoding",
+        "multi_head_attention",
+        "kv_cache_anatomy"
+      ],
+      "sources": [],
+      "aliases": [
+        "bai_13_self_attention",
+        "self_attention"
+      ],
+      "path": "lessons/self_attention/index.html"
+    },
+    "shared_memory_tiling": {
+      "id": "shared_memory_tiling",
+      "title": "Tiled MatMul & Shared Memory",
+      "summary": "Shared Memory (SRAM on-chip) nhanh gấp 100 lần Global Memory (DRAM). Kỹ thuật Tiling chia nhỏ ma trận thành khối và đồng bộ `__syncthreads()`.",
+      "topic": "gpu",
+      "tags": [
+        "cuda",
+        "shared-memory",
+        "tiling",
+        "gemm-optimization"
+      ],
+      "difficulty": "advanced",
+      "estimatedMinutes": 22,
+      "status": "ready",
+      "prerequisites": [
+        "cuda_threads"
+      ],
+      "related": [
+        "coalescing_and_banks",
+        "flash_attention"
+      ],
+      "sources": [],
+      "aliases": [
+        "bai_11_shared_memory_tiling",
+        "shared_memory_tiling"
+      ],
+      "path": "lessons/shared_memory_tiling/index.html"
+    },
+    "softmax_regression": {
+      "id": "softmax_regression",
+      "title": "Chu Trình Softmax Regression (Ma trận)",
+      "summary": "Làm chủ đạo hàm ma trận: Từ Forward $Z = X \\theta \\to$ Softmax $P \\to$ Loss $\\to$ Gradient $\\nabla_\\theta = X^T G \\to$ Cập nhật SGD.",
+      "topic": "foundations",
+      "tags": [
+        "linear-algebra",
+        "gradient-descent",
+        "softmax",
+        "backprop"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 15,
+      "status": "ready",
+      "prerequisites": [
+        "softmax_stability"
+      ],
+      "related": [
+        "twolayer_relu_backprop",
+        "minibatch_sgd"
+      ],
+      "sources": [],
+      "aliases": [
+        "bai_03_softmax_regression",
+        "softmax_regression"
+      ],
+      "path": "lessons/softmax_regression/index.html"
+    },
+    "softmax_stability": {
+      "id": "softmax_stability",
+      "title": "Softmax & Cơn Ác Mộng Lóa Sáng",
+      "summary": "Đèn pha cực đại đẩy logits lên $+1000$ gây tràn số FP32 (NaN/Infinity). Kỹ thuật Safe Softmax trừ $\\max(z)$ và núm vặn Nhiệt độ Softmax $T$ (Temperature Scaling).",
+      "topic": "foundations",
+      "tags": [
+        "numerical-stability",
+        "temperature-scaling",
+        "softmax"
+      ],
+      "difficulty": "beginner",
+      "estimatedMinutes": 10,
+      "status": "ready",
+      "prerequisites": [
+        "robot_vision"
+      ],
+      "related": [
+        "cross_entropy_logsumexp",
+        "softmax_regression"
+      ],
+      "sources": [],
+      "aliases": [
+        "bai_02_softmax_loss",
+        "softmax_stability"
+      ],
+      "path": "lessons/softmax_stability/index.html"
+    },
+    "strides_views": {
+      "id": "strides_views",
+      "title": "Strides & View — Một Vùng Nhớ, Nhiều Cách Nhìn",
+      "summary": "Mô hình NDArray dùng shape, strides và offset để transpose, slice, broadcast mà không tốn 1 byte sao chép. Khi nào bắt buộc phải gọi `compact()` sang bộ nhớ mới.",
+      "topic": "memory-systems",
+      "tags": [
+        "ndarray",
+        "strides",
+        "views",
+        "memory-layout",
+        "compact"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 15,
+      "status": "ready",
+      "prerequisites": [
+        "cpp_matmul_loops"
+      ],
+      "related": [
+        "broadcast_grad",
+        "conv2d_im2col"
+      ],
+      "sources": [],
+      "aliases": [
+        "strides_views"
+      ],
+      "path": "lessons/strides_views/index.html"
+    },
+    "twolayer_relu_backprop": {
+      "id": "twolayer_relu_backprop",
+      "title": "Mạng Nơ-ron 2 Tầng & Lan Truyền Ngược ReLU",
+      "summary": "Cơ chế phi tuyến tính: Van một chiều ReLU chặn dòng gradient ở nơ-ron âm ($Z_1 \\le 0$). Đạo hàm dội ngược qua tầng ẩn.",
+      "topic": "foundations",
+      "tags": [
+        "deep-learning",
+        "backprop",
+        "relu",
+        "neural-network"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 15,
+      "status": "ready",
+      "prerequisites": [
+        "softmax_regression"
+      ],
+      "related": [
+        "activation_valves",
+        "autograd_graph"
+      ],
+      "sources": [],
+      "aliases": [
+        "bai_04_twolayer_relu_backprop",
+        "twolayer_relu_backprop"
+      ],
+      "path": "lessons/twolayer_relu_backprop/index.html"
+    }
+  },
   "topics": [
     {
       "id": "foundations",
@@ -42,6 +965,449 @@
       "color": "#facc15"
     }
   ],
-  "paths": [],
-  "totalLessons": 0
+  "paths": [
+    {
+      "id": "cmu-10414",
+      "title": "Theo khung khóa CMU 10-414/714",
+      "description": "Lộ trình đối chiếu với hệ thống bài tập thực hành CMU 10-414/714 (Deep Learning Systems).",
+      "default": false,
+      "status": "planned",
+      "sections": [],
+      "positions": {}
+    },
+    {
+      "id": "cpp-memory",
+      "title": "Kỹ nghệ Bộ nhớ & C++/CUDA",
+      "description": "Lộ trình chuyên sâu 10 bài về bố cục RAM, CPU Cache locality, lập trình GPU CUDA và chiến lược tiết kiệm VRAM.",
+      "default": false,
+      "sections": [
+        {
+          "title": "Chặng 1 — Bố Cục Bộ Nhớ C++ & CPU Cache",
+          "lessons": [
+            "robot_vision",
+            "cpp_matmul_loops",
+            "memory_leak",
+            "cache_locality",
+            "strides_views",
+            "minibatch_assembly"
+          ]
+        },
+        {
+          "title": "Chặng 2 — Tăng Tốc Phần Cứng GPU & Tiết Kiệm VRAM",
+          "lessons": [
+            "cuda_threads",
+            "shared_memory_tiling",
+            "coalescing_and_banks",
+            "activation_checkpointing"
+          ]
+        }
+      ],
+      "positions": {
+        "robot_vision": {
+          "index": 1,
+          "sectionTitle": "Chặng 1 — Bố Cục Bộ Nhớ C++ & CPU Cache",
+          "total": 10
+        },
+        "cpp_matmul_loops": {
+          "index": 2,
+          "sectionTitle": "Chặng 1 — Bố Cục Bộ Nhớ C++ & CPU Cache",
+          "total": 10
+        },
+        "memory_leak": {
+          "index": 3,
+          "sectionTitle": "Chặng 1 — Bố Cục Bộ Nhớ C++ & CPU Cache",
+          "total": 10
+        },
+        "cache_locality": {
+          "index": 4,
+          "sectionTitle": "Chặng 1 — Bố Cục Bộ Nhớ C++ & CPU Cache",
+          "total": 10
+        },
+        "strides_views": {
+          "index": 5,
+          "sectionTitle": "Chặng 1 — Bố Cục Bộ Nhớ C++ & CPU Cache",
+          "total": 10
+        },
+        "minibatch_assembly": {
+          "index": 6,
+          "sectionTitle": "Chặng 1 — Bố Cục Bộ Nhớ C++ & CPU Cache",
+          "total": 10
+        },
+        "cuda_threads": {
+          "index": 7,
+          "sectionTitle": "Chặng 2 — Tăng Tốc Phần Cứng GPU & Tiết Kiệm VRAM",
+          "total": 10
+        },
+        "shared_memory_tiling": {
+          "index": 8,
+          "sectionTitle": "Chặng 2 — Tăng Tốc Phần Cứng GPU & Tiết Kiệm VRAM",
+          "total": 10
+        },
+        "coalescing_and_banks": {
+          "index": 9,
+          "sectionTitle": "Chặng 2 — Tăng Tốc Phần Cứng GPU & Tiết Kiệm VRAM",
+          "total": 10
+        },
+        "activation_checkpointing": {
+          "index": 10,
+          "sectionTitle": "Chặng 2 — Tăng Tốc Phần Cứng GPU & Tiết Kiệm VRAM",
+          "total": 10
+        }
+      }
+    },
+    {
+      "id": "llm-systems",
+      "title": "Đường nhanh tới LLM Systems",
+      "description": "Lộ trình tinh gọn 13 bài tập trung vào cơ chế cốt lõi của Transformer và tối ưu hóa serving suy luận.",
+      "default": false,
+      "sections": [
+        {
+          "title": "Chặng 1 — Nền tảng Toán & Gradient",
+          "lessons": [
+            "robot_vision",
+            "softmax_stability",
+            "cross_entropy_logsumexp",
+            "softmax_regression",
+            "autograd_graph"
+          ]
+        },
+        {
+          "title": "Chặng 2 — Khối Kiến Trúc Transformer",
+          "lessons": [
+            "layernorm_residual",
+            "rnn_bptt",
+            "self_attention",
+            "positional_encoding",
+            "multi_head_attention"
+          ]
+        },
+        {
+          "title": "Chặng 3 — Tối Ưu Hệ Thống & LLM Serving",
+          "lessons": [
+            "mixed_precision",
+            "kv_cache_anatomy",
+            "flash_attention"
+          ]
+        }
+      ],
+      "positions": {
+        "robot_vision": {
+          "index": 1,
+          "sectionTitle": "Chặng 1 — Nền tảng Toán & Gradient",
+          "total": 13
+        },
+        "softmax_stability": {
+          "index": 2,
+          "sectionTitle": "Chặng 1 — Nền tảng Toán & Gradient",
+          "total": 13
+        },
+        "cross_entropy_logsumexp": {
+          "index": 3,
+          "sectionTitle": "Chặng 1 — Nền tảng Toán & Gradient",
+          "total": 13
+        },
+        "softmax_regression": {
+          "index": 4,
+          "sectionTitle": "Chặng 1 — Nền tảng Toán & Gradient",
+          "total": 13
+        },
+        "autograd_graph": {
+          "index": 5,
+          "sectionTitle": "Chặng 1 — Nền tảng Toán & Gradient",
+          "total": 13
+        },
+        "layernorm_residual": {
+          "index": 6,
+          "sectionTitle": "Chặng 2 — Khối Kiến Trúc Transformer",
+          "total": 13
+        },
+        "rnn_bptt": {
+          "index": 7,
+          "sectionTitle": "Chặng 2 — Khối Kiến Trúc Transformer",
+          "total": 13
+        },
+        "self_attention": {
+          "index": 8,
+          "sectionTitle": "Chặng 2 — Khối Kiến Trúc Transformer",
+          "total": 13
+        },
+        "positional_encoding": {
+          "index": 9,
+          "sectionTitle": "Chặng 2 — Khối Kiến Trúc Transformer",
+          "total": 13
+        },
+        "multi_head_attention": {
+          "index": 10,
+          "sectionTitle": "Chặng 2 — Khối Kiến Trúc Transformer",
+          "total": 13
+        },
+        "mixed_precision": {
+          "index": 11,
+          "sectionTitle": "Chặng 3 — Tối Ưu Hệ Thống & LLM Serving",
+          "total": 13
+        },
+        "kv_cache_anatomy": {
+          "index": 12,
+          "sectionTitle": "Chặng 3 — Tối Ưu Hệ Thống & LLM Serving",
+          "total": 13
+        },
+        "flash_attention": {
+          "index": 13,
+          "sectionTitle": "Chặng 3 — Tối Ưu Hệ Thống & LLM Serving",
+          "total": 13
+        }
+      }
+    },
+    {
+      "id": "main",
+      "title": "Lộ trình đầy đủ",
+      "description": "Toàn cảnh hệ thống học sâu: từ vector đầu tiên đến FlashAttention và KV-Cache.",
+      "default": true,
+      "sections": [
+        {
+          "title": "Chặng 1 — Nền tảng Tensor & Softmax",
+          "lessons": [
+            "robot_vision",
+            "softmax_stability",
+            "softmax_regression",
+            "cross_entropy_logsumexp",
+            "twolayer_relu_backprop",
+            "minibatch_sgd"
+          ]
+        },
+        {
+          "title": "Chặng 2 — Kỹ nghệ Bộ nhớ C++ & Strides",
+          "lessons": [
+            "cpp_matmul_loops",
+            "memory_leak",
+            "cache_locality",
+            "strides_views"
+          ]
+        },
+        {
+          "title": "Chặng 3 — Động cơ Autograd & Gradient",
+          "lessons": [
+            "autograd_graph",
+            "reverse_vs_forward_ad",
+            "broadcast_grad",
+            "gradient_check"
+          ]
+        },
+        {
+          "title": "Chặng 4 — Huấn luyện Ổn định & Tối ưu hóa",
+          "lessons": [
+            "activation_valves",
+            "kaiming_init",
+            "optimizers",
+            "adamw_weight_decay",
+            "batch_norm_dynamics",
+            "dropout",
+            "layernorm_residual"
+          ]
+        },
+        {
+          "title": "Chặng 5 — Mạng Tích chập & Dataloader",
+          "lessons": [
+            "conv2d_im2col",
+            "minibatch_assembly"
+          ]
+        },
+        {
+          "title": "Chặng 6 — Tăng tốc GPU & CUDA",
+          "lessons": [
+            "cuda_threads",
+            "shared_memory_tiling",
+            "coalescing_and_banks",
+            "mixed_precision",
+            "activation_checkpointing"
+          ]
+        },
+        {
+          "title": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
+          "lessons": [
+            "rnn_bptt",
+            "self_attention",
+            "positional_encoding",
+            "multi_head_attention",
+            "kv_cache_anatomy",
+            "flash_attention"
+          ]
+        }
+      ],
+      "positions": {
+        "robot_vision": {
+          "index": 1,
+          "sectionTitle": "Chặng 1 — Nền tảng Tensor & Softmax",
+          "total": 34
+        },
+        "softmax_stability": {
+          "index": 2,
+          "sectionTitle": "Chặng 1 — Nền tảng Tensor & Softmax",
+          "total": 34
+        },
+        "softmax_regression": {
+          "index": 3,
+          "sectionTitle": "Chặng 1 — Nền tảng Tensor & Softmax",
+          "total": 34
+        },
+        "cross_entropy_logsumexp": {
+          "index": 4,
+          "sectionTitle": "Chặng 1 — Nền tảng Tensor & Softmax",
+          "total": 34
+        },
+        "twolayer_relu_backprop": {
+          "index": 5,
+          "sectionTitle": "Chặng 1 — Nền tảng Tensor & Softmax",
+          "total": 34
+        },
+        "minibatch_sgd": {
+          "index": 6,
+          "sectionTitle": "Chặng 1 — Nền tảng Tensor & Softmax",
+          "total": 34
+        },
+        "cpp_matmul_loops": {
+          "index": 7,
+          "sectionTitle": "Chặng 2 — Kỹ nghệ Bộ nhớ C++ & Strides",
+          "total": 34
+        },
+        "memory_leak": {
+          "index": 8,
+          "sectionTitle": "Chặng 2 — Kỹ nghệ Bộ nhớ C++ & Strides",
+          "total": 34
+        },
+        "cache_locality": {
+          "index": 9,
+          "sectionTitle": "Chặng 2 — Kỹ nghệ Bộ nhớ C++ & Strides",
+          "total": 34
+        },
+        "strides_views": {
+          "index": 10,
+          "sectionTitle": "Chặng 2 — Kỹ nghệ Bộ nhớ C++ & Strides",
+          "total": 34
+        },
+        "autograd_graph": {
+          "index": 11,
+          "sectionTitle": "Chặng 3 — Động cơ Autograd & Gradient",
+          "total": 34
+        },
+        "reverse_vs_forward_ad": {
+          "index": 12,
+          "sectionTitle": "Chặng 3 — Động cơ Autograd & Gradient",
+          "total": 34
+        },
+        "broadcast_grad": {
+          "index": 13,
+          "sectionTitle": "Chặng 3 — Động cơ Autograd & Gradient",
+          "total": 34
+        },
+        "gradient_check": {
+          "index": 14,
+          "sectionTitle": "Chặng 3 — Động cơ Autograd & Gradient",
+          "total": 34
+        },
+        "activation_valves": {
+          "index": 15,
+          "sectionTitle": "Chặng 4 — Huấn luyện Ổn định & Tối ưu hóa",
+          "total": 34
+        },
+        "kaiming_init": {
+          "index": 16,
+          "sectionTitle": "Chặng 4 — Huấn luyện Ổn định & Tối ưu hóa",
+          "total": 34
+        },
+        "optimizers": {
+          "index": 17,
+          "sectionTitle": "Chặng 4 — Huấn luyện Ổn định & Tối ưu hóa",
+          "total": 34
+        },
+        "adamw_weight_decay": {
+          "index": 18,
+          "sectionTitle": "Chặng 4 — Huấn luyện Ổn định & Tối ưu hóa",
+          "total": 34
+        },
+        "batch_norm_dynamics": {
+          "index": 19,
+          "sectionTitle": "Chặng 4 — Huấn luyện Ổn định & Tối ưu hóa",
+          "total": 34
+        },
+        "dropout": {
+          "index": 20,
+          "sectionTitle": "Chặng 4 — Huấn luyện Ổn định & Tối ưu hóa",
+          "total": 34
+        },
+        "layernorm_residual": {
+          "index": 21,
+          "sectionTitle": "Chặng 4 — Huấn luyện Ổn định & Tối ưu hóa",
+          "total": 34
+        },
+        "conv2d_im2col": {
+          "index": 22,
+          "sectionTitle": "Chặng 5 — Mạng Tích chập & Dataloader",
+          "total": 34
+        },
+        "minibatch_assembly": {
+          "index": 23,
+          "sectionTitle": "Chặng 5 — Mạng Tích chập & Dataloader",
+          "total": 34
+        },
+        "cuda_threads": {
+          "index": 24,
+          "sectionTitle": "Chặng 6 — Tăng tốc GPU & CUDA",
+          "total": 34
+        },
+        "shared_memory_tiling": {
+          "index": 25,
+          "sectionTitle": "Chặng 6 — Tăng tốc GPU & CUDA",
+          "total": 34
+        },
+        "coalescing_and_banks": {
+          "index": 26,
+          "sectionTitle": "Chặng 6 — Tăng tốc GPU & CUDA",
+          "total": 34
+        },
+        "mixed_precision": {
+          "index": 27,
+          "sectionTitle": "Chặng 6 — Tăng tốc GPU & CUDA",
+          "total": 34
+        },
+        "activation_checkpointing": {
+          "index": 28,
+          "sectionTitle": "Chặng 6 — Tăng tốc GPU & CUDA",
+          "total": 34
+        },
+        "rnn_bptt": {
+          "index": 29,
+          "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
+          "total": 34
+        },
+        "self_attention": {
+          "index": 30,
+          "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
+          "total": 34
+        },
+        "positional_encoding": {
+          "index": 31,
+          "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
+          "total": 34
+        },
+        "multi_head_attention": {
+          "index": 32,
+          "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
+          "total": 34
+        },
+        "kv_cache_anatomy": {
+          "index": 33,
+          "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
+          "total": 34
+        },
+        "flash_attention": {
+          "index": 34,
+          "sectionTitle": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
+          "total": 34
+        }
+      }
+    }
+  ],
+  "generatedAt": "2026-10-08T07:55:01.922Z",
+  "totalLessons": 34
 }

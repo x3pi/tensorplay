@@ -1,0 +1,17 @@
+{
+  "id": "{{SLUG}}",
+  "title": "{{TITLE}}",
+  "summary": "{{SUMMARY}}",
+  "topic": "{{TOPIC}}",
+  "tags": [
+    "deep-learning",
+    "tensorplay"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 15,
+  "status": "draft",
+  "prerequisites": [],
+  "related": [],
+  "sources": [],
+  "aliases": []
+}

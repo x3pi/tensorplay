@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta name="tp-lesson" content="multi_head_attention">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-Head Attention — Nhiều Cặp Mắt Cùng Nhìn - TensorPlay</title>
+  <meta name="description" content="Vì sao chia d_model thành nhiều đầu attention: mỗi đầu học một kiểu quan hệ khác nhau mà không tốn thêm tham số hay FLOPs.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">← Về Danh Mục</a>
+      </div>
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step" style="border-color: rgba(236, 72, 153, 0.4);">Track 4: Transformer &amp; LLM</span>
+      </div>
+    </header>
+
+    <main class="lab-grid">
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt &amp; Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Bàn Thí Nghiệm Chia Đầu</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Đặt Lại</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">🤖 Câu: "Robot nhặt pin" ($d_{model} = 4$)</div>
+            <div style="display: flex; justify-content: center;">
+              <table class="tp-mini-matrix" id="x-grid"></table>
+            </div>
+            <div class="tp-matrix-caption">2 cột đầu = vai trò cú pháp (chủ thể / vật thể), 2 cột sau = chủ đề ngữ nghĩa (hành động / đồ vật)</div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">🧩 Số đầu $h$ (mỗi đầu nhận $d_k = 4 / h$ cột)</div>
+            <div class="tp-seg" id="seg-heads">
+              <button data-v="1">h = 1</button>
+              <button data-v="2">h = 2</button>
+              <button data-v="4">h = 4</button>
+            </div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">🔦 Token đóng vai Query</div>
+            <div class="tp-seg" id="seg-query">
+              <button data-v="0">Robot</button>
+              <button data-v="1">nhặt</button>
+              <button data-v="2">pin</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math &amp; Telemetry</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div class="tp-math-box" id="katex-mha"></div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">👀 Mỗi đầu nhìn vào đâu? (trọng số của Query)</div>
+            <table class="tp-kv-table" id="heads-table"></table>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">🔗 Nối các đầu lại (Concat)</div>
+            <div style="display: flex; justify-content: center;">
+              <table class="tp-mini-matrix" id="concat-grid"></table>
+            </div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-title">⚙️ Chi phí hệ thống</div>
+            <table class="tp-kv-table" id="cost-table"></table>
+          </div>
+
+          <div class="tp-verdict" id="verdict"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
+    import { markCompleted } from '../../shared/progress.js';
+    import { LessonLogic, PRESETS, TOKENS, X } from './logic.js';
+
+    const LESSON_ID = 'multi_head_attention';
+
+    const STEPS = [
+      {
+        step: 1, badge: 'Bước 1 / 4',
+        heading: 'Một điểm số phải gánh mọi kiểu quan hệ',
+        problem: 'Trong câu "Robot nhặt pin", từ "pin" cần biết ai là chủ thể (Robot) và hành động gì đang diễn ra (nhặt). Với 1 đầu attention, mỗi cặp token chỉ có đúng một điểm số.',
+        mechanism: 'Tích vô hướng 4 chiều cộng gộp "vai trò" và "chủ đề" vào cùng một con số. Với Query "pin", điểm tới Robot và nhặt đều bằng 1 nên đầu duy nhất không phân biệt được hai kiểu quan hệ: nó cho trọng số $[0.21, 0.21, 0.58]$.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "1 đầu (trộn lẫn) ❌".\n👁️ Quan sát (Cột 3): Một dòng trọng số duy nhất, Robot và nhặt có trọng số y hệt.',
+        takeaway: 'Một đầu chỉ có thể trả lời một câu hỏi "nên chú ý vào đâu".'
+      },
+      {
+        step: 2, badge: 'Bước 2 / 4',
+        heading: 'Chia nhỏ d_model: mỗi đầu một góc nhìn',
+        problem: 'Có thể hỏi nhiều câu hỏi cùng lúc mà không phải tăng chi phí tính toán?',
+        mechanism: 'Cắt 4 chiều thành $h = 2$ đầu, mỗi đầu giữ $d_k = 2$ chiều. Đầu 1 chỉ thấy cột 0–1 (vai trò), đầu 2 chỉ thấy cột 2–3 (chủ đề). Với Query "pin": đầu 1 chú ý vào Robot ($0.42$), đầu 2 chú ý vào nhặt ($0.42$).',
+        action: '👉 Thao tác (Cột 2): Bấm preset "2 đầu (chuyên môn hóa) ✅".\n👁️ Quan sát (Cột 3): Hai dòng trọng số khác nhau, kết luận xanh báo 2 mẫu chú ý.',
+        takeaway: 'Mỗi đầu học một "mối quan hệ" riêng, ví dụ chủ ngữ – vị ngữ, đại từ – danh từ, hay vị trí lân cận.'
+      },
+      {
+        step: 3, badge: 'Bước 3 / 4',
+        heading: 'Nối lại và trộn bằng W_O',
+        problem: 'Sau khi mỗi đầu có đầu ra riêng, làm sao ghép thành một vector duy nhất cho tầng sau?',
+        mechanism: 'Nối các đầu ra lại theo chiều đặc trưng được vector $d_{model} = 4$ chiều: $[0.84, 0.16 \\mid 0.16, 0.84]$. Ma trận $W_O$ (ở bản toy là ma trận đơn vị) trộn thông tin giữa các đầu để tầng sau dùng chung.',
+        action: '👉 Thao tác (Cột 2): Chuyển giữa h = 1, 2, 4 và để ý ô "Concat".\n👁️ Quan sát (Cột 3): Concat luôn là 4 số, bất kể số đầu.',
+        takeaway: 'Số chiều vào và ra của khối attention không đổi, nên có thể xếp chồng khối này lên nhau.'
+      },
+      {
+        step: 4, badge: 'Bước 4 / 4',
+        heading: 'Thêm đầu không tốn thêm tham số, nhưng không miễn phí',
+        problem: 'Vậy cứ chia thật nhiều đầu cho mạnh?',
+        mechanism: 'Bốn ma trận $W_Q, W_K, W_V, W_O$ đều là $d \\times d$ nên tổng tham số là $4d^2 = 64$ cho mọi $h$. KV-Cache ([[lesson:kv_cache_anatomy]]) mỗi token vẫn là $2 \\cdot h \\cdot d_k = 2 d = 8$ phần tử. Nhưng khi $h = 4$, mỗi đầu chỉ còn $d_k = 1$ chiều: hai đầu ở giữa chỉ thấy một con số nên chú ý đều $\\frac{1}{3}$, gần như vô dụng.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "4 đầu (mỗi đầu 1 chiều)".\n👁️ Quan sát (Cột 3): Đầu 2 và 3 có trọng số $[0.33, 0.33, 0.33]$ — không phân biệt được gì.',
+        takeaway: 'Số đầu và độ rộng mỗi đầu $d_k$ đánh đổi nhau: đầu quá hẹp thì mất khả năng biểu diễn.'
+      }
+    ];
+
+    const STEP_COMMENTS = {
+      2: [{
+        id: 'mh2', author: 'Học Viên DL Systems', role: 'Student', avatar: '🎓', tag: 'Gotcha kinh điển', tagType: 'gotcha',
+        content: 'Khi cài đặt, không ai cắt từng đầu bằng vòng lặp. Ta reshape $(B, N, d)$ thành $(B, N, h, d_k)$ rồi hoán vị thành $(B, h, N, d_k)$, và các đầu chạy song song như một batch lớn. Đó cũng là bài toán strides ở [[lesson:strides_views]]: `transpose` chỉ đổi view, nhưng matmul phía sau thường cần `contiguous()`.'
+      }],
+      3: [{
+        id: 'mh3', author: 'Nhà Toán Học AI', role: 'Math', avatar: '📐', tag: 'Giải thích hình học', tagType: 'math',
+        content: 'Mỗi đầu thực chất chiếu $X$ xuống một không gian con $d_k$ chiều bằng $W_Q^{(m)}, W_K^{(m)}$ riêng, rồi so khớp trong không gian đó. Bản toy dùng phép cắt cột (chiếu trực giao) để các số tròn trị; thực tế các ma trận này được học.'
+      }],
+      4: [{
+        id: 'mh4', author: 'Chuyên Gia LLM', role: 'LLM', avatar: '🧠', tag: 'MQA & GQA', tagType: 'systems',
+        content: 'KV-Cache tỉ lệ với số đầu K/V. Multi-Query Attention (MQA) chia sẻ 1 bộ K,V cho mọi đầu Q, còn Grouped-Query Attention (GQA, dùng trong Llama 2/3) chia sẻ theo nhóm. Chúng cắt KV-Cache đi $h$ hoặc $h/g$ lần mà chất lượng hầu như giữ nguyên.'
+      }]
+    };
+
+    const logic = new LessonLogic();
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
+    });
+
+    createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 1,
+      onStepChange: (n) => {
+        comments.setStep(n, STEP_COMMENTS[n] || []);
+        if (n === STEPS.length) markCompleted(LESSON_ID, true);
+      }
+    });
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      initialActiveId: 'single_head',
+      onPick: (p) => {
+        logic.applyPreset(p.state);
+        render();
+      }
+    });
+
+    document.querySelectorAll('#seg-heads button').forEach(btn => btn.addEventListener('click', () => {
+      logic.onUserUpdate({ heads: Number(btn.dataset.v) });
+      presets.setActive(null);
+      render();
+    }));
+    document.querySelectorAll('#seg-query button').forEach(btn => btn.addEventListener('click', () => {
+      logic.onUserUpdate({ queryIdx: Number(btn.dataset.v) });
+      presets.setActive(null);
+      render();
+    }));
+
+    const headColors = ['pos', 'hl', 'neg', ''];
+
+    function render() {
+      const r = logic.calculate();
+      const s = logic.state;
+
+      document.querySelectorAll('#seg-heads button').forEach(b => b.classList.toggle('active', Number(b.dataset.v) === s.heads));
+      document.querySelectorAll('#seg-query button').forEach(b => b.classList.toggle('active', Number(b.dataset.v) === s.queryIdx));
+
+      const dk = r.dk;
+      document.getElementById('x-grid').innerHTML = X.map((row, i) => `
+        <tr>
+          <td style="font-size: 0.7rem; color: var(--text-dim); border: none;">${TOKENS[i]}${i === s.queryIdx ? ' 🔦' : ''}</td>
+          ${row.map((v, c) => `<td class="${headColors[Math.floor(c / dk) % 4]}" style="min-width: 36px; text-align: center;">${v}</td>`).join('')}
+        </tr>`).join('');
+
+      renderMath(document.getElementById('katex-mha'), r.formulaKaTeX, { displayMode: true });
+
+      document.getElementById('heads-table').innerHTML =
+        `<tr><td><em>Query = ${r.query}</em></td><td>${TOKENS.join(' | ')}</td></tr>` +
+        r.perHead.map(h => `<tr><td>Đầu ${h.head} (cột ${h.cols})</td><td>${h.weights.join(' | ')}</td></tr>`).join('');
+
+      document.getElementById('concat-grid').innerHTML = `<tr>${r.concat.map((v, c) =>
+        `<td class="${headColors[Math.floor(c / dk) % 4]}" style="min-width: 44px; text-align: center;">${v}</td>`).join('')}</tr>`;
+
+      document.getElementById('cost-table').innerHTML = `
+        <tr><td>Tham số $W_Q, W_K, W_V, W_O$</td><td>${r.params}</td></tr>
+        <tr><td>KV-Cache mỗi token mỗi tầng</td><td>${r.kvPerToken} phần tử</td></tr>
+        <tr><td>Số mẫu chú ý khác nhau</td><td>${r.distinctPatterns}</td></tr>
+      `;
+
+      const verdict = document.getElementById('verdict');
+      verdict.className = `tp-verdict ${r.verdict.type}`;
+      verdict.textContent = r.verdict.text;
+
+      renderAllInlineMath(document.querySelector('.col-telemetry'));
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      presets.setActive('single_head');
+      render();
+    });
+
+    renderAllInlineMath(document.querySelector('.col-sandbox'));
+    render();
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

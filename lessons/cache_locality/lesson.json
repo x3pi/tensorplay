@@ -1,0 +1,26 @@
+{
+  "id": "cache_locality",
+  "title": "Row-Major vs Col-Major Cache Locality",
+  "summary": "Trực quan hóa CPU Cache L1/L2. Đọc theo dòng (Row-Major) tận dụng Cache Line vs Đọc theo cột (Col-Major) gây nhảy cóc Cache Miss làm tụt hiệu năng gấp 10 lần.",
+  "topic": "memory-systems",
+  "tags": [
+    "hardware",
+    "cpu-cache",
+    "row-major",
+    "memory-access"
+  ],
+  "difficulty": "advanced",
+  "estimatedMinutes": 15,
+  "status": "ready",
+  "prerequisites": [
+    "cpp_matmul_loops"
+  ],
+  "related": [
+    "strides_views"
+  ],
+  "sources": [],
+  "aliases": [
+    "bai_03_cache_locality",
+    "cache_locality"
+  ]
+}

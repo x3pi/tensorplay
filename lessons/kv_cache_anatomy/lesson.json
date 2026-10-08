@@ -1,0 +1,26 @@
+{
+  "id": "kv_cache_anatomy",
+  "title": "Giải Phẫu KV-Cache Trong LLM Serving",
+  "summary": "Suy diễn tự hồi quy (Autoregressive Generation): Tại sao phải lưu bộ nhớ đệm KV? Ước tính dung lượng RAM GPU của KV Cache theo batch size và độ dài sinh token.",
+  "topic": "llm-serving",
+  "tags": [
+    "llm-serving",
+    "kv-cache",
+    "autoregressive",
+    "memory-budget"
+  ],
+  "difficulty": "advanced",
+  "estimatedMinutes": 18,
+  "status": "ready",
+  "prerequisites": [
+    "self_attention"
+  ],
+  "related": [
+    "flash_attention"
+  ],
+  "sources": [],
+  "aliases": [
+    "bai_14_kv_cache_anatomy",
+    "kv_cache_anatomy"
+  ]
+}

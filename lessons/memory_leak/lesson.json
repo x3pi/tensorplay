@@ -1,0 +1,26 @@
+{
+  "id": "memory_leak",
+  "title": "Robot Chết Đuối Vì Memory Leak",
+  "summary": "Mô phỏng rò rỉ bộ nhớ qua từng mini-batch. Quên lệnh `free(grad)` hoặc `delete[]` khiến RAM đầy tràn và hệ điều hành tiêu diệt tiến trình (OOM Killer).",
+  "topic": "memory-systems",
+  "tags": [
+    "c-plus-plus",
+    "memory-leak",
+    "valgrind",
+    "systems"
+  ],
+  "difficulty": "intermediate",
+  "estimatedMinutes": 10,
+  "status": "ready",
+  "prerequisites": [
+    "cpp_matmul_loops"
+  ],
+  "related": [
+    "cache_locality"
+  ],
+  "sources": [],
+  "aliases": [
+    "bai_03b_memory_leak",
+    "memory_leak"
+  ]
+}

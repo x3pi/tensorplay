@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta name="tp-lesson" content="cache_locality">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Row-Major vs Col-Major Cache Locality - TensorPlay</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">← Về Danh Mục</a>
+      </div>
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step">Track 0: Nền Tảng Tensor & Bộ Nhớ C++</span>
+      </div>
+    </header>
+
+    <main class="lab-grid">
+      <!-- CỘT 1: SOCRATIC & COMMENTS -->
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt & Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <!-- CỘT 2: SÂN CHƠI TƯƠNG TÁC -->
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Mô Phỏng Quét CPU L1 Cache</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Reset</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; align-items: center; gap: 1.25rem;">
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+
+          <!-- Controls -->
+          <div style="display: flex; gap: 0.75rem; width: 100%; justify-content: center;">
+            <button id="btn-step" class="tp-btn tp-btn-primary">▶ Bước Kế Tiếp</button>
+            <button id="btn-auto" class="tp-btn tp-btn-secondary">⚡ Quét Tự Động</button>
+          </div>
+
+          <!-- 4x4 Grid Matrix -->
+          <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 1.25rem; box-shadow: var(--card-shadow); text-align: center;">
+            <div style="font-size: var(--text-xs); font-weight: 700; color: var(--color-info); margin-bottom: 0.75rem; text-transform: uppercase;">
+              Ma Trận 4×4 Trong RAM C++ (Mảng float M[16])
+            </div>
+            <div id="matrix-grid-4x4" style="display: grid; grid-template-columns: repeat(4, 56px); gap: 6px; justify-content: center;">
+              <!-- 16 cells -->
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 1rem; font-size: var(--text-xs); color: var(--text-muted);">
+            <span>🟢 Xanh = Cache Hit (1 cycle)</span>
+            <span>🔴 Đỏ = Cache Miss (20 cycles)</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- CỘT 3: LIVE MATH & TELEMETRY -->
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Đo Lường Hiệu Năng Phần Cứng</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● TELEMETRY</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
+              📐 Tỉ Lệ Hit & Chu Kỳ Xung Nhịp
+            </div>
+            <div id="katex-formula-mount" style="min-height: 52px; background: #090d15; border-radius: var(--radius-sm); padding: 0.5rem; display: flex; align-items: center; justify-content: center; overflow-x: auto;"></div>
+          </div>
+
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+            <div style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.75rem;">
+              📊 Phân Tích Bộ Nhớ Đệm
+            </div>
+            <div id="mount-bar-hitrate"></div>
+            <div id="mount-bar-cycles"></div>
+            <div id="verdict-banner" style="margin-top: 0.75rem; padding: 8px 12px; border-radius: var(--radius-sm); font-size: var(--text-xs); font-weight: 600;"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createScoreBar } from '../../shared/components/ScoreBar.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath } from '../../shared/katex-render.js';
+    import { markCompleted } from '../../shared/progress.js';
+    import { LessonLogic, PRESETS } from './logic.js';
+
+    const STEPS = [
+      {
+        step: 1,
+        badge: 'Bước 1 / 5',
+        heading: 'Kho Hàng RAM Xa Xôi vs Mặt Bàn L1 Cache',
+        problem: 'Bộ nhớ RAM máy tính cách CPU hàng trăm chu kỳ xung nhịp. Nếu mỗi phép tính ma trận đều phải chờ đọc từ RAM, AI sẽ chạy chậm như rùa bò!',
+        mechanism: 'CPU giải quyết bằng cách trang bị bộ đệm L1 Cache siêu tốc ngay sát lõi chip: L1 chỉ tốn $1$ cycle, trong khi đọc từ RAM tốn tới $100+$ cycles! Tốc độ chênh lệch hơn 100 lần.',
+        action: '👉 Thao tác (Cột 2): Bấm nút "Đọc 1 Ô" ở Cột 2.\n👁️ Quan sát (Cột 3): Xem đồng hồ đo chu kỳ trễ (Latency Cycles) nhảy vọt khi phải nạp từ RAM!',
+        takeaway: 'Tốc độ thực tế của thuật toán Deep Learning phần lớn do hiệu quả tận dụng Cache CPU/GPU quyết định, không chỉ số lượng phép toán FLOPs.'
+      },
+      {
+        step: 2,
+        badge: 'Bước 2 / 5',
+        heading: 'Cơ Chế Cache Line: Nạp Nguyên Cụm',
+        problem: 'Khi CPU cần đọc một ô số float 4 bytes tại `M[0][0]`, phần cứng có nạp lẻ 1 số đơn độc từ RAM không?',
+        mechanism: 'Không bao giờ! CPU luôn nạp nguyên 1 khối Cache Line (thường là 64 bytes = 16 float). Trong mô phỏng này, 1 Cache Line chứa 4 ô liền kề.\nVí dụ nhẩm: Nạp ô [0] sẽ tự động kéo luôn ô [1, 2, 3] vào bộ đệm cache. Đọc 3 ô sau sẽ tốn đúng 1 chu kỳ!',
+        action: '👉 Thao tác (Cột 2): Bấm vào ô đầu tiên của một hàng ở ma trận Cột 2.\n👁️ Quan sát (Cột 3): Cả 4 ô liền kề cùng được sáng viền và nạp đồng thời vào bộ đệm Cache!',
+        takeaway: 'Nạp 1 ô sẽ tự động kéo theo các ô láng giềng vào cache. Tận dụng các ô láng giềng đó chính là tận dụng thời gian truy cập "miễn phí"!'
+      },
+      {
+        step: 3,
+        badge: 'Bước 3 / 5',
+        heading: 'Quét Theo Hàng (Row-Major: for r, for c)',
+        problem: 'Thứ tự vòng lặp duyệt ma trận ảnh hưởng như thế nào đến số lần CPU phải chờ RAM?',
+        mechanism: 'Vì mảng 2D trong C++ được lưu theo hàng (Row-Major), duyệt tuần tự `for r, for c` khớp hoàn hảo với các ô trong Cache Line vừa nạp.\nVí dụ nhẩm: Với 4 ô mỗi hàng, ô đầu Miss ($100$ cycles), 3 ô sau Hit ($3 \\times 1$ cycles). Tỉ lệ Hit đạt $3/4 = 75\\%$!',
+        action: '👉 Thao tác (Cột 2): Bấm chọn preset "Quét Hàng (Row-Major)" rồi bấm "Quét Tự Động".\n👁️ Quan sát (Cột 3): Mỗi hàng chỉ bị 1 ô đỏ (Miss), 3 ô sau sáng xanh lá (Hit), tỉ lệ Hit Rate vọt lên $75\\%$!',
+        takeaway: 'Duyệt theo hàng tận dụng tối đa Spatial Locality (tính địa phương không gian), tối ưu hóa băng thông phần cứng.'
+      },
+      {
+        step: 4,
+        badge: 'Bước 4 / 5',
+        heading: 'Thảm Họa Quét Theo Cột (Col-Major: for c, for r)',
+        problem: 'Chuyện gì xảy ra nếu lập trình viên vô tình đảo thứ tự vòng lặp thành `for c, for r`?',
+        mechanism: 'Duyệt theo cột khiến CPU nhảy cóc qua các hàng khác nhau trong RAM. Mỗi lần nhảy là một Cache Line khác, làm vô hiệu hóa toàn bộ Cache đã nạp!\nMỗi ô đều phải load từ RAM $\\implies 16 \\times 100$ cycles!',
+        action: '👉 Thao tác (Cột 2): Bấm chọn preset "Quét Cột (Col-Major)" rồi bấm "Quét Tự Động".\n👁️ Quan sát (Cột 3): Các ô nhớ liên tục đỏ rực (Cache Miss 100%), tổng chu kỳ trễ tăng vọt từ 92 cycles lên 200+ cycles!',
+        takeaway: 'Chỉ hoán đổi 2 dòng lệnh `for` có thể làm chương trình chạy chậm hơn gấp 10 lần vì phá hủy tính cục bộ bộ nhớ!'
+      },
+      {
+        step: 5,
+        badge: 'Bước 5 / 5',
+        heading: 'Đúc Kết Kỹ Nghệ Hệ Thống C++',
+        problem: 'Làm thế nào để viết code Tensor hiệu năng cao chuẩn production?',
+        mechanism: 'Quy tắc vàng: Luôn đảm bảo vòng lặp trong cùng (innermost loop) duyệt qua các phần tử có địa chỉ bộ nhớ kế tiếp nhau (`stride = 1`).',
+        action: '👉 Thao tác (Cột 2): So sánh 2 preset Quét Hàng vs Quét Cột ở Cột 2.\n👁️ Quan sát (Cột 3): Bảng thống kê chu kỳ trễ (Latency Cycles) cho thấy sự vượt trội tuyệt đối của thiết kế thân thiện phần cứng!',
+        takeaway: 'Hiểu kiến trúc bộ nhớ giúp kỹ sư AI viết code nhanh hơn 10x mà không tốn thêm bất kỳ chi phí phần cứng nào.'
+      }
+    ];
+
+    const COMMENTS = {
+      1: [
+        {
+          author: 'Kỹ Sư Phần Cứng',
+          avatar: '⚡',
+          tag: 'Hệ Thống Phân Cấp',
+          tagType: 'systems',
+          content: 'L1 Cache: ~1ns (1 cycle). L2 Cache: ~4ns. L3 Cache: ~10ns. DRAM: ~100ns (hơn 100 cycles)! Chênh lệch thời gian là khổng lồ.'
+        }
+      ],
+      3: [
+        {
+          author: 'Chuyên Gia C++',
+          avatar: '⚙️',
+          tag: 'Thực Chiến',
+          tagType: 'systems',
+          content: 'Trong C/C++, mảng nhiều chiều luôn là Row-Major. Ngược lại trong Fortran hoặc MATLAB, mặc định là Column-Major. Luôn nhớ ngôn ngữ bạn đang dùng!'
+        }
+      ]
+    };
+
+    const logic = new LessonLogic();
+    const wizard = createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 1,
+      onStepChange: (stepNum) => {
+        comments.setStep(stepNum, COMMENTS[stepNum] || []);
+        if (stepNum === STEPS.length) markCompleted('cache_locality', true);
+      }
+    });
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: 'cache_locality',
+      initialStep: 1,
+      curatedComments: COMMENTS[1] || []
+    });
+
+    const gridEl = document.getElementById('matrix-grid-4x4');
+    for (let i = 0; i < 16; i++) {
+      const r = Math.floor(i / 4);
+      const c = i % 4;
+      const cell = document.createElement('div');
+      cell.className = 'tp-grid-cell';
+      cell.setAttribute('data-idx', i);
+      cell.innerHTML = `
+        <span style="font-size: 0.6rem; color: var(--text-dim);">(${r},${c})</span>
+        <span style="font-size: 0.75rem; font-weight: 700; margin-top: 2px;">[${i}]</span>
+      `;
+      gridEl.appendChild(cell);
+    }
+
+    const presetsBar = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      onPick: (p) => {
+        const res = logic.applyPreset(p.state);
+        resetCellHighlights();
+        updateTelemetry(res);
+      }
+    });
+
+    const barHitRate = createScoreBar(document.getElementById('mount-bar-hitrate'), {
+      label: 'Tỉ Lệ Cache Hit Rate',
+      value: 0,
+      min: 0,
+      max: 1,
+      variant: 'reward',
+      showPercentage: true
+    });
+
+    const barCycles = createScoreBar(document.getElementById('mount-bar-cycles'), {
+      label: 'Độ Trễ CPU (Clock Cycles)',
+      value: 0,
+      min: 0,
+      max: 320,
+      variant: 'penalty'
+    });
+
+    function resetCellHighlights() {
+      gridEl.querySelectorAll('.tp-grid-cell').forEach(c => {
+        c.className = 'tp-grid-cell';
+        c.style.boxShadow = 'none';
+      });
+    }
+
+    function updateCellVisual(coord, eventType) {
+      if (!coord) return;
+      const cell = gridEl.querySelector(`[data-idx="${coord.linearIdx}"]`);
+      if (cell) {
+        cell.className = 'tp-grid-cell';
+        if (eventType === 'hit') {
+          cell.classList.add('active-positive');
+        } else {
+          cell.classList.add('active-negative');
+        }
+      }
+    }
+
+    function updateTelemetry(res) {
+      renderMath(document.getElementById('katex-formula-mount'), res.formulaKaTeX);
+
+      barHitRate.setValue(res.hitRate, `Cache Hit Rate: ${(res.hitRate * 100).toFixed(0)}%`);
+      barHitRate.setVariant(res.hitRate > 0.5 ? 'reward' : 'penalty');
+
+      barCycles.setValue(res.estimatedCycles, `Tổng Chu Kỳ: ${res.estimatedCycles} cycles`);
+
+      const banner = document.getElementById('verdict-banner');
+      if (banner && res.verdict) {
+        banner.textContent = res.verdict.text;
+        banner.style.backgroundColor = res.verdict.type === 'danger' ? 'var(--color-negative-bg)' : (res.verdict.type === 'success' ? 'var(--color-positive-bg)' : 'rgba(255,255,255,0.05)');
+        banner.style.color = res.verdict.type === 'danger' ? 'var(--color-negative)' : (res.verdict.type === 'success' ? 'var(--color-positive)' : 'var(--text-muted)');
+        banner.style.border = `1px solid ${res.verdict.type === 'danger' ? 'var(--color-negative)' : (res.verdict.type === 'success' ? 'var(--color-positive)' : 'var(--border-subtle)')}`;
+      }
+    }
+
+    document.getElementById('btn-step').addEventListener('click', () => {
+      const res = logic.stepScan();
+      updateCellVisual(res.currentCoord, res.lastEvent);
+      updateTelemetry(res);
+    });
+
+    let autoInterval = null;
+    document.getElementById('btn-auto').addEventListener('click', () => {
+      if (autoInterval) {
+        clearInterval(autoInterval);
+        autoInterval = null;
+        document.getElementById('btn-auto').textContent = '⚡ Quét Tự Động';
+        return;
+      }
+      document.getElementById('btn-auto').textContent = '⏹ Dừng Lại';
+      autoInterval = setInterval(() => {
+        if (logic.state.currentIndex >= 16) {
+          clearInterval(autoInterval);
+          autoInterval = null;
+          document.getElementById('btn-auto').textContent = '⚡ Quét Tự Động';
+          return;
+        }
+        const res = logic.stepScan();
+        updateCellVisual(res.currentCoord, res.lastEvent);
+        updateTelemetry(res);
+      }, 180);
+    });
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      if (autoInterval) { clearInterval(autoInterval); autoInterval = null; }
+      document.getElementById('btn-auto').textContent = '⚡ Quét Tự Động';
+      const res = logic.reset();
+      resetCellHighlights();
+      updateTelemetry(res);
+    });
+
+    updateTelemetry(logic.calculate());
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

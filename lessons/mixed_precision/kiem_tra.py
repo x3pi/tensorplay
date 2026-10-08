@@ -2,20 +2,56 @@
 """
 lessons/mixed_precision/kiem_tra.py
 Kiểm chứng số học độc lập bằng NumPy theo quy chuẩn AGENTS.md.
+(Khôi phục đầy đủ các assertion gốc từ bộ kiểm chứng theo track cũ.)
 """
+import math
+
 import numpy as np
 
-def main() -> None:
+
+def kiem_tra_mixed_precision():
+    print("=== [Kiểm tra Bài 27: Mixed Precision FP16 & Loss Scaling] ===")
+    # Hằng số FP16 từ numpy (nguồn độc lập với code JS)
     info = np.finfo(np.float16)
     assert float(info.max) == 65504.0
+    min_sub = 2.0 ** -24
+    assert float(np.nextafter(np.float16(0), np.float16(1))) == min_sub
+
+    # Underflow: gradient 1e-8 không scale -> 0
     g = 1e-8
-    assert float(np.float16(g)) == 0.0
+    assert float(np.float16(g)) == 0.0, "1e-8 phải bị FP16 làm tròn về 0"
+
+    # Loss scale 1024: lưu 1.024e-5 rồi chia lại trong FP32
     S = 1024.0
     stored = np.float16(g * S)
     assert float(stored) > 0
     recovered = np.float32(stored) / np.float32(S)
     rel_err = abs(float(recovered) - g) / g
-    assert rel_err < 0.01
+    assert rel_err < 0.01, f"Sai số tương đối phải < 1%, nhận được {rel_err:.4%}"
+
+    # Overflow: 1.0 * 2^16 = 65536 > 65504 -> inf
+    with np.errstate(over="ignore"):
+        assert np.isinf(np.float16(1.0 * 2.0 ** 16))
+        # Ngưỡng làm tròn IEEE: 65519 -> 65504, 65520 -> inf
+        assert float(np.float16(65519.0)) == 65504.0
+        assert np.isinf(np.float16(65520.0))
+
+    # BF16 mô phỏng bằng cách cắt 16 bit cao của float32 (làm tròn half-to-even)
+    def to_bf16(x):
+        b = np.float32(x).view(np.uint32)
+        rounding = ((b >> 16) & 1) + 0x7FFF
+        return np.uint32((b + rounding) & 0xFFFF0000).view(np.float32)
+    bf = float(to_bf16(1e-8))
+    assert bf > 0 and abs(bf - 1e-8) / 1e-8 < 0.005, "BF16 giữ được 1e-8 với sai số < 0.5%"
+
+    # Bộ nhớ trạng thái Adam: FP32 thuần 16 byte/param, mixed cũng 16 byte/param
+    assert 4 + 4 + 4 + 4 == 2 + 2 + 4 + 4 + 4 == 16
+    print("-> Mixed Precision: ĐẠT CHUẨN 100%\n")
+
+
+def main() -> None:
+    kiem_tra_mixed_precision()
+
 
 if __name__ == "__main__":
     main()

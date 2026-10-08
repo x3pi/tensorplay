@@ -1,0 +1,10 @@
+[
+  { "id": "foundations",        "label": "Nền tảng Tensor & Softmax",        "color": "#38bdf8" },
+  { "id": "memory-systems",     "label": "Bộ nhớ, Cache & C++",               "color": "#f59e0b" },
+  { "id": "autograd",           "label": "Autograd & Gradient",               "color": "#10b981" },
+  { "id": "training-stability", "label": "Huấn luyện ổn định (init/optim/norm)", "color": "#a78bfa" },
+  { "id": "cnn-data",           "label": "CNN & Pipeline dữ liệu",            "color": "#f472b6" },
+  { "id": "gpu",                "label": "GPU, CUDA & độ chính xác số",       "color": "#fb7185" },
+  { "id": "transformer",        "label": "Transformer",                       "color": "#22d3ee" },
+  { "id": "llm-serving",        "label": "LLM Serving",                       "color": "#facc15" }
+]

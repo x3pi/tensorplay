@@ -1,0 +1,28 @@
+{
+  "id": "cpp-memory",
+  "title": "Kỹ nghệ Bộ nhớ & C++/CUDA",
+  "description": "Lộ trình chuyên sâu 10 bài về bố cục RAM, CPU Cache locality, lập trình GPU CUDA và chiến lược tiết kiệm VRAM.",
+  "default": false,
+  "sections": [
+    {
+      "title": "Chặng 1 — Bố Cục Bộ Nhớ C++ & CPU Cache",
+      "lessons": [
+        "robot_vision",
+        "cpp_matmul_loops",
+        "memory_leak",
+        "cache_locality",
+        "strides_views",
+        "minibatch_assembly"
+      ]
+    },
+    {
+      "title": "Chặng 2 — Tăng Tốc Phần Cứng GPU & Tiết Kiệm VRAM",
+      "lessons": [
+        "cuda_threads",
+        "shared_memory_tiling",
+        "coalescing_and_banks",
+        "activation_checkpointing"
+      ]
+    }
+  ]
+}

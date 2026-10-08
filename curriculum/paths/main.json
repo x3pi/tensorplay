@@ -1,0 +1,77 @@
+{
+  "id": "main",
+  "title": "Lộ trình đầy đủ",
+  "description": "Toàn cảnh hệ thống học sâu: từ vector đầu tiên đến FlashAttention và KV-Cache.",
+  "default": true,
+  "sections": [
+    {
+      "title": "Chặng 1 — Nền tảng Tensor & Softmax",
+      "lessons": [
+        "robot_vision",
+        "softmax_stability",
+        "softmax_regression",
+        "cross_entropy_logsumexp",
+        "twolayer_relu_backprop",
+        "minibatch_sgd"
+      ]
+    },
+    {
+      "title": "Chặng 2 — Kỹ nghệ Bộ nhớ C++ & Strides",
+      "lessons": [
+        "cpp_matmul_loops",
+        "memory_leak",
+        "cache_locality",
+        "strides_views"
+      ]
+    },
+    {
+      "title": "Chặng 3 — Động cơ Autograd & Gradient",
+      "lessons": [
+        "autograd_graph",
+        "reverse_vs_forward_ad",
+        "broadcast_grad",
+        "gradient_check"
+      ]
+    },
+    {
+      "title": "Chặng 4 — Huấn luyện Ổn định & Tối ưu hóa",
+      "lessons": [
+        "activation_valves",
+        "kaiming_init",
+        "optimizers",
+        "adamw_weight_decay",
+        "batch_norm_dynamics",
+        "dropout",
+        "layernorm_residual"
+      ]
+    },
+    {
+      "title": "Chặng 5 — Mạng Tích chập & Dataloader",
+      "lessons": [
+        "conv2d_im2col",
+        "minibatch_assembly"
+      ]
+    },
+    {
+      "title": "Chặng 6 — Tăng tốc GPU & CUDA",
+      "lessons": [
+        "cuda_threads",
+        "shared_memory_tiling",
+        "coalescing_and_banks",
+        "mixed_precision",
+        "activation_checkpointing"
+      ]
+    },
+    {
+      "title": "Chặng 7 — Kiến trúc Transformer & LLM Serving",
+      "lessons": [
+        "rnn_bptt",
+        "self_attention",
+        "positional_encoding",
+        "multi_head_attention",
+        "kv_cache_anatomy",
+        "flash_attention"
+      ]
+    }
+  ]
+}

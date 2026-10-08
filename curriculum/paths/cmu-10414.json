@@ -1,0 +1,8 @@
+{
+  "id": "cmu-10414",
+  "title": "Theo khung khóa CMU 10-414/714",
+  "description": "Lộ trình đối chiếu với hệ thống bài tập thực hành CMU 10-414/714 (Deep Learning Systems).",
+  "default": false,
+  "status": "planned",
+  "sections": []
+}

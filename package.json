@@ -4,6 +4,13 @@
   "description": "Interactive Deep Learning Systems Visual Lab",
   "type": "module",
   "scripts": {
+    "predev": "node tools/build-catalog.mjs",
+    "prebuild": "node tools/build-catalog.mjs",
+    "catalog": "node tools/build-catalog.mjs",
+    "catalog:check": "node tools/build-catalog.mjs --check",
+    "check": "node tools/build-catalog.mjs --check && vitest run",
+    "verify": "python3 tools/run_checks.py",
+    "new-lesson": "node tools/new-lesson.mjs",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",

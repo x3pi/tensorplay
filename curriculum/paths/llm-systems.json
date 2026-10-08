@@ -1,0 +1,36 @@
+{
+  "id": "llm-systems",
+  "title": "Đường nhanh tới LLM Systems",
+  "description": "Lộ trình tinh gọn 13 bài tập trung vào cơ chế cốt lõi của Transformer và tối ưu hóa serving suy luận.",
+  "default": false,
+  "sections": [
+    {
+      "title": "Chặng 1 — Nền tảng Toán & Gradient",
+      "lessons": [
+        "robot_vision",
+        "softmax_stability",
+        "cross_entropy_logsumexp",
+        "softmax_regression",
+        "autograd_graph"
+      ]
+    },
+    {
+      "title": "Chặng 2 — Khối Kiến Trúc Transformer",
+      "lessons": [
+        "layernorm_residual",
+        "rnn_bptt",
+        "self_attention",
+        "positional_encoding",
+        "multi_head_attention"
+      ]
+    },
+    {
+      "title": "Chặng 3 — Tối Ưu Hệ Thống & LLM Serving",
+      "lessons": [
+        "mixed_precision",
+        "kv_cache_anatomy",
+        "flash_attention"
+      ]
+    }
+  ]
+}

@@ -83,16 +83,17 @@ export const PRESETS = [
   {
     id: "batch_single",
     label: "Lô Đơn B = 1 (Lãng phí GPU)",
-    state: { batchSize: 1 }
+    state: { batchSize: 1, gpuMaxVramKb: 16 }
   },
   {
     id: "batch_sweet_spot",
     label: "Lô Vừa B = 4 (Tối ưu)",
-    state: { batchSize: 4 }
+    state: { batchSize: 4, gpuMaxVramKb: 16 }
   },
   {
     id: "batch_large_oom",
     label: "Lô Cực Đại B = 16 (Bão hòa & Nguy cơ OOM)",
-    state: { batchSize: 16 }
+    // Ngưỡng VRAM giả lập 0.5 KB: 16 x 4 x 3 tầng x 4 byte = 768 B = 0.75 KB > 0.5 KB
+    state: { batchSize: 16, gpuMaxVramKb: 0.5 }
   }
 ];

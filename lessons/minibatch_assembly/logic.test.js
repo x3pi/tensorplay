@@ -30,4 +30,13 @@ describe('minibatch_assembly logic', () => {
     // 16 * 1024 * 4 * 4 = 262,144 Bytes = 256 KB > 100 KB
     expect(res.isOOM).toBe(true);
   });
+
+  it("preset 'Lô Cực Đại B = 16' thật sự minh họa OOM (768 B > 0.5 KB), còn B = 4 thì không", () => {
+    const logic = new LessonLogic();
+    const big = logic.applyPreset(PRESETS.find(p => p.id === 'batch_large_oom').state);
+    expect(big.totalActivationBytes).toBe(768);
+    expect(big.isOOM).toBe(true);
+    const ok = logic.applyPreset(PRESETS.find(p => p.id === 'batch_sweet_spot').state);
+    expect(ok.isOOM).toBe(false);
+  });
 });

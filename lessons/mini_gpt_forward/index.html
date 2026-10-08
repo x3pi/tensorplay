@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta name="tp-lesson" content="mini_gpt_forward">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mini-GPT — Một Lượt Thuận Từ Token Đến Xác Suất Token Kế Tiếp - TensorPlay</title>
+  <meta name="description" content="Ghép embedding, mã vị trí, LayerNorm, multi-head attention nhân quả, residual, FFN và softmax thành một mô hình nhỏ chạy thật và theo dõi tensor ở từng giai đoạn.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="../../shared/styles/tokens.css">
+  <link rel="stylesheet" href="../../shared/styles/layout.css">
+  <link rel="stylesheet" href="../../shared/styles/components.css">
+</head>
+<body class="theme-dark">
+  <div class="lab-shell">
+    <header class="lab-header">
+      <div class="lab-header-left">
+        <a href="../../index.html" class="lab-header-title">
+          <span style="color: var(--color-warning);">⚡</span>
+          <span>Tensor<span style="color: var(--color-info);">Play</span></span>
+        </a>
+        <a href="../../index.html" class="btn-back-catalog">← Về Danh Mục</a>
+      </div>
+      <div class="lab-header-right">
+        <span class="tp-badge tp-badge-step" data-topic-badge></span>
+      </div>
+    </header>
+
+    <main class="lab-grid">
+      <section class="lab-col col-narrative">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 1 • Khung Dẫn Dắt &amp; Chú Giải</span>
+        </div>
+        <div class="lab-col-body">
+          <div id="mount-step-wizard"></div>
+          <div id="mount-comment-section"></div>
+        </div>
+      </section>
+
+      <section class="lab-col col-sandbox">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 2 • Bàn Thí Nghiệm Đường Đi Của Dữ Liệu</span>
+          <button id="btn-reset" class="tp-btn tp-btn-ghost" style="padding: 4px 10px;">↺ Đặt Lại</button>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div id="mount-preset-picker" style="width: 100%;"></div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">📝 Câu đầu vào</div>
+            <div class="tp-seg" id="seg-seq">
+              <button data-v="seqA">Robot nhặt pin</button>
+              <button data-v="seqB">Robot nhặt sạc</button>
+              <button data-v="seqC">pin nhặt Robot</button>
+            </div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🧭 Chọn giai đoạn (bấm số)</div>
+            <div id="stage-nav" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+            <div class="tp-matrix-caption" id="stage-desc" style="margin-top:0.5rem;"></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🧩 Cấu hình mô hình</div>
+            <table class="tp-kv-table"><tr><td>Từ vựng</td><td>Robot, nhặt, pin, sạc (V = 4)</td></tr><tr><td>Chiều ẩn d</td><td>4, 2 đầu (d_k = 2)</td></tr><tr><td>Số khối</td><td>1 (Pre-LN)</td></tr><tr><td>Trọng số</td><td>W_Q = W_K = W_V = W_O = I, FFN = ReLU, đầu ra dùng chung E</td></tr></table>
+          </div>
+        </div>
+      </section>
+
+      <section class="lab-col col-telemetry">
+        <div class="lab-col-header">
+          <span class="lab-col-title">Cột 3 • Live Math &amp; Telemetry</span>
+          <span style="font-size: 0.65rem; color: var(--color-positive); font-weight: 700;">● REALTIME</span>
+        </div>
+        <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+          <div class="tp-panel">
+            <div class="tp-panel-title">📐 Phép tính ở giai đoạn này</div>
+            <div class="tp-math-box" id="katex-stage"></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🔬 Tensor hiện tại</div>
+            <div id="tensor-shape" class="tp-matrix-caption"></div>
+            <div style="display:flex; justify-content:center; overflow-x:auto;"><table class="tp-mini-matrix" id="tensor-grid"></table></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">👀 Trọng số attention (hàng = token hỏi, cột = token được nhìn)</div>
+            <div id="attn-grids" style="display:flex; gap:1rem; flex-wrap:wrap; justify-content:center;"></div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-title">🧮 Số tham số</div>
+            <table class="tp-kv-table" id="params-table"></table>
+          </div>
+          <div class="tp-verdict" id="verdict"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createStepWizard } from '../../shared/components/StepWizard.js';
+    import { createLiveSlider } from '../../shared/components/LiveSlider.js';
+    import { createPresetPicker } from '../../shared/components/PresetPicker.js';
+    import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
+    import { markCompleted } from '../../shared/progress.js';
+    import { LessonLogic, PRESETS } from './logic.js';
+
+    const LESSON_ID = 'mini_gpt_forward';
+
+    const STEPS = [
+      {
+        step: 1, badge: 'Bước 1 / 4',
+        heading: 'Từ chữ đến số: token và embedding',
+        problem: 'Câu "Robot nhặt pin" đi vào mô hình như thế nào? Máy chỉ nhận số.',
+        mechanism: 'Tokenizer gán mỗi từ một id ([[lesson:embedding_tokenization]]): $[0, 1, 2]$. Bảng embedding $E$ ($4 \\times 4$) cho mỗi id một hàng; ở đây $E = I$ nên token thành vector one-hot. Hai lần tra bảng này là phép gather theo chỉ số, gần như miễn phí về FLOPs. Rồi cộng mã vị trí ([[lesson:positional_encoding]]) để có $X \\in \\mathbb{R}^{3 \\times 4}$.',
+        action: '👉 Thao tác (Cột 2): Bấm số 1, 2, 3 ở "Chọn giai đoạn".\n👁️ Quan sát (Cột 3): Tensor đổi từ ids $[0,1,2]$ sang one-hot $3 \\times 4$ rồi $X = [[1,0,0,1],[0,1,1,0],[0,0,1,-1]]$.',
+        takeaway: 'Đầu vào của mọi tầng Transformer là một ma trận $T \\times d$: mỗi hàng một token.'
+      },
+      {
+        step: 2, badge: 'Bước 2 / 4',
+        heading: 'Khối Transformer: LayerNorm, Attention, Residual',
+        problem: 'Một khối Pre-LN xử lý $X$ như thế nào?',
+        mechanism: 'LayerNorm từng hàng ([[lesson:layernorm_residual]]) cho $H_1$; multi-head attention nhân quả với 2 đầu ([[lesson:multi_head_attention]], [[lesson:self_attention]]) trộn thông tin từ các token trước; cộng residual $X_1 = X + A$. Hàng đầu chỉ nhìn chính nó nên $A_0 = H_{1,0}$; hàng 2 là trung bình có trọng số của 2 token đầu: $[-0.888, 0.888, 0.888, -0.888]$.',
+        action: '👉 Thao tác (Cột 2): Bấm số 4, 5, 6 và xem lưới trọng số attention ở Cột 3.\n👁️ Quan sát (Cột 3): Ma trận trọng số tam giác dưới, mỗi hàng cộng bằng 1; token đầu có hàng $[1, 0, 0]$.',
+        takeaway: 'Mặt nạ nhân quả biến ma trận attention thành tam giác dưới: token chỉ nhìn quá khứ.'
+      },
+      {
+        step: 3, badge: 'Bước 3 / 4',
+        heading: 'FFN, residual và đầu ra',
+        problem: 'Sau attention, khối làm gì tiếp và làm sao ra xác suất token kế tiếp?',
+        mechanism: 'LayerNorm lần 2, FFN (ở bản toy là ReLU, ([[lesson:activation_valves]])), cộng residual lần 2 cho $X_2$. Rồi LayerNorm cuối và nhân với $E^\\top$ (dùng chung bảng embedding) cho logits $Z \\in \\mathbb{R}^{3 \\times 4}$: mỗi token có một điểm cho mỗi từ trong từ vựng. Softmax ([[lesson:softmax_stability]]) từng hàng ra xác suất; hàng cuối là phân phối token kế tiếp: $[0.126, 0.126, 0.705, 0.043]$.',
+        action: '👉 Thao tác (Cột 2): Bấm số 7, 8, 9, 10 hoặc preset "Xem kết quả cuối".\n👁️ Quan sát (Cột 3): Logits hàng cuối $[-0.165, -0.165, 1.56, -1.229]$, xác suất lớn nhất $70.5\\%$ ở "pin".',
+        takeaway: 'Dự đoán token kế tiếp chỉ là hàng cuối của một phép chiếu cuối cùng; kết quả này còn vô nghĩa vì mô hình chưa huấn luyện.'
+      },
+      {
+        step: 4, badge: 'Bước 4 / 4',
+        heading: 'Nhân quả và thứ tự là thật',
+        problem: 'Hai tính chất quan trọng nhất của mô hình ngôn ngữ sinh văn bản: (1) token sau không ảnh hưởng token trước; (2) đảo thứ tự thì kết quả đổi. Mô hình này có không?',
+        mechanism: 'Chọn câu "Robot nhặt sạc": nó chỉ khác "Robot nhặt pin" ở token cuối, và hai hàng đầu của MỌI tensor trùng hệt nhau, chỉ hàng cuối đổi. Đây là điều cho phép KV-Cache ([[lesson:kv_cache_anatomy]]): K, V của token cũ không bao giờ đổi nên được lưu lại. Chọn "pin nhặt Robot" (đảo thứ tự): kết quả đổi hoàn toàn nhờ mã vị trí, dù cùng một tập token.',
+        action: '👉 Thao tác (Cột 2): Lần lượt chọn 3 câu, giữ giai đoạn 9.\n👁️ Quan sát (Cột 3): Hai hàng đầu của câu 1 và 2 giống hệt nhau; câu 3 khác hẳn.',
+        takeaway: 'Nhân quả là điều kiện để sinh từng token và dùng KV-Cache; mã vị trí là lý do thứ tự có nghĩa.'
+      }
+    ];
+
+    const STEP_COMMENTS = {
+      2: [{
+        id: 'gp2', author: 'Học Viên DL Systems', role: 'Student', avatar: '🎓', tag: 'Cách theo dõi bug', tagType: 'gotcha',
+        content: 'Khi mô hình thật cho kết quả lạ, hãy làm đúng như bài này: dựng bản toy với số tròn, in shape và giá trị tensor sau từng bước, rồi so với numpy. Phần lớn lỗi (sai trục LayerNorm, quên mặt nạ, quên chia căn $d_k$) lộ ra ở bước nhỏ nhất.'
+      }],
+      3: [{
+        id: 'gp3', author: 'Chuyên Gia LLM', role: 'LLM', avatar: '🧠', tag: 'Thực tế', tagType: 'systems',
+        content: 'Mô hình thật lặp lại khối này $L$ lần (bài [[lesson:transformer_block_params]]), dùng RoPE ([[lesson:rope_rotary]]) thay mã vị trí cộng, GQA ([[lesson:gqa_kv_cache]]) thay MHA và RMSNorm thay LayerNorm; đầu ra dùng thêm đệm và ma trận chiếu không chia sẻ nếu cần. Cấu trúc dòng chảy dữ liệu vẫn y hệt.'
+      }],
+      4: [{
+        id: 'gp4', author: 'Kỹ Sư Backend', role: 'Systems', avatar: '⚙️', tag: 'Lúc suy diễn', tagType: 'systems',
+        content: 'Ở lượt đầu (prefill) cả câu đi qua mô hình một lần; sau đó mỗi bước giải mã chỉ đưa 1 token mới vào, đọc K,V cũ từ cache và lấy hàng cuối của logits rồi bốc token ([[lesson:sampling_decoding]]). Vì thế tối ưu cho giải mã là bài toán băng thông ([[lesson:roofline_arithmetic_intensity]]).'
+      }]
+    };
+
+    const logic = new LessonLogic();
+
+    const comments = createCommentSection(document.getElementById('mount-comment-section'), {
+      lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
+    });
+
+    createStepWizard(document.getElementById('mount-step-wizard'), {
+      steps: STEPS,
+      initialStep: 1,
+      onStepChange: (n) => {
+        comments.setStep(n, STEP_COMMENTS[n] || []);
+        if (n === STEPS.length) markCompleted(LESSON_ID, true);
+      }
+    });
+
+    let selectedStage = logic.state.stage;
+
+    function syncControls() {
+      void 0;
+    }
+
+    const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
+      presets: PRESETS,
+      initialActiveId: 'robot_nhat_pin',
+      onPick: (p) => {
+        logic.applyPreset(p.state);
+        syncControls();
+        render();
+      }
+    });
+
+    document.querySelectorAll('#seg-seq button').forEach(btn => btn.addEventListener('click', () => {
+      logic.onUserUpdate({ seq: btn.dataset.v });
+      presets.setActive(null);
+      render();
+    }));
+
+    function render() {
+      const r = logic.calculate();
+      const s = logic.state;
+      document.querySelectorAll('#seg-seq button').forEach(b => b.classList.toggle('active', b.dataset.v === s.seq));
+      const nav = document.getElementById('stage-nav');
+      nav.innerHTML = r.stageNames.map((n, i) =>
+        `<button class="tp-btn ${i === s.stage ? 'tp-btn-primary' : 'tp-btn-ghost'}" data-i="${i}" title="${n}" style="padding:2px 10px;">${i + 1}</button>`).join('');
+      nav.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+        logic.onUserUpdate({ stage: Number(b.dataset.i) });
+        presets.setActive(null);
+        render();
+      }));
+      document.getElementById('stage-desc').innerHTML = `<strong>${r.stageName}</strong><br>${r.description}`;
+
+      renderMath(document.getElementById('katex-stage'), r.formulaKaTeX, { displayMode: true });
+      document.getElementById('tensor-shape').textContent = `Hình dạng: ${r.shape[0]} × ${r.shape[1]}`;
+      const rowLabel = (i) => (s.stage === 0 ? 'ids' : (s.stage === 9 || s.stage === 8 ? `${r.tokens[i]} →` : r.tokens[i]));
+      const colLabels = (s.stage === 8 || s.stage === 9) ? r.vocab : null;
+      document.getElementById('tensor-grid').innerHTML =
+        (colLabels ? `<tr><td style="border:none; font-size:0.65rem; color:var(--text-dim);"></td>${colLabels.map(c => `<td style="border:none; font-size:0.65rem; color:var(--text-dim); text-align:center;">${c}</td>`).join('')}</tr>` : '') +
+        r.matrix.map((row, i) => `<tr><td style="border:none; font-size:0.7rem; color:var(--text-dim); white-space:nowrap;">${rowLabel(i)}</td>${row.map(v => `<td class="${v > 0 ? 'pos' : v < 0 ? 'neg' : ''}" style="min-width:48px; text-align:center;">${v}</td>`).join('')}</tr>`).join('');
+
+      document.getElementById('attn-grids').innerHTML = r.attnWeights.map((P, h) =>
+        `<div><div class="tp-matrix-caption">Đầu ${h + 1}</div><table class="tp-mini-matrix">${P.map(row => `<tr>${row.map(v => `<td class="${v > 0 ? 'pos' : ''}" style="min-width:44px; text-align:center;">${v}</td>`).join('')}</tr>`).join('')}</table></div>`).join('');
+
+      document.getElementById('params-table').innerHTML = `
+        <tr><td>Attention 4d²</td><td>${r.params.attention}</td></tr>
+        <tr><td>FFN 2·m·d² (m = 2)</td><td>${r.params.ffn}</td></tr>
+        <tr><td>Embedding V·d</td><td>${r.params.embedding}</td></tr>
+        <tr><td><strong>Tổng</strong></td><td><strong>${r.params.total}</strong> (≈ ${r.flopsPerToken} FLOPs/token)</td></tr>`;
+      renderAllInlineMath(document.querySelector('.col-telemetry'));
+      const verdict = document.getElementById('verdict');
+      verdict.className = `tp-verdict ${r.verdict.type}`;
+      verdict.textContent = r.verdict.text;
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      logic.reset();
+      syncControls();
+      presets.setActive('robot_nhat_pin');
+      render();
+    });
+
+    renderAllInlineMath(document.querySelector('.col-sandbox'));
+    render();
+  </script>
+
+  <script type="module" src="../../shared/components/LessonNav.js"></script>
+</body>
+</html>

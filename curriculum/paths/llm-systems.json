@@ -25,7 +25,8 @@
         "rope_rotary",
         "multi_head_attention",
         "transformer_block_params",
-        "moe_routing"
+        "moe_routing",
+        "mini_gpt_forward"
       ]
     },
     {

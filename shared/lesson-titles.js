@@ -26,6 +26,7 @@ export const LESSON_TITLES = {
   "lora_finetuning": "LoRA",
   "lr_schedule_warmup": "LR Schedule",
   "memory_leak": "Robot Chết Đuối Vì Memory Leak",
+  "mini_gpt_forward": "Mini-GPT",
   "minibatch_assembly": "Băng Chuyền Mini-Batching Assembly Line",
   "minibatch_sgd": "Xử Lý Mini-batch $B=2$ & Phép Chuyển Vị $X^T$",
   "mixed_precision": "Mixed Precision",

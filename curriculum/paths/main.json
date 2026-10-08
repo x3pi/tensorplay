@@ -79,6 +79,7 @@
         "multi_head_attention",
         "transformer_block_params",
         "moe_routing",
+        "mini_gpt_forward",
         "kv_cache_anatomy",
         "gqa_kv_cache",
         "sampling_decoding",

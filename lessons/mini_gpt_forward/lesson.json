@@ -1,0 +1,30 @@
+{
+  "id": "mini_gpt_forward",
+  "title": "Mini-GPT — Một Lượt Thuận Từ Token Đến Xác Suất Token Kế Tiếp",
+  "summary": "Ghép mọi bài trước thành một mô hình 144 tham số chạy thật: embedding + mã vị trí, LayerNorm, attention nhân quả 2 đầu, residual, FFN, logits tied và softmax. Đổi token cuối không đổi các hàng trước (nhân quả); đảo thứ tự đổi kết quả (vị trí).",
+  "topic": "transformer",
+  "tags": [
+    "capstone",
+    "gpt",
+    "forward-pass",
+    "causal",
+    "end-to-end"
+  ],
+  "difficulty": "advanced",
+  "estimatedMinutes": 15,
+  "status": "ready",
+  "prerequisites": [
+    "transformer_block_params",
+    "multi_head_attention",
+    "positional_encoding",
+    "embedding_tokenization"
+  ],
+  "related": [
+    "kv_cache_anatomy",
+    "sampling_decoding",
+    "rope_rotary",
+    "gqa_kv_cache"
+  ],
+  "sources": [],
+  "aliases": []
+}

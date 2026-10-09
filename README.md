@@ -71,3 +71,6 @@ npm run build
 - `vite.config.js` dùng `base: './'` và các trang chuyển hướng URL cũ dùng đường dẫn tương đối, nên bản `dist/` chạy được cả ở gốc domain lẫn dưới thư mục con (ví dụ GitHub Pages `/tensorplay/`).
 - `.github/workflows/ci.yml` chạy `npm run verify` (catalog khớp nguồn + toàn bộ Vitest + kiểm chứng toán học Python từng bài ở chế độ strict) rồi `npm run build`.
 - Kiểm chứng từng bài: `lessons/<slug>/kiem_tra.py` tính độc lập bằng numpy và đối chiếu trực tiếp với `logic.js` qua `tools/checks_common.py` (`js_calc`).
+
+## ⏱️ Về thời gian học
+`estimatedMinutes` trong `lesson.json` chỉ là thời gian **lướt qua** sandbox (ước lượng của tác giả, chưa đo trên người học thật). Trang chủ hiển thị thêm khoảng "hiểu" gấp 2–4 lần. Cả khóa (49 bài + 28 bài tập + tự code lại) thực tế khoảng 75–130 giờ, tức 3–5 tháng với 6–8 giờ mỗi tuần. Hãy tự bấm giờ vài bài đầu để hiệu chỉnh.

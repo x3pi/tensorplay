@@ -531,7 +531,7 @@
   </div>
 
   <script type="module">
-    import { loadCatalog } from './shared/curriculum.js';
+    import { loadCatalog, timeRange, formatHours } from './shared/curriculum.js';
     import { isLessonCompleted } from './shared/progress.js';
     import { renderMath, renderInlineMath } from './shared/katex-render.js';
 
@@ -604,9 +604,14 @@
       function updatePathBanner() {
         const pathObj = paths.find(p => p.id === activePathId) || paths[0];
         pathTitleEl.textContent = pathObj.title;
-        pathDescEl.textContent = pathObj.description;
-
         const pathLessons = getPathLessons(activePathId);
+        const skim = pathLessons.reduce((s, it) => s + ((catalog.lessons[it.slug] && catalog.lessons[it.slug].estimatedMinutes) || 0), 0);
+        const timeNote = skim > 0
+          ? ` ⏱️ Ước lượng (chưa đo thực tế): lướt qua ~${formatHours(skim)}, học hiểu thật ~${formatHours(skim * 2)}–${formatHours(skim * 4)} chưa tính bài tập và tự code lại.`
+          : '';
+        pathDescEl.textContent = (pathObj.description || '') + timeNote;
+
+
         const total = pathLessons.length;
         const done = pathLessons.filter(item => isLessonCompleted(item.slug)).length;
         const pct = total > 0 ? Math.round((done / total) * 100) : 0;
@@ -666,7 +671,7 @@
               <div class="card-bottom">
                 <div class="card-badges-left">
                   <span>${diffBadge}</span>
-                  <span>⏱️ ~${lesson.estimatedMinutes}m</span>
+                  <span title="Ước lượng, chưa đo trên người học thật. Lướt qua sandbox ~${lesson.estimatedMinutes} phút; hiểu thật (đọc, nghĩ lại, tính tay) thường gấp 2–4 lần.">⏱️ lướt ~${lesson.estimatedMinutes}m · hiểu ~${timeRange(lesson.estimatedMinutes).low}–${timeRange(lesson.estimatedMinutes).high}m</span>
                 </div>
 
                 ${isReady ? `

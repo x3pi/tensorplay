@@ -154,3 +154,16 @@ export function resolveRefs(text, catalog = cachedCatalog, options = {}) {
     return `«${shortTitle}»`;
   });
 }
+
+/**
+ * Thời gian học. `estimatedMinutes` trong lesson.json chỉ là thời gian LƯỚT QUA sandbox (ước lượng, chưa đo thực tế).
+ * Thời gian để HIỂU thật (đọc, nghĩ lại, tự tính tay) thường gấp 2-4 lần.
+ */
+export function timeRange(skimMinutes) {
+  const r5 = (v) => Math.max(5, Math.round(v / 5) * 5);
+  return { skim: skimMinutes, low: r5(skimMinutes * 2), high: r5(skimMinutes * 4) };
+}
+
+export function formatHours(minutes) {
+  return `${Math.round((minutes / 60) * 10) / 10} giờ`;
+}

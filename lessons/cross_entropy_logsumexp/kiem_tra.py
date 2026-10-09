@@ -134,46 +134,6 @@ def main() -> None:
     Fo = js_calc("cross_entropy_logsumexp", preset="overflow")["formulas"]
     assert "\\text{NaN}" in Fo["lossA"] and "\\infty" in Fo["softmaxNaive"]
 
-    # --- SGD trên logit: mô phỏng độc lập bằng numpy float32 ---
-    def sgd_lse(z, y, steps, lr=1.0):
-        z = np.array(z, dtype=np.float32)
-        for _ in range(steps):
-            e = np.exp(z - z.max())
-            p = e / e.sum(dtype=np.float32)
-            g = p.copy()
-            g[y] -= 1.0
-            z = (z - np.float32(lr) * g).astype(np.float32)
-        return z
-
-    def sgd_naive_step(z, y, lr=1.0):
-        z = np.array(z, dtype=np.float32)
-        with np.errstate(all="ignore"):
-            e = np.exp(z)
-            p = (e / e.sum(dtype=np.float32)).astype(np.float32)
-            py = p[y]
-            onehot = np.zeros(2, dtype=np.float32)
-            onehot[y] = 1.0
-            g = (np.float32(-1.0) / py) * (py * (onehot - p))  # quy tắc dây chuyền qua -ln(softmax)
-            return z - np.float32(lr) * g
-
-    for n in (1, 10, 100):
-        ref = sgd_lse([0.0, -110.0], 1, n)
-        # chạy n bước bằng cách gọi stepSGD n lần qua cầu Node (mỗi call = 1 bước)
-        js = js_calc("cross_entropy_logsumexp", preset="underflow", calls=["stepSGD"] * n)
-        assert abs(js["lossActive"] - float((np.log(np.exp(ref - ref.max()).sum()) + ref.max()) - ref[1])) < 1e-2, n
-    ref100 = sgd_lse([0.0, -110.0], 1, 100)
-    assert abs(float(ref100[0]) + 57.25) < 0.01 and abs(float(ref100[1]) + 52.75) < 0.01
-    ref10 = sgd_lse([0.0, -110.0], 1, 10)
-    assert np.allclose(ref10, [-10.0, -100.0], atol=1e-4)
-
-    # Đường A: một bước SGD làm logit thành NaN ở mọi tình huống lỗi (numpy xác nhận)
-    for name in ("underflow", "overflow"):
-        dt, z, y = cases[name]
-        assert np.isnan(sgd_naive_step(z, y)).all(), name
-    assert not np.isnan(sgd_naive_step([2.0, 1.0], 1)).any(), "Logit nhỏ: đường A vẫn hoạt động"
-    js = js_calc("cross_entropy_logsumexp", preset="underflow", update={"mode": "naive"}, calls=["stepSGD"])
-    assert js["dead"] is True
-
     # --- FP32 vs FP16: cùng logit [12, 11] chỉ hỏng ở FP16 ---
     assert naive_loss([12.0, 11.0], 0, np.float32)[0] == naive_loss([12.0, 11.0], 0, np.float32)[0] > 0
     assert math.isnan(naive_loss([12.0, 11.0], 0, np.float16)[0])

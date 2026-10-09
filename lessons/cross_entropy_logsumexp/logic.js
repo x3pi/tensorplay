@@ -231,13 +231,16 @@ export function buildRoutes(z, y, prec = 'fp32') {
   const sub = (i) => '₀₁₂₃₄₅₆₇₈₉'[i];
   const fz = (v) => (v < 0 ? `−${Math.abs(v)}` : String(v));
   const note = (st, sym, level, why) => { st.sym = sym; if (level) st.level = level; if (why) st.why = why; };
+  const maxVal = prec === 'fp16' ? '65504' : '3.4×10³⁸';
+  const big = (v) => (v >= 1e6 ? v.toExponential(2).replace('e+', '×10^') : String(Number(v.toPrecision(5))));
   const idx = (arr, f) => arr.map((v, i) => (f(v, i) ? i : -1)).filter(i => i >= 0);
 
   const overI = idx(eA, v => v === Infinity);
   const underA = idx(eA, (v, i) => v === 0 && Number.isFinite(z[i]));
   note(A[0], 'e_i = e^{z_i}',
     overI.length ? 'bad' : underA.length ? 'warn' : '',
-    overI.length ? overI.map(i => `exp(z${sub(i)}) với z${sub(i)} = ${fz(z[i])} > ${hi}: tràn thành +∞ (overflow)`).join('; ')
+    overI.length ? overI.map(i => `exp(z${sub(i)}) với z${sub(i)} = ${fz(z[i])} > ${hi}: giá trị thật e^${z[i]} ≈ ${big(Math.exp(z[i]))} vượt giới hạn ${maxVal} của ${prec === 'fp16' ? 'FP16' : 'FP32'} nên tràn thành +∞ (overflow)`).join('; ')
+      + eA.map((v, i) => (Number.isFinite(v) && v > 0 && overI.length ? `; exp(z${sub(i)}) = ${big(v)} vẫn nhỏ hơn ${maxVal} nên giữ nguyên` : '')).join('')
       : underA.length ? underA.map(i => `exp(z${sub(i)}) với z${sub(i)} = ${fz(z[i])} < ${lo}: bị làm tròn về 0 (underflow)`).join('; ') : '');
   note(A[1], 'S = \\sum_j e_j', Number.isFinite(sA) ? '' : 'bad', Number.isFinite(sA) ? '' : 'S chứa +∞ nên S = +∞');
   note(A[2], `p_i = e_i / S`, A[2].bad ? 'bad' : '',

@@ -373,7 +373,7 @@
         if (v === -Infinity) return '−∞';
         if (v === 0) return '0';
         const a = Math.abs(v);
-        return (a >= 1e5 || a < 1e-3) ? v.toExponential(2) : String(Number(v.toPrecision(4)));
+        return (a >= 1e5 || a < 1e-3) ? v.toExponential(2) : String(Number(v.toPrecision(5)));
       };
       const RED = 'var(--color-negative)', ORANGE = 'var(--color-warning)', GREEN = 'var(--color-positive)';
       const setMode = (mode) => {

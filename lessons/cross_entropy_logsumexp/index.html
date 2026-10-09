@@ -64,6 +64,15 @@
             </div>
           </div>
 
+          <!-- Độ chính xác số -->
+          <div class="tp-panel">
+            <div class="tp-panel-title">🔢 Độ Chính Xác Số Của GPU</div>
+            <div class="tp-seg" id="seg-precision">
+              <button data-v="fp32" class="active">FP32 (tràn khi logit &gt; 88.7)</button>
+              <button data-v="fp16">FP16 (tràn khi logit &gt; 11.1)</button>
+            </div>
+          </div>
+
           <!-- Nhãn đúng mục tiêu -->
           <div class="tp-panel">
             <div class="tp-panel-title">🎯 Nhãn Đúng Mục Tiêu (Target y)</div>
@@ -102,10 +111,21 @@
           </div>
 
           <!-- Thẻ 2: LogSumExp & Live Loss -->
-          <div class="tp-panel">
-            <div class="tp-panel-title">📐 2. Phép Tính Log-Sum-Exp &amp; Loss</div>
-            <div class="tp-math-box" id="katex-lse-formula"></div>
-            <table class="tp-kv-table" id="loss-table" style="margin-top: 0.6rem;"></table>
+          <div class="tp-panel" id="panel-loss-calc">
+            <div class="tp-panel-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+              <span>📐 2. Phép Tính Loss &amp; So Sánh Công Thức</span>
+              <span id="active-mode-badge" class="tp-badge" style="font-size: 0.68rem; font-weight: 700;"></span>
+            </div>
+            
+            <div style="font-size: 0.72rem; color: var(--text-dim); margin-bottom: 0.4rem;" id="formula-caption">
+              Công thức của hàm đang kích hoạt:
+            </div>
+            <div class="tp-math-box" id="katex-lse-formula" style="transition: border-color 0.2s ease;"></div>
+
+            <div style="margin-top: 0.85rem; font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;">
+              Đối Chiếu Hai Phương Pháp Tính:
+            </div>
+            <table class="tp-kv-table" id="loss-table" style="margin-top: 0.4rem;"></table>
           </div>
 
           <!-- Thẻ 3: Gradient -->
@@ -134,48 +154,57 @@
     const STEPS = [
       {
         step: 1,
-        badge: 'Bước 1 / 5',
+        badge: 'Bước 1 / 6',
         heading: 'Cơn Ác Mộng Của Cách Tính Ngây Thơ',
-        problem: 'Tại sao công thức toán học quen thuộc Loss = -ln(softmax(z)_y) lại khiến mô hình AI sụp đổ khi logit chênh lệch lớn?',
-        mechanism: 'Khi một logit rất âm (ví dụ $z_1 = -1000$), máy tính làm tròn $e^{-1000}$ thành đúng số $0$ (Underflow). Khi đó xác suất Softmax $p_1 = 0$. Đến bước lấy log, $\\ln(0) = -\\infty$ khiến Loss $= +\\infty$! Mọi gradient bị phá hủy hoàn toàn.',
-        action: '👉 Thao tác: Bấm Preset "Cực Đoan: Chênh lệch lớn [0, -1000]" và chuyển công tắc sang chế độ Naive (Ngây Thơ).\n👁️ Quan sát: Xem thanh Loss nhảy vọt lên Infinity và bảng điều khiển báo động đỏ!',
-        takeaway: 'Tính Softmax trước rồi mới lấy log là con đường ngắn nhất dẫn tới thảm họa số học trong máy tính.'
+        problem: 'Công thức quen thuộc $\\text{Loss} = -\\ln(\\operatorname{softmax}(z)_y)$ trông hoàn hảo trên giấy. Vì sao nó làm mô hình sụp đổ khi logit chênh lệch lớn?',
+        mechanism: 'Giả sử $z = [0, -110]$ và nhãn đúng là lớp 1. Trong FP32, $e^{-110} \\approx 1.7 \\times 10^{-48}$ nhỏ hơn số FP32 dương nhỏ nhất ($1.4 \\times 10^{-45}$) nên máy làm tròn thành đúng $0$ (Underflow). Khi đó $p_1 = 0$ và $\\ln(0) = -\\infty$ nên $\\text{Loss} = +\\infty$. Trong khi đó Loss thật chỉ là $110$, một số hoàn toàn bình thường!',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Hụt số FP32: [0, -110]" và chuyển công tắc sang "Naive".\n👁️ Quan sát (Cột 3): Loss nhảy lên +Infinity, và bảng gradient của cách ngây thơ ra NaN.',
+        takeaway: 'Tính Softmax trước rồi mới lấy log làm mất thông tin: một Loss hữu hạn bị biến thành vô cực, và gradient thành NaN.'
       },
       {
         step: 2,
-        badge: 'Bước 2 / 5',
-        heading: 'Công Thức Gộp Log-Sum-Exp Kỳ Diệu',
+        badge: 'Bước 2 / 6',
+        heading: 'Công Thức Gộp Log-Sum-Exp',
         problem: 'Làm thế nào để tính log của Softmax mà không bao giờ phải tính riêng từng giá trị Softmax?',
-        mechanism: 'Khai triển đại số triệt tiêu phép chia:\n$$\\ln(p_y) = \\ln\\left(\\frac{e^{z_y}}{\\sum e^{z_j}}\\right) = z_y - \\ln\\left(\\sum e^{z_j}\\right)$$\nDo đó:\n$$\\text{Loss} = -\\ln(p_y) = \\text{LogSumExp}(z) - z_y$$\nTa không cần phải chia mẫu số, cũng không cần lấy $\\ln$ của một số cực nhỏ!',
-        action: '👉 Thao tác: Bật công tắc sang "Log-Sum-Exp ✅".\n👁️ Quan sát: Loss lập tức trở về con số 1000.0 tròn trịa, hoàn toàn hữu hạn và chính xác tuyệt đối!',
-        takeaway: 'Công thức Log-Sum-Exp gộp triệt tiêu phép chia nguy hiểm, biến phép tính thành một phép trừ tuyến tính an toàn.'
+        mechanism: 'Khai triển đại số triệt tiêu phép chia:\n$$\\ln(p_y) = \\ln\\left(\\frac{e^{z_y}}{\\sum e^{z_j}}\\right) = z_y - \\ln\\left(\\sum e^{z_j}\\right)$$\nDo đó:\n$$\\text{Loss} = -\\ln(p_y) = \\text{LogSumExp}(z) - z_y$$\nKhông còn phép chia, cũng không còn $\\ln$ của một số cực nhỏ: với $z = [0, -110]$, $\\text{LSE} = 0$ và $\\text{Loss} = 0 - (-110) = 110$.',
+        action: '👉 Thao tác (Cột 2): Giữ preset "Hụt số FP32" và bật công tắc "Log-Sum-Exp".\n👁️ Quan sát (Cột 3): Loss trở về đúng $110$, gradient $[1, -1]$ hữu hạn.',
+        takeaway: 'Gộp softmax và log thành một công thức biến phép chia nguy hiểm thành một phép trừ an toàn.'
       },
       {
         step: 3,
-        badge: 'Bước 3 / 5',
+        badge: 'Bước 3 / 6',
         heading: 'Kỹ Thuật Trừ Max (Safe LSE)',
-        problem: 'Nếu logit dương quá lớn như $z = [1000, 999]$, hàm $e^{1000}$ sẽ tràn số ra Infinity. LogSumExp giải quyết thế nào?',
-        mechanism: 'Đặt $m = \\max(z)$. Ta rút thừa số chung $e^m$ ra ngoài log:\n$$\\text{LogSumExp}(z) = m + \\ln\\left(\\sum e^{z_j - m}\\right)$$\nVì $z_j - m \\le 0$, các số mũ $e^{z_j - m}$ luôn nằm trong khoảng $(0, 1]$! Không bao giờ có bất kỳ số nào bị tràn vượt quá $1.0$.',
-        action: '👉 Thao tác: Bấm Preset "Tràn Số: Logit siêu lớn [1000, 999]".\n👁️ Quan sát: $m = 1000$, các số mũ chỉ là $e^0 = 1$ và $e^{-1} \\approx 0.3679$. Loss ra 0.3133 cực kỳ mượt mà!',
-        takeaway: 'Kỹ thuật rút max(z) đảm bảo mọi số mũ đều <= 0, triệt tiêu 100% nguy cơ tràn số (Overflow).'
+        problem: 'Logit dương lớn như $z = [100, 99]$ thì $e^{100}$ vượt $3.4 \\times 10^{38}$, tràn ra Infinity trong FP32. LogSumExp xử lý thế nào?',
+        mechanism: 'Đặt $m = \\max(z)$ rồi rút $e^m$ ra ngoài log:\n$$\\text{LogSumExp}(z) = m + \\ln\\left(\\sum e^{z_j - m}\\right)$$\nVì $z_j - m \\le 0$, mọi số mũ $e^{z_j - m}$ nằm trong $(0, 1]$ nên không bao giờ tràn. Với $z = [100, 99]$: các số mũ là $e^0 = 1$ và $e^{-1} \\approx 0.368$, $\\text{LSE} = 100.3133$, $\\text{Loss} = 0.3133$.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Tràn số FP32: [100, 99]" rồi so hai công tắc.\n👁️ Quan sát (Cột 3): Naive ra NaN, LSE ra $0.3133$.',
+        takeaway: 'Trừ $\\max(z)$ đảm bảo mọi số mũ $\\le 0$, loại bỏ hoàn toàn nguy cơ tràn số (cùng mẹo với Safe Softmax ở bài trước).'
       },
       {
         step: 4,
-        badge: 'Bước 4 / 5',
-        heading: 'Gradient Dội Ngược: Đơn Giản & Hoàn Hảo',
-        problem: 'Đạo hàm của hàm mất mát theo logit z có bị ảnh hưởng bởi Log-Sum-Exp không?',
-        mechanism: 'Đạo hàm của $\\text{LogSumExp}(z)$ theo $z_i$ chính là Softmax: $\\frac{\\partial \\text{LSE}}{\\partial z_i} = p_i$. Kết hợp với $\\frac{\\partial(-z_y)}{\\partial z_i}$, ta có:\n$$\\frac{\\partial \\text{Loss}}{\\partial z} = P - I_y$$\nGradient luôn là vector sai số quen thuộc: tổng các phần tử luôn triệt tiêu đúng bằng 0, không hề có số vô cực nào!',
-        action: '👉 Thao tác: Quan sát Thẻ 3 ở Cột 3 với các bộ logit khác nhau.\n👁️ Quan sát: Vector gradient $P - I_y$ luôn hữu hạn và tổng hai thành phần luôn bằng 0.',
-        takeaway: 'Đạo hàm dội ngược của Cross-Entropy LogSumExp giữ nguyên dạng $P - I_y$ đẹp đẽ và ổn định tuyệt đối.'
+        badge: 'Bước 4 / 6',
+        heading: 'FP16 Làm Mọi Thứ Đến Sớm Hơn Nhiều',
+        problem: 'Mô hình thật huấn luyện bằng FP16 hoặc BF16 để tiết kiệm bộ nhớ ([[lesson:mixed_precision]]). Cách ngây thơ hỏng ở logit nào?',
+        mechanism: 'FP16 chỉ biểu diễn tới $65504$, tức $e^z$ tràn khi $z > \\ln 65504 \\approx 11.09$. Logit $12$ là hoàn toàn bình thường trong mô hình thật! Ở chiều ngược lại, số FP16 dương nhỏ nhất là $6 \\times 10^{-8}$ nên $e^{z}$ về 0 từ $z < -16.6$. Log-Sum-Exp vẫn cho Loss hữu hạn, chỉ có sai số làm tròn nhỏ: $0.3125$ thay vì $0.3133$.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "FP16 chỉ cần logit 12: [12, 11]", rồi kéo thanh trượt $z_0$ lên xuống quanh 11.\n👁️ Quan sát (Cột 3): Naive chuyển từ hữu hạn sang NaN ngay khi $z_0$ vượt 11, còn LSE luôn hữu hạn.',
+        takeaway: 'Càng ít bit thì ngưỡng hỏng càng gần: FP32 hỏng ở 88.7, FP16 chỉ ở 11.1.'
       },
       {
         step: 5,
-        badge: 'Bước 5 / 5',
+        badge: 'Bước 5 / 6',
+        heading: 'Gradient Dội Ngược: Đơn Giản & Hoàn Hảo',
+        problem: 'Đạo hàm của hàm mất mát theo logit $z$ có bị ảnh hưởng bởi Log-Sum-Exp không?',
+        mechanism: 'Đạo hàm của $\\text{LogSumExp}(z)$ theo $z_i$ chính là Softmax: $\\frac{\\partial \\text{LSE}}{\\partial z_i} = p_i$. Kết hợp với $\\frac{\\partial(-z_y)}{\\partial z_i}$ ta có:\n$$\\frac{\\partial \\text{Loss}}{\\partial z} = P - I_y$$\nTổng các phần tử luôn bằng 0 và luôn hữu hạn. Còn cách ngây thơ phải đi qua $\\frac{\\partial L}{\\partial p_y} = -\\frac{1}{p_y}$: khi $p_y = 0$ nó là $-\\infty$, nhân với đạo hàm Softmax bằng 0 ra $\\text{NaN}$.',
+        action: '👉 Thao tác (Cột 2): Xem Thẻ 3 ở Cột 3 với từng preset.\n👁️ Quan sát (Cột 3): Cột LSE luôn hữu hạn, cột "ngây thơ" ra NaN ở mọi preset lỗi.',
+        takeaway: 'Một Loss $= \\infty$ chưa phải điều tệ nhất: gradient NaN lan vào trọng số ở bước cập nhật kế tiếp và phá hỏng cả mô hình.'
+      },
+      {
+        step: 6,
+        badge: 'Bước 6 / 6',
         heading: 'Bài Học Hệ Thống Cho Kỹ Sư AI',
-        problem: 'Tại sao trong PyTorch hay Candle, bạn không bao giờ thấy torch.log(torch.softmax(...))?',
-        mechanism: 'Mọi thư viện học sâu chuẩn công nghiệp đều cung cấp sẵn `torch.nn.functional.cross_entropy` hoặc `log_softmax` được tối ưu hóa ở tầng CUDA bằng LogSumExp. Dùng riêng lẻ softmax rồi log là lỗi cấm kỵ trong production!',
-        action: '👉 Thao tác: Thử tự kéo 2 thanh trượt $z_0, z_1$ tùy ý để kiểm tra độ bền vững của hệ thống.\n👁️ Quan sát: Huy hiệu hoàn thành bài học sẽ bật sáng.',
-        takeaway: 'Luôn dùng hàm Cross-Entropy gộp sẵn hoặc Log-Softmax trong mọi dự án AI thực tế.'
+        problem: 'Vì sao trong PyTorch hay Candle không ai viết `torch.log(torch.softmax(...))`? Và `CrossEntropyLoss` nhận gì làm đầu vào?',
+        mechanism: '`torch.nn.functional.cross_entropy(logits, target)` nhận LOGIT THÔ và bên trong dùng `log_softmax` (LogSumExp) ở tầng CUDA. `F.log_softmax` làm đúng phần LSE, `F.nll_loss` lấy phần tử $-\\log p_y$. Với $K$ lớp công thức y hệt, chỉ khác tổng chạy qua $K$ số hạng.',
+        action: '👉 Thao tác (Cột 2): Tự kéo $z_0, z_1$ trên cả hai độ chính xác và quan sát ngưỡng hỏng.\n👁️ Quan sát: Huy hiệu hoàn thành bài học sẽ bật sáng.',
+        takeaway: 'Luôn đưa logit thô vào hàm Cross-Entropy gộp sẵn, và dùng `log_softmax` thay vì `log(softmax(...))`.'
       }
     ];
 
@@ -187,7 +216,7 @@
           avatar: '💥',
           tag: 'Production Bug',
           tagType: 'gotcha',
-          content: 'Lỗi này rất phổ biến ở người mới: viết code rời `loss = -torch.log(torch.softmax(z, dim=-1)[y])`. Đến khi train mô hình lớn gặp logit lệch là model nổ Loss NaN ngay!'
+          content: 'Lỗi này rất phổ biến ở người mới: viết `loss = -torch.log(torch.softmax(z, dim=-1)[y])`. Mô hình chạy bình thường hàng nghìn bước đầu, rồi gặp một batch logit lệch là Loss thành NaN và không bao giờ hồi phục.'
         }
       ],
       2: [
@@ -195,9 +224,9 @@
           id: 'c-lse-2',
           author: 'Nhà Toán Học',
           avatar: '📐',
-          tag: 'Đại Số Tuyến Tính',
+          tag: 'Đại Số',
           tagType: 'math',
-          content: 'Nhờ tính chất $\\ln(a/b) = \\ln(a) - \\ln(b)$ và $\\ln(e^x) = x$, phép chia biến thành phép trừ. Biến đổi giải tích vừa đơn giản hóa vừa ổn định số học kỳ diệu.'
+          content: 'Nhờ $\\ln(a/b) = \\ln a - \\ln b$ và $\\ln(e^x) = x$, phép chia biến thành phép trừ: đây là biến đổi chính xác tuyệt đối, không phải xấp xỉ. LogSumExp còn là xấp xỉ trơn của $\\max$: $\\max(z) \\le \\text{LSE}(z) \\le \\max(z) + \\ln K$.'
         }
       ],
       3: [
@@ -207,27 +236,37 @@
           avatar: '⚙️',
           tag: 'Numeric Stability',
           tagType: 'system',
-          content: 'Trong kernel C++/CUDA của Candle hay PyTorch, `logsumexp` luôn tìm `max(z)` đầu tiên bằng thao tác warp-reduce, sau đó mới tính tổng `exp(z - max)`.'
+          content: 'Trong kernel CUDA, `logsumexp` luôn tìm `max(z)` trước bằng warp-reduce, rồi mới tính tổng `exp(z - max)`. Đây cũng là mẹo của Safe Softmax và là bước đầu tiên của Online Softmax trong FlashAttention ([[lesson:flash_attention]]).'
         }
       ],
       4: [
         {
           id: 'c-lse-4',
-          author: 'Nhà Toán Học',
+          author: 'Chuyên Gia GPU',
           avatar: '⚡',
-          tag: 'Vector Sai Số',
-          tagType: 'math',
-          content: 'Đạo hàm của LogSumExp là Softmax: $\\nabla_z \\text{LSE}(z) = P$. Đó là lý do $\\nabla_z \\text{Loss} = P - I_y$. Một sự liên kết tuyệt mỹ giữa giải tích và xác suất.'
+          tag: 'FP16 và BF16',
+          tagType: 'system',
+          content: 'BF16 có dải số như FP32 nên `exp` tràn ở logit 88.7 chứ không phải 11. Nhưng BF16 ít chữ số hơn, nên các framework vẫn tính softmax và loss ở FP32 ("upcast") dù phần còn lại chạy 16 bit. Đó là lý do bạn hay thấy `logits.float()` trước khi tính loss.'
         }
       ],
       5: [
         {
           id: 'c-lse-5',
+          author: 'Nhà Toán Học',
+          avatar: '⚡',
+          tag: 'Vector Sai Số',
+          tagType: 'math',
+          content: 'Đạo hàm của LogSumExp là Softmax: $\\nabla_z \\text{LSE}(z) = P$. Đó là lý do $\\nabla_z \\text{Loss} = P - I_y$. Liên kết giữa giải tích và xác suất này cũng là nguồn gốc của bài Softmax Regression ở đầu khóa.'
+        }
+      ],
+      6: [
+        {
+          id: 'c-lse-6',
           author: 'Kỹ Sư Hệ Thống',
           avatar: '🚀',
-          tag: 'API Best Practice',
-          tagType: 'system',
-          content: 'Quy tắc vàng: Nếu cần xuất xác suất ra ngoài xem, hãy dùng Softmax. Nhưng nếu cần tính Loss hoặc Gradient, BẮT BUỘC dùng LogSumExp hoặc Cross-Entropy gộp!'
+          tag: 'Gotcha kinh điển',
+          tagType: 'gotcha',
+          content: 'Lỗi ngược lại cũng phổ biến: thêm `nn.Softmax()` vào cuối mô hình rồi đưa ra `CrossEntropyLoss`. Hàm loss lại softmax thêm một lần nữa ("double softmax"): mô hình vẫn học nhưng chậm và kém, không báo lỗi nào. Quy tắc: nếu cần xác suất để hiển thị thì softmax riêng, còn lúc tính Loss thì luôn dùng logit thô.'
         }
       ]
     };
@@ -268,13 +307,13 @@
     // 4. Sliders
     const sliderZ0 = createLiveSlider(document.getElementById('mount-slider-z0'), {
       label: 'Logit $z_0$ (Lớp 0: Dừng 🛑)',
-      min: -10, max: 10, step: 0.5, initial: logic.state.z0,
+      min: -120, max: 120, step: 1, initial: logic.state.z0,
       onChange: (v) => { logic.onUserUpdate({ z0: v }); renderAll(); }
     });
 
     const sliderZ1 = createLiveSlider(document.getElementById('mount-slider-z1'), {
       label: 'Logit $z_1$ (Lớp 1: Đi Thẳng ⬆️)',
-      min: -10, max: 10, step: 0.5, initial: logic.state.z1,
+      min: -120, max: 120, step: 1, initial: logic.state.z1,
       onChange: (v) => { logic.onUserUpdate({ z1: v }); renderAll(); }
     });
 
@@ -285,6 +324,15 @@
         const mode = btn.dataset.v;
         logic.onUserUpdate({ mode });
         updateSegActive(segMode, mode);
+        renderAll();
+      });
+    });
+
+    const segPrecision = document.getElementById('seg-precision');
+    segPrecision.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        logic.onUserUpdate({ precision: btn.dataset.v });
+        updateSegActive(segPrecision, btn.dataset.v);
         renderAll();
       });
     });
@@ -317,6 +365,7 @@
       sliderZ0.setValue(s.z0);
       sliderZ1.setValue(s.z1);
       updateSegActive(segMode, s.mode);
+      updateSegActive(segPrecision, s.precision);
       updateSegActive(segTarget, s.y.toString());
     }
 
@@ -326,7 +375,7 @@
 
       // Sliders caption
       document.getElementById('txt-logits-caption').textContent =
-        `Vector z = [${calc.z[0]}, ${calc.z[1]}], max(z) = ${calc.m}`;
+        `Vector z = [${calc.z[0]}, ${calc.z[1]}], max(z) = ${calc.m}. ${calc.precisionName}: exp tràn khi z > ${calc.overflowAt}, về 0 khi z < ${calc.underflowAt}.`;
 
       // Verdict
       const verdictEl = document.getElementById('verdict');
@@ -347,20 +396,104 @@
       document.getElementById('probs-caption').textContent =
         s.mode === 'naive' && (calc.isUnderflow || calc.isOverflow)
           ? '⚠️ Naive Softmax gặp sự cố số học (Underflow/Overflow)!'
-          : 'Safe Softmax trừ max(z) luôn có tổng đúng bằng 100%.';
+          : `Safe Softmax trừ max(z) luôn có tổng xấp xỉ 100% ở ${calc.precisionName}.`;
 
       // Telemetry Card 2: LSE & Loss Formula
-      renderMath(document.getElementById('katex-lse-formula'), calc.formulaKaTeX);
+      const isLseActive = s.mode === 'lse';
+      const activeBadge = document.getElementById('active-mode-badge');
+      if (activeBadge) {
+        if (isLseActive) {
+          activeBadge.style.cssText = 'background: rgba(34, 197, 94, 0.18); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.35); font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 4px;';
+          activeBadge.textContent = '🛡️ Đang Dùng: Log-Sum-Exp';
+        } else {
+          activeBadge.style.cssText = 'background: rgba(239, 68, 68, 0.18); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 4px;';
+          activeBadge.textContent = '❌ Đang Dùng: Naive (Softmax rồi Log)';
+        }
+      }
+
+      const formulaCaption = document.getElementById('formula-caption');
+      if (formulaCaption) {
+        formulaCaption.innerHTML = isLseActive
+          ? 'Công thức <strong style="color:var(--color-positive);">Log-Sum-Exp Gộp (Safe)</strong> đang áp dụng:'
+          : 'Công thức <strong style="color:var(--color-negative);">Naive Rời Rạc</strong> đang áp dụng:';
+      }
+
+      const mathBox = document.getElementById('katex-lse-formula');
+      if (mathBox) {
+        mathBox.style.border = isLseActive
+          ? '1px solid rgba(34, 197, 94, 0.4)'
+          : '1px solid rgba(239, 68, 68, 0.5)';
+      }
+      renderMath(mathBox, calc.formulaActiveKaTeX || calc.formulaKaTeX);
 
       const fmtLoss = (l) => Number.isFinite(l) ? l.toFixed(4) : (Number.isNaN(l) ? '<span style="color:var(--color-negative);font-weight:700;">NaN</span>' : '<span style="color:var(--color-negative);font-weight:700;">+Infinity</span>');
 
       const lossTable = document.getElementById('loss-table');
       lossTable.innerHTML = `
-        <tr><td>LogSumExp(z)</td><td><strong>${Number.isFinite(calc.lse) ? calc.lse.toFixed(4) : calc.lse}</strong></td></tr>
-        <tr><td>Loss Log-Sum-Exp</td><td style="color:var(--color-positive);font-weight:700;">${fmtLoss(calc.lossLSE)}</td></tr>
-        <tr><td>Loss Naive</td><td>${fmtLoss(calc.lossNaive)}</td></tr>
-        <tr><td>Hàm đang kích hoạt</td><td><span class="tp-badge" style="font-weight:700;">${s.mode === 'lse' ? '🛡️ Log-Sum-Exp' : '❌ Naive'}</span></td></tr>
+        <tr class="loss-row-lse" style="cursor: pointer; ${isLseActive ? 'background: rgba(34, 197, 94, 0.08);' : 'opacity: 0.8;'}" title="Click để chuyển sang công thức Log-Sum-Exp">
+          <td>
+            <div style="font-weight: 700; color: ${isLseActive ? 'var(--color-positive)' : 'inherit'};">Loss Log-Sum-Exp</div>
+            <div style="font-size: 0.7rem; color: var(--text-dim);">$\\text{Loss} = \\text{LogSumExp}(z) - z_{${s.y}}$</div>
+          </td>
+          <td style="color: var(--color-positive); font-weight: 700; vertical-align: middle;">${fmtLoss(calc.lossLSE)}</td>
+          <td style="text-align: right; vertical-align: middle;">
+            ${isLseActive
+              ? '<span class="tp-badge" style="background: rgba(34, 197, 94, 0.2); color: #4ade80; font-size: 0.65rem; font-weight: 700;">● ĐANG DÙNG</span>'
+              : '<button class="tp-btn tp-btn-secondary btn-switch-mode" data-mode="lse" style="padding: 2px 8px; font-size: 0.68rem;">Dùng hàm này</button>'}
+          </td>
+        </tr>
+        <tr class="loss-row-naive" style="cursor: pointer; ${!isLseActive ? 'background: rgba(239, 68, 68, 0.08);' : 'opacity: 0.8;'}" title="Click để chuyển sang công thức Naive">
+          <td>
+            <div style="font-weight: 700; color: ${!isLseActive ? 'var(--color-negative)' : 'inherit'};">Loss Naive (Rời Rạc)</div>
+            <div style="font-size: 0.7rem; color: var(--text-dim);">$\\text{Loss} = -\\ln(p_{${s.y}})$</div>
+          </td>
+          <td style="color: ${calc.isUnderflow || calc.isOverflow ? 'var(--color-negative)' : 'var(--text-bright)'}; font-weight: 700; vertical-align: middle;">${fmtLoss(calc.lossNaive)}</td>
+          <td style="text-align: right; vertical-align: middle;">
+            ${!isLseActive
+              ? '<span class="tp-badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-size: 0.65rem; font-weight: 700;">● ĐANG DÙNG</span>'
+              : '<button class="tp-btn tp-btn-secondary btn-switch-mode" data-mode="naive" style="padding: 2px 8px; font-size: 0.68rem;">Dùng hàm này</button>'}
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <span style="font-size: 0.74rem;">LogSumExp(z)</span>
+          </td>
+          <td colspan="2"><strong style="font-size: 0.8rem;">${Number.isFinite(calc.lse) ? calc.lse.toFixed(4) : calc.lse}</strong></td>
+        </tr>
       `;
+
+      // Event listener cho nút chuyển đổi ngay trong bảng
+      lossTable.querySelectorAll('.btn-switch-mode').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const targetMode = btn.dataset.mode;
+          if (targetMode && targetMode !== s.mode) {
+            logic.onUserUpdate({ mode: targetMode });
+            syncUIFromState();
+            renderAll();
+          }
+        });
+      });
+      const rowLSE = lossTable.querySelector('.loss-row-lse');
+      if (rowLSE) {
+        rowLSE.addEventListener('click', () => {
+          if (s.mode !== 'lse') {
+            logic.onUserUpdate({ mode: 'lse' });
+            syncUIFromState();
+            renderAll();
+          }
+        });
+      }
+      const rowNaive = lossTable.querySelector('.loss-row-naive');
+      if (rowNaive) {
+        rowNaive.addEventListener('click', () => {
+          if (s.mode !== 'naive') {
+            logic.onUserUpdate({ mode: 'naive' });
+            syncUIFromState();
+            renderAll();
+          }
+        });
+      }
 
       // Telemetry Card 3: Gradient Table
       const gradFormula = `\\nabla_z \\text{Loss} = [P_0 - I_{y=0}, \\; P_1 - I_{y=1}] = [${calc.grad[0].toFixed(4)}, \\; ${calc.grad[1].toFixed(4)}]`;
@@ -368,10 +501,12 @@
 
       const gradTable = document.getElementById('grad-table');
       const gradSum = calc.grad[0] + calc.grad[1];
+      const fmtG = (g) => Number.isFinite(g) ? `${g >= 0 ? '+' : ''}${g.toFixed(4)}` : `<span style="color:var(--color-negative);font-weight:700;">${Number.isNaN(g) ? 'NaN' : g}</span>`;
       gradTable.innerHTML = `
-        <tr><td>dL / dz_0 (Lớp 0)</td><td>${calc.grad[0] >= 0 ? '+' : ''}${calc.grad[0].toFixed(4)}</td></tr>
-        <tr><td>dL / dz_1 (Lớp 1)</td><td>${calc.grad[1] >= 0 ? '+' : ''}${calc.grad[1].toFixed(4)}</td></tr>
-        <tr><td>Tổng lực cân bằng (Sum)</td><td><strong>${gradSum.toFixed(6)}</strong> (luôn = 0)</td></tr>
+        <tr><td><em>Gradient</em></td><td><em>Công thức gộp (LSE)</em></td><td><em>Cách ngây thơ</em></td></tr>
+        <tr><td>dL / dz_0 (Lớp 0)</td><td>${fmtG(calc.grad[0])}</td><td>${fmtG(calc.gradNaive[0])}</td></tr>
+        <tr><td>dL / dz_1 (Lớp 1)</td><td>${fmtG(calc.grad[1])}</td><td>${fmtG(calc.gradNaive[1])}</td></tr>
+        <tr><td>Tổng</td><td><strong>${gradSum.toFixed(4)}</strong> (≈ 0)</td><td>${calc.gradNaiveBroken ? '<span style="color:var(--color-negative);font-weight:700;">hỏng: SGD sẽ ghi NaN vào trọng số</span>' : '≈ 0'}</td></tr>
       `;
 
       renderAllInlineMath(document.body);

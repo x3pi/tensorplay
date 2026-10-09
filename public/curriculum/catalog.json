@@ -274,22 +274,27 @@
     "cross_entropy_logsumexp": {
       "id": "cross_entropy_logsumexp",
       "title": "Cross-Entropy dạng Log-Sum-Exp — Ổn Định Số Học Cho Hàm Mất Mát",
-      "summary": "Tính Softmax trước rồi lấy log gây sụp đổ số học khi logit chênh lệch lớn. Công thức gộp $\\text{Loss} = \\text{LogSumExp}(z) - z_y$ triệt tiêu phép chia nguy hiểm và bảo toàn gradient.",
+      "summary": "Tính Softmax trước rồi lấy log làm hỏng Loss và gradient khi logit lớn hoặc chênh lệch: FP32 tràn ở logit 88.7, FP16 chỉ ở 11.1. Công thức gộp $\\text{Loss} = \\text{LogSumExp}(z) - z_y$ (trừ max) luôn hữu hạn, gradient là $P - I_y$.",
       "topic": "foundations",
       "tags": [
-        "numerical-stability",
-        "log-sum-exp",
         "cross-entropy",
-        "loss-function"
+        "fp16",
+        "fp32",
+        "log-softmax",
+        "log-sum-exp",
+        "loss-function",
+        "numerical-stability"
       ],
       "difficulty": "intermediate",
-      "estimatedMinutes": 12,
+      "estimatedMinutes": 15,
       "status": "ready",
       "prerequisites": [
         "softmax_stability"
       ],
       "related": [
-        "softmax_regression"
+        "mixed_precision",
+        "softmax_regression",
+        "softmax_stability"
       ],
       "sources": [],
       "aliases": [
@@ -1980,6 +1985,6 @@
       }
     }
   ],
-  "generatedAt": "2026-10-08T10:11:06.931Z",
+  "generatedAt": "2026-10-09T03:25:04.404Z",
   "totalLessons": 49
 }

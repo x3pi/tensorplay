@@ -1,61 +1,112 @@
 #!/usr/bin/env python3
 """
 lessons/cross_entropy_logsumexp/kiem_tra.py
-Kiểm chứng số học độc lập bằng NumPy theo quy chuẩn AGENTS.md.
-(Khôi phục đầy đủ các assertion gốc từ bộ kiểm chứng theo track cũ.)
+Dùng kiểu số thật của numpy (float32, float16) làm chuẩn độc lập để kiểm chứng mô phỏng độ chính xác trong logic.js.
 """
 import math
+import pathlib
+import sys
+import warnings
 
 import numpy as np
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "tools"))
+from checks_common import js_calc  # noqa: E402
 
-def kiem_tra_cross_entropy_logsumexp():
-    print("=== [Kiểm tra Bài: Cross-Entropy dạng Log-Sum-Exp] ===")
-    def lse(z):
-        m = np.max(z)
-        return m + np.log(np.sum(np.exp(z - m)))
+warnings.filterwarnings("ignore")
 
-    def loss_lse(z, y):
-        return lse(z) - z[y]
 
-    # 1. Trường hợp bình thường [2.0, 1.0], nhãn y=1
-    z_norm = np.array([2.0, 1.0])
-    lse_norm = lse(z_norm)
-    assert math.isclose(lse_norm, 2.3132616875, rel_tol=1e-5)
-    loss_norm = loss_lse(z_norm, 1)
-    assert math.isclose(loss_norm, 1.3132616875, rel_tol=1e-5)
+def naive_loss(z, y, dt):
+    z = np.array(z, dtype=dt)
+    with np.errstate(all="ignore"):
+        e = np.exp(z)
+        s = e.sum(dtype=dt)
+        p = (e / s).astype(dt)
+        return float(-np.log(p[y])), p
 
-    # 2. Trường hợp chênh lệch cực đại [0.0, -1000.0], nhãn y=1 (Underflow)
-    z_under = np.array([0.0, -1000.0])
-    # Naive: exp(-1000) -> 0.0 -> log(0) -> -inf -> loss = inf
-    loss_under_lse = loss_lse(z_under, 1)
-    assert loss_under_lse == 1000.0, f"Loss LSE phải đúng bằng 1000.0, nhận được {loss_under_lse}"
 
-    # 3. Trường hợp số cực lớn [1000.0, 999.0], nhãn y=0 (Overflow)
-    z_over = np.array([1000.0, 999.0])
-    loss_over_lse = loss_lse(z_over, 0)
-    assert math.isclose(loss_over_lse, 0.3132616875, rel_tol=1e-5)
-
-    # 4. Kiểm chứng Gradient bằng sai phân hữu hạn (Numerical Gradient)
-    eps = 1e-6
-    grad_analytical = np.exp(z_norm - np.max(z_norm)) / np.sum(np.exp(z_norm - np.max(z_norm)))
-    grad_analytical[1] -= 1.0  # target y=1
-
-    grad_numerical = np.zeros(2)
-    for i in range(2):
-        z_pos = z_norm.copy()
-        z_neg = z_norm.copy()
-        z_pos[i] += eps
-        z_neg[i] -= eps
-        grad_numerical[i] = (loss_lse(z_pos, 1) - loss_lse(z_neg, 1)) / (2 * eps)
-
-    assert np.allclose(grad_analytical, grad_numerical, atol=1e-5), "Gradient giải tích và sai phân hữu hạn phải khớp nhau"
-    assert math.isclose(np.sum(grad_analytical), 0.0, abs_tol=1e-7), "Tổng các phần tử gradient luôn bằng 0"
-    print("-> Cross-Entropy LogSumExp: ĐẠT CHUẨN 100%\n")
+def lse_loss(z, y, dt):
+    z = np.array(z, dtype=dt)
+    with np.errstate(all="ignore"):
+        m = z.max()
+        lse = (m + np.log(np.exp(z - m).sum(dtype=dt))).astype(dt)
+        return float((lse - z[y]).astype(dt))
 
 
 def main() -> None:
-    kiem_tra_cross_entropy_logsumexp()
+    # --- Ngưỡng tràn / hụt của từng kiểu số ---
+    assert math.isclose(np.log(float(np.finfo(np.float32).max)), 88.7228, abs_tol=1e-3)
+    assert math.isclose(np.log(float(np.finfo(np.float16).max)), 11.09, abs_tol=1e-2)
+    assert np.exp(np.float32(88)) < np.inf and np.exp(np.float32(89)) == np.inf
+    assert np.exp(np.float16(11)) < np.inf and np.exp(np.float16(12)) == np.inf
+    assert np.exp(np.float32(-110)) == 0.0 and np.exp(np.float16(-20)) == 0.0
+
+    # --- Các tình huống của bài: numpy làm chuẩn ---
+    cases = {
+        "normal": (np.float32, [2.0, 1.0], 1),
+        "underflow": (np.float32, [0.0, -110.0], 1),
+        "overflow": (np.float32, [100.0, 99.0], 0),
+        "fp16_overflow": (np.float16, [12.0, 11.0], 0),
+        "fp16_underflow": (np.float16, [0.0, -20.0], 1),
+    }
+    expected = {
+        "normal": (1.3132617, 1.3132617),
+        "underflow": (math.inf, 110.0),
+        "overflow": (math.nan, 0.31326),
+        "fp16_overflow": (math.nan, 0.3125),
+        "fp16_underflow": (math.inf, 20.0),
+    }
+    for name, (dt, z, y) in cases.items():
+        naive, _ = naive_loss(z, y, dt)
+        lse = lse_loss(z, y, dt)
+        e_naive, e_lse = expected[name]
+        if math.isnan(e_naive):
+            assert math.isnan(naive), name
+        else:
+            assert naive == e_naive or math.isclose(naive, e_naive, rel_tol=1e-5), name
+        assert math.isclose(lse, e_lse, rel_tol=2e-4, abs_tol=1e-4), (name, lse)
+
+        # --- Đối chiếu JS: cùng kết quả với numpy ---
+        js = js_calc("cross_entropy_logsumexp", preset=name if name in ("normal", "underflow", "overflow", "fp16_overflow", "fp16_underflow") else None)
+        # JS trả Infinity/NaN dạng null qua JSON: null nghĩa là không hữu hạn
+        if math.isnan(e_naive) or math.isinf(e_naive):
+            assert js["lossNaive"] is None, name
+        else:
+            assert abs(js["lossNaive"] - naive) < 1e-4, name
+        assert abs(js["lossLSE"] - lse) < 1e-3, name
+
+    # --- LSE bằng numpy.logaddexp (nguồn độc lập thứ hai, tính ở float64) ---
+    for z in ([2.0, 1.0], [0.0, -110.0], [100.0, 99.0], [1000.0, 999.0], [0.0, -1000.0]):
+        assert math.isclose(float(np.logaddexp.reduce(np.array(z, dtype=np.float64))), max(z) + math.log1p(math.exp(min(z) - max(z))), rel_tol=1e-12, abs_tol=1e-300)
+
+    # --- Gradient: giải tích = sai phân hữu hạn (float64) và tổng bằng 0 ---
+    z = np.array([2.0, 1.0])
+    p = np.exp(z - z.max()) / np.exp(z - z.max()).sum()
+    g = p.copy()
+    g[1] -= 1.0
+    eps = 1e-6
+    num = np.zeros(2)
+    for i in range(2):
+        zp, zm = z.copy(), z.copy()
+        zp[i] += eps
+        zm[i] -= eps
+        num[i] = (lse_loss(zp, 1, np.float64) - lse_loss(zm, 1, np.float64)) / (2 * eps)
+    assert np.allclose(g, num, atol=1e-5) and math.isclose(g.sum(), 0.0, abs_tol=1e-7)
+    js = js_calc("cross_entropy_logsumexp", preset="normal")
+    assert np.allclose(js["grad"], g, atol=1e-6) and np.allclose(js["gradNaive"], g, atol=1e-6)
+
+    # Gradient Naive hỏng thành NaN ở mọi tình huống lỗi, còn gradient LSE hữu hạn
+    for preset in ("underflow", "overflow", "fp16_overflow", "fp16_underflow"):
+        js = js_calc("cross_entropy_logsumexp", preset=preset)
+        assert all(v is None for v in js["gradNaive"]), preset
+        assert all(v is not None for v in js["grad"]), preset
+    assert js_calc("cross_entropy_logsumexp", preset="underflow")["grad"] == [1, -1]
+
+    # --- FP32 vs FP16: cùng logit [12, 11] chỉ hỏng ở FP16 ---
+    assert naive_loss([12.0, 11.0], 0, np.float32)[0] == naive_loss([12.0, 11.0], 0, np.float32)[0] > 0
+    assert math.isnan(naive_loss([12.0, 11.0], 0, np.float16)[0])
+    js = js_calc("cross_entropy_logsumexp", state={"z0": 12.0, "z1": 11.0, "y": 0, "mode": "naive", "precision": "fp32"})
+    assert js["naiveBroken"] is False and abs(js["lossNaive"] - 0.31326) < 1e-4
 
 
 if __name__ == "__main__":

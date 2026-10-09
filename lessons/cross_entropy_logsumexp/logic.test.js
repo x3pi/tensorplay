@@ -7,92 +7,116 @@ import {
   naiveSoftmax,
   crossEntropyLSE,
   crossEntropyNaive,
-  crossEntropyGrad
+  crossEntropyGrad,
+  crossEntropyGradNaive,
+  roundTo,
+  OVERFLOW_AT,
+  UNDERFLOW_AT
 } from './logic.js';
 
+const pick = (id) => PRESETS.find(p => p.id === id).state;
+
 describe('lessons/cross_entropy_logsumexp/logic.js', () => {
-  it('Trường hợp logit vừa phải [2, 1], nhãn y=1: Naive và LSE cho cùng kết quả', () => {
+  it('logit vừa phải [2, 1], y = 1: Naive và LSE cho cùng Loss 1.3133 (FP32 và FP16)', () => {
     const z = [2.0, 1.0];
-    const y = 1;
-
-    const lseVal = logSumExp(z);
-    expect(lseVal).toBeCloseTo(2.3133, 4);
-
-    const lossL = crossEntropyLSE(z, y);
-    const lossN = crossEntropyNaive(z, y);
-    expect(lossL).toBeCloseTo(1.3133, 4);
-    expect(lossN).toBeCloseTo(1.3133, 4);
-
-    const p = safeSoftmax(z);
+    expect(logSumExp(z, 'fp32')).toBeCloseTo(2.3133, 4);
+    expect(crossEntropyLSE(z, 1, 'fp32')).toBeCloseTo(1.3133, 4);
+    expect(crossEntropyNaive(z, 1, 'fp32')).toBeCloseTo(1.3133, 4);
+    expect(crossEntropyLSE(z, 1, 'fp16')).toBeCloseTo(1.3133, 2);
+    const p = safeSoftmax(z, 'fp32');
     expect(p[0] + p[1]).toBeCloseTo(1.0, 6);
-    expect(p[0]).toBeGreaterThan(p[1]);
-
-    const grad = crossEntropyGrad(z, y);
-    expect(grad[0] + grad[1]).toBeCloseTo(0.0, 6);
-    expect(grad[0]).toBeCloseTo(p[0], 4);
-    expect(grad[1]).toBeCloseTo(p[1] - 1, 4);
+    const g = crossEntropyGrad(z, 1, 'fp32');
+    expect(g[0] + g[1]).toBeCloseTo(0.0, 6);
+    expect(g[0]).toBeCloseTo(p[0], 6);
+    expect(g[1]).toBeCloseTo(p[1] - 1, 6);
   });
 
-  it('Trường hợp chênh lệch cực đại [0, -1000], nhãn y=1: Naive ra Infinity, LSE ra 1000.0', () => {
-    const z = [0.0, -1000.0];
-    const y = 1;
-
-    const pNaive = naiveSoftmax(z);
-    expect(pNaive[1]).toBe(0);
-
-    const lossN = crossEntropyNaive(z, y);
-    expect(lossN).toBe(Infinity);
-
-    const lseVal = logSumExp(z);
-    expect(lseVal).toBe(0.0);
-
-    const lossL = crossEntropyLSE(z, y);
-    expect(lossL).toBe(1000.0);
-
-    const grad = crossEntropyGrad(z, y);
-    expect(grad[0]).toBeCloseTo(1.0, 4);
-    expect(grad[1]).toBeCloseTo(-1.0, 4);
-    expect(grad[0] + grad[1]).toBeCloseTo(0.0, 6);
+  it('hụt số FP32 [0, -110], y = 1: Naive ra Infinity, LSE ra đúng 110, gradient LSE [1, -1], gradient Naive NaN', () => {
+    const z = [0, -110];
+    expect(naiveSoftmax(z, 'fp32')[1]).toBe(0);
+    expect(crossEntropyNaive(z, 1, 'fp32')).toBe(Infinity);
+    expect(logSumExp(z, 'fp32')).toBe(0);
+    expect(crossEntropyLSE(z, 1, 'fp32')).toBe(110);
+    expect(crossEntropyGrad(z, 1, 'fp32')).toEqual([1, -1]);
+    expect(crossEntropyGradNaive(z, 1, 'fp32').every(Number.isNaN)).toBe(true);
   });
 
-  it('Trường hợp tràn số siêu lớn [1000, 999], nhãn y=0: Naive hỏng, LSE tính mượt mà', () => {
-    const z = [1000.0, 999.0];
-    const y = 0;
-
-    const lossN = crossEntropyNaive(z, y);
-    expect(Number.isNaN(lossN)).toBe(true);
-
-    const lossL = crossEntropyLSE(z, y);
-    expect(lossL).toBeCloseTo(0.3133, 4);
+  it('tràn số FP32 [100, 99], y = 0: Naive NaN, LSE ≈ 0.3133', () => {
+    const z = [100, 99];
+    expect(naiveSoftmax(z, 'fp32').every(v => Number.isNaN(v) || v === 0)).toBe(true);
+    expect(Number.isNaN(crossEntropyNaive(z, 0, 'fp32'))).toBe(true);
+    expect(crossEntropyLSE(z, 0, 'fp32')).toBeCloseTo(0.3133, 3);
   });
 
-  it('LessonLogic hoạt động chuẩn xác với các presets và thay đổi mode', () => {
+  it('ngưỡng tràn: FP32 ở logit 88.72, FP16 ở logit 11.09; hụt ở -103.28 và -16.64', () => {
+    expect(OVERFLOW_AT.fp32).toBeCloseTo(88.7228, 3);
+    expect(OVERFLOW_AT.fp16).toBeCloseTo(11.09, 2);
+    expect(UNDERFLOW_AT.fp32).toBeCloseTo(-103.28, 2);
+    expect(UNDERFLOW_AT.fp16).toBeCloseTo(-16.64, 2);
+    expect(Math.exp(88)).toBeLessThan(3.4028e38);
+    expect(roundTo(Math.exp(88), 'fp32')).toBeLessThan(Infinity);
+    expect(roundTo(Math.exp(89), 'fp32')).toBe(Infinity);
+    expect(roundTo(Math.exp(11), 'fp16')).toBe(59872); // 59874 làm tròn về FP16
+    expect(roundTo(Math.exp(12), 'fp16')).toBe(Infinity);
+  });
+
+  it('FP16: logit 12 đã làm Naive hỏng nhưng LSE cho 0.3125 (sai số làm tròn FP16)', () => {
+    const r = new LessonLogic().applyPreset(pick('fp16_overflow'));
+    expect(Number.isNaN(r.lossNaive)).toBe(true);
+    expect(r.lossLSE).toBe(0.3125);
+    expect(r.gradNaiveBroken).toBe(true);
+  });
+
+  it('FP16: logit -20 hụt số, Naive ra Infinity, LSE ra 20', () => {
+    const r = new LessonLogic().applyPreset(pick('fp16_underflow'));
+    expect(r.lossNaive).toBe(Infinity);
+    expect(r.lossLSE).toBe(20);
+  });
+
+  it('cùng logit [12, 11] ở FP32 vẫn bình thường (Naive không hỏng)', () => {
+    const r = new LessonLogic().applyPreset({ z0: 12, z1: 11, y: 0, mode: 'naive', precision: 'fp32' });
+    expect(r.naiveBroken).toBe(false);
+    expect(r.lossNaive).toBeCloseTo(0.3133, 3);
+    expect(r.verdict.type).toBe('warning');
+  });
+
+  it('LessonLogic: preset và công tắc mode đổi kết luận đúng', () => {
     const logic = new LessonLogic();
-    const stDefault = logic.calculate();
+    expect(logic.calculate().verdict.type).toBe('success');
 
-    expect(stDefault.state.mode).toBe('lse');
-    expect(stDefault.verdict.type).toBe('success');
+    logic.applyPreset(pick('underflow'));
+    expect(logic.calculate().verdict.text).toContain('CỨU NGUY');
 
-    // Chuyển sang preset underflow
-    const underflowPreset = PRESETS.find(p => p.id === 'underflow');
-    logic.applyPreset(underflowPreset.state);
-    const stUnderflowLSE = logic.calculate();
-    expect(stUnderflowLSE.lossLSE).toBe(1000.0);
-    expect(stUnderflowLSE.verdict.type).toBe('success');
-
-    // Bật mode naive khi đang underflow -> lập tức cảnh báo danger
     logic.onUserUpdate({ mode: 'naive' });
-    const stUnderflowNaive = logic.calculate();
-    expect(stUnderflowNaive.lossNaive).toBe(Infinity);
-    expect(stUnderflowNaive.verdict.type).toBe('danger');
-    expect(stUnderflowNaive.verdict.text).toContain('Underflow');
+    const naive = logic.calculate();
+    expect(naive.verdict.type).toBe('danger');
+    expect(naive.verdict.text).toContain('Underflow');
 
-    // Chuyển sang preset overflow
-    const overflowPreset = PRESETS.find(p => p.id === 'overflow');
-    logic.applyPreset(overflowPreset.state);
+    logic.applyPreset(pick('overflow'));
     logic.onUserUpdate({ mode: 'naive' });
-    const stOverflowNaive = logic.calculate();
-    expect(stOverflowNaive.verdict.type).toBe('danger');
-    expect(stOverflowNaive.verdict.text).toContain('tràn số');
+    expect(logic.calculate().verdict.text).toContain('tràn số');
+  });
+
+  it('công thức KaTeX đổi theo mode và có trạng thái +∞ / NaN đúng', () => {
+    const logic = new LessonLogic();
+    expect(logic.calculate().formulaKaTeX).toContain('\\text{LogSumExp}(z)');
+    logic.applyPreset(pick('underflow'));
+    logic.onUserUpdate({ mode: 'naive' });
+    expect(logic.calculate().formulaKaTeX).toContain('+\\infty');
+    logic.applyPreset(pick('overflow'));
+    logic.onUserUpdate({ mode: 'naive' });
+    expect(logic.calculate().formulaKaTeX).toContain('NaN');
+    logic.onUserUpdate({ mode: 'lse' });
+    expect(logic.calculate().formulaKaTeX).toContain('\\text{LogSumExp}(z)');
+  });
+
+  it('tính chất toán: max(z) <= LSE(z) <= max(z) + ln K và gradient LSE luôn cộng bằng 0', () => {
+    for (const z of [[0, 0], [5, -3], [50, 49], [-20, 10]]) {
+      const lse = logSumExp(z, 'fp32');
+      expect(lse).toBeGreaterThanOrEqual(Math.max(...z) - 1e-6);
+      expect(lse).toBeLessThanOrEqual(Math.max(...z) + Math.log(2) + 1e-6);
+      const g = crossEntropyGrad(z, 0, 'fp32');
+      expect(Math.abs(g[0] + g[1])).toBeLessThan(1e-6);
+    }
   });
 });

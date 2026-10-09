@@ -248,14 +248,14 @@ export function buildRoutes(z, y, prec = 'fp32') {
   note(B[0], 'z_i - m', '', '');
   const underB = idx(eB, v => v === 0);
   note(B[1], 'e_i = e^{z_i - m}', underB.length ? 'warn' : '',
-    underB.length ? underB.map(i => `exp(z${sub(i)}−m) với z${sub(i)}−m = ${fz(shifted[i])} < ${lo}: về 0 (underflow)`).join('; ') : 'z_i − m ≤ 0 nên e ∈ (0, 1]: không thể tràn');
+    underB.length ? underB.map(i => `exp(z${sub(i)}−m) với z${sub(i)}−m = ${fz(shifted[i])} < ${lo}: về 0 (underflow)`).join('; ') : 'mọi z − max ≤ 0 nên e ∈ (0, 1]: không thể tràn');
   note(B[2], 'p_i = e_i / S', pB[y] === 0 ? 'bad' : '', pB[y] === 0 ? `p${sub(y)} = 0 / S = 0: xác suất lớp đúng mất hết` : '');
   note(B[3], `L = -\\ln p_{${y}}`, B[3].bad || pB[y] === 0 ? 'bad' : '', pB[y] === 0 ? '−ln(0) = +∞: trừ max chữa được tràn số nhưng không chữa được bước này' : '');
 
   note(C[0], 'z_i - m', '', '');
   note(C[1], 'e_i = e^{z_i - m}', '', underB.length
     ? `exp(z${sub(underB[0])}−m) = 0 nhưng vô hại: chỉ cộng thêm 0 vào Σ`
-    : 'z_i − m ≤ 0 nên e ∈ (0, 1]: không thể tràn');
+    : 'mọi z − max ≤ 0 nên e ∈ (0, 1]: không thể tràn');
   note(C[2], '\\ln S = \\ln\\sum_j e_j', '', 'Phần tử lớn nhất cho e = 1 nên S ≥ 1: không bao giờ phải lấy ln(0)');
   note(C[3], '\\mathrm{LSE} = m + \\ln S', '', '');
   note(C[4], `L = \\mathrm{LSE} - z_{${y}}`, '', '');

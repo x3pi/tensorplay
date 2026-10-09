@@ -104,23 +104,17 @@
         </div>
         <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
           
-          <!-- Thẻ 1: Ai sắp hỏng? -->
+          <!-- Thẻ 1: Sơ đồ các bước của đường đang chọn -->
           <div class="tp-panel">
-            <div class="tp-panel-title">📏 1. Logit Nào Đang Gặp Nguy?</div>
-            <div id="ruler"></div>
-            <table class="tp-kv-table" id="danger-table" style="margin-top: 0.6rem;"></table>
-          </div>
-
-          <!-- Thẻ 2: Sơ đồ các bước của đường đang chọn -->
-          <div class="tp-panel">
-            <div class="tp-panel-title">🛤️ 2. Từ Logit Tới Loss, Từng Bước</div>
+            <div class="tp-panel-title">🛤️ 1. Từ Logit Tới Loss, Từng Bước</div>
+            <div id="range-note" style="font-size:0.74rem; color:var(--text-dim); margin-bottom:0.6rem;"></div>
             <div class="tp-seg" id="route-tabs" style="margin-bottom: 0.7rem;"></div>
             <div id="pipeline"></div>
           </div>
 
-          <!-- Thẻ 3: Kết quả cuối -->
+          <!-- Thẻ 2: Kết quả cuối -->
           <div class="tp-panel">
-            <div class="tp-panel-title">🏁 3. Kết Quả Cuối: Loss Và Gradient</div>
+            <div class="tp-panel-title">🏁 2. Kết Quả Cuối: Loss Và Gradient</div>
             <div class="tp-matrix-caption" style="text-align:left; margin-bottom:0.4rem;">Huấn luyện chạy trên gradient, không phải trên giá trị Loss. Gradient NaN thì trọng số cũng thành NaN.</div>
             <table class="tp-kv-table" id="result-table"></table>
           </div>
@@ -148,7 +142,7 @@
         heading: 'Cơn Ác Mộng Của Cách Tính Ngây Thơ',
         problem: 'Công thức quen thuộc $\\text{Loss} = -\\ln(\\operatorname{softmax}(z)_y)$ trông hoàn hảo trên giấy. Vì sao nó làm mô hình sụp đổ khi logit chênh lệch lớn?',
         mechanism: 'Giả sử $z = [0, -110]$ và nhãn đúng là lớp 1. Trong FP32, $e^{-110} \\approx 1.7 \\times 10^{-48}$ nhỏ hơn số FP32 dương nhỏ nhất ($1.4 \\times 10^{-45}$) nên máy làm tròn thành đúng $0$ (Underflow). Khi đó $p_1 = 0$ và $\\ln(0) = -\\infty$ nên $\\text{Loss} = +\\infty$. Trong khi đó Loss thật chỉ là $110$, một số hoàn toàn bình thường!',
-        action: '👉 Thao tác (Cột 2): Bấm preset "Hụt số FP32: [0, -110]" và chọn đường A (Ngây thơ).\n👁️ Quan sát (Cột 3): Thẻ 1 báo $e^{z_1}$ về 0 (cam). Thẻ 2 cho thấy bước 3 ($p_i = e_i/S$) đỏ rồi Loss nhảy lên +∞. Thẻ 3: gradient của đường A ra NaN.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Hụt số FP32: [0, -110]" và chọn đường A (Ngây thơ).\n👁️ Quan sát (Cột 3): Thẻ 1: bước 1 báo $e^{z_1}$ về 0 (cam), bước 3 ($p_i = e_i/S$) đỏ rồi Loss nhảy lên +∞. Thẻ 2: gradient của đường A ra NaN.',
         takeaway: 'Tính Softmax trước rồi mới lấy log làm mất thông tin: một Loss hữu hạn bị biến thành vô cực, và gradient thành NaN.'
       },
       {
@@ -157,7 +151,7 @@
         heading: 'Công Thức Gộp Log-Sum-Exp',
         problem: 'Làm thế nào để tính log của Softmax mà không bao giờ phải tính riêng từng giá trị Softmax?',
         mechanism: 'Khai triển đại số triệt tiêu phép chia:\n$$\\ln(p_y) = \\ln\\left(\\frac{e^{z_y}}{\\sum e^{z_j}}\\right) = z_y - \\ln\\left(\\sum e^{z_j}\\right)$$\nDo đó:\n$$\\text{Loss} = -\\ln(p_y) = \\text{LogSumExp}(z) - z_y$$\nKhông còn phép chia, cũng không còn $\\ln$ của một số cực nhỏ: với $z = [0, -110]$, $\\text{LSE} = 0$ và $\\text{Loss} = 0 - (-110) = 110$.',
-        action: '👉 Thao tác (Cột 2): Giữ preset "Hụt số FP32" và chọn đường C (Log-Sum-Exp).\n👁️ Quan sát (Cột 3): Thẻ 2: đường C không có bước đỏ nào, Loss trở về đúng $110$. Thẻ 3: gradient $[1, -1]$ hữu hạn.',
+        action: '👉 Thao tác (Cột 2): Giữ preset "Hụt số FP32" và chọn đường C (Log-Sum-Exp).\n👁️ Quan sát (Cột 3): Thẻ 1: đường C không có bước đỏ nào, Loss trở về đúng $110$. Thẻ 2: gradient $[1, -1]$ hữu hạn.',
         takeaway: 'Gộp softmax và log thành một công thức biến phép chia nguy hiểm thành một phép trừ an toàn.'
       },
       {
@@ -166,7 +160,7 @@
         heading: 'Trừ Max Là Chưa Đủ: Vì Sao Cần Gộp',
         problem: 'Mẹo quen thuộc là Softmax an toàn: trừ $\\max(z)$ trước khi lấy $\\exp$. Nếu cứ Softmax an toàn rồi mới lấy $\\ln$ (đường B) thì đã hết lỗi chưa?',
         mechanism: 'Trừ max giúp mọi số mũ $e^{z_j - m} \\in (0, 1]$ nên **chống được tràn số**. Với $z = [100, 99]$ đường B ra $0.3133$ trong khi đường A ra NaN. Nhưng với $z = [0, -110]$ thì $e^{-110}$ vẫn về $0$ nên $p_1 = 0$ và $-\\ln(0) = +\\infty$: **đường B vẫn hỏng vì hụt số**. Chỉ đường C, dùng $\\text{LSE}(z) = m + \\ln\\left(\\sum e^{z_j - m}\\right)$ rồi trừ $z_y$, không bao giờ lấy $\\ln$ của $p_y$ nên luôn an toàn.',
-        action: '👉 Thao tác (Cột 2): Bấm preset "Tràn số FP32: [100, 99]", bấm lần lượt ba tab A, B, C ở Thẻ 2; rồi bấm preset "Hụt số FP32: [0, -110]" và xem lại.\n👁️ Quan sát (Cột 3): Tràn số: thẻ 1 báo $e^{z_0}$ và $e^{z_1}$ tràn (đỏ) ở cột ngây thơ, nhưng cột "sau trừ max" xanh; tab A đỏ, B và C xanh. Hụt số: A và B đều đỏ ở bước $p_i = e_i/S$, chỉ C xanh.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Tràn số FP32: [100, 99]", bấm lần lượt ba tab A, B, C ở Thẻ 1; rồi bấm preset "Hụt số FP32: [0, -110]" và xem lại.\n👁️ Quan sát (Cột 3): Tràn số: tab A đỏ ngay bước 1 vì $e^{z_0}$ tràn, còn B và C xanh vì đã trừ max. Hụt số: A và B đều đỏ ở bước $p_i = e_i/S$, chỉ C xanh.',
         takeaway: 'Trừ max sửa tràn số nhưng không sửa hụt số; Log-Sum-Exp sửa cả hai vì tránh lấy ln của số cực nhỏ.'
       },
       {
@@ -175,7 +169,7 @@
         heading: 'FP16 Làm Mọi Thứ Đến Sớm Hơn Nhiều',
         problem: 'Mô hình thật huấn luyện bằng FP16 hoặc BF16 để tiết kiệm bộ nhớ ([[lesson:mixed_precision]]). Cách ngây thơ hỏng ở logit nào?',
         mechanism: 'FP16 chỉ biểu diễn tới $65504$, tức $e^z$ tràn khi $z > \\ln 65504 \\approx 11.09$. Logit $12$ là hoàn toàn bình thường trong mô hình thật! Ở chiều ngược lại, số FP16 dương nhỏ nhất là $6 \\times 10^{-8}$ nên $e^{z}$ về 0 từ $z < -16.6$. Log-Sum-Exp vẫn cho Loss hữu hạn, chỉ có sai số làm tròn nhỏ: $0.3125$ thay vì $0.3133$.',
-        action: '👉 Thao tác (Cột 2): Bấm preset "FP16 chỉ cần logit 12: [12, 11]", rồi kéo thanh trượt $z_0$ lên xuống quanh 11.\n👁️ Quan sát (Cột 3): Con trỏ $z_0$ trên thước đo (Thẻ 1) chui vào vùng đỏ khi vượt 11, đường A chuyển sang NaN, còn đường C luôn hữu hạn.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "FP16 chỉ cần logit 12: [12, 11]", rồi kéo thanh trượt $z_0$ lên xuống quanh 11.\n👁️ Quan sát (Cột 3): Khi $z_0$ vượt 11, bước 1 của đường A chuyển đỏ và Loss thành NaN, còn đường C luôn hữu hạn.',
         takeaway: 'Càng ít bit thì ngưỡng hỏng càng gần: FP32 hỏng ở 88.7, FP16 chỉ ở 11.1.'
       },
       {
@@ -184,7 +178,7 @@
         heading: 'Gradient Dội Ngược: Đơn Giản & Hoàn Hảo',
         problem: 'Đạo hàm của hàm mất mát theo logit $z$ có bị ảnh hưởng bởi Log-Sum-Exp không?',
         mechanism: 'Đạo hàm của $\\text{LogSumExp}(z)$ theo $z_i$ chính là Softmax: $\\frac{\\partial \\text{LSE}}{\\partial z_i} = p_i$. Kết hợp với $\\frac{\\partial(-z_y)}{\\partial z_i}$ ta có:\n$$\\frac{\\partial \\text{Loss}}{\\partial z} = P - I_y$$\nTổng các phần tử luôn bằng 0 và luôn hữu hạn. Còn cách ngây thơ phải đi qua $\\frac{\\partial L}{\\partial p_y} = -\\frac{1}{p_y}$: khi $p_y = 0$ nó là $-\\infty$, nhân với đạo hàm Softmax bằng 0 ra $\\text{NaN}$.',
-        action: '👉 Thao tác (Cột 2): Xem Thẻ 3 ở Cột 3 với từng preset.\n👁️ Quan sát (Cột 3): Đường C luôn có gradient hữu hạn, đường A (và B khi hụt số) ra NaN ở mọi preset lỗi.',
+        action: '👉 Thao tác (Cột 2): Xem Thẻ 2 ở Cột 3 với từng preset.\n👁️ Quan sát (Cột 3): Đường C luôn có gradient hữu hạn, đường A (và B khi hụt số) ra NaN ở mọi preset lỗi.',
         takeaway: 'Một Loss $= \\infty$ chưa phải điều tệ nhất: gradient NaN lan vào trọng số ở bước cập nhật kế tiếp và phá hỏng cả mô hình.'
       },
       {
@@ -391,42 +385,10 @@
       };
       const SUB = ['₀', '₁'];
 
-      // ---- Thẻ 1: thước đo logit + bảng "ai sắp hỏng"
-      const under = calc.underflowAt, over = calc.overflowAt;
-      const lo = Math.min(under - 12, ...calc.z) - 6, hi = Math.max(over + 12, ...calc.z) + 6;
-      const pct = (v) => Math.max(0, Math.min(100, (v - lo) / (hi - lo) * 100));
-      const rulerEl = document.getElementById('ruler');
-      const marker = (i, up) => `
-        <div style="position:absolute; left:${pct(calc.z[i])}%; ${up ? 'bottom:34px;' : 'top:34px;'} transform:translateX(${pct(calc.z[i]) < 14 ? '-10%' : pct(calc.z[i]) > 86 ? '-90%' : '-50%'}); text-align:${pct(calc.z[i]) < 14 ? 'left' : pct(calc.z[i]) > 86 ? 'right' : 'center'}; font-size:0.74rem; font-weight:700; white-space:nowrap; color:var(--text-main);">
-          ${up ? `z${SUB[i]} = ${calc.z[i]}<div style="line-height:0.8;">▼</div>` : `<div style="line-height:0.8;">▲</div>z${SUB[i]} = ${calc.z[i]}`}
-        </div>`;
-      rulerEl.innerHTML = `
-        <div style="position:relative; height:78px; margin:0 8px;">
-          <div style="position:absolute; left:0; right:0; top:32px; height:14px; border-radius:7px; overflow:hidden; background:${GREEN}; opacity:0.55;">
-            <div style="position:absolute; left:0; width:${pct(under)}%; top:0; bottom:0; background:${ORANGE};"></div>
-            <div style="position:absolute; left:${pct(over)}%; right:0; top:0; bottom:0; background:${RED};"></div>
-          </div>
-          ${marker(0, true)}${marker(1, false)}
-        </div>
-        <div style="display:flex; flex-wrap:wrap; gap:4px 14px; font-size:0.68rem; color:var(--text-dim);">
-          <span><b style="color:${ORANGE};">■</b> z &lt; ${under}: e<sup>z</sup> về 0 (underflow)</span>
-          <span><b style="color:${GREEN};">■</b> an toàn</span>
-          <span><b style="color:${RED};">■</b> z &gt; ${over}: e<sup>z</sup> tràn thành +∞ (overflow)</span>
-        </div>`;
+      document.getElementById('range-note').innerHTML =
+        `${calc.precisionName} chỉ chứa được $e^{z}$ khi <strong>${calc.underflowAt} &lt; z &lt; ${calc.overflowAt}</strong>. Lớn hơn thì tràn thành +∞, nhỏ hơn thì bị làm tròn về 0. Mỗi bước dưới đây gắn nhãn 🟠 hoặc 🔴 khi chạm ngưỡng đó.`;
 
-      const A0 = calc.routes[0].steps[0].value, B1 = calc.routes[1].steps[1].value, shifted = calc.routes[1].steps[0].value;
-      const cellStatus = (v) => !Number.isFinite(v)
-        ? { c: RED, t: `🔴 ${fmtV(v)} tràn` }
-        : v === 0 ? { c: ORANGE, t: `🟠 0 hụt` }
-        : { c: GREEN, t: `✅ ${fmtV(v)}` };
-      document.getElementById('danger-table').innerHTML = `
-        <tr><td><em>Logit</em></td><td><em>Thẳng: $e^{z_i}$</em></td><td><em>Trừ max: $e^{z_i - m}$</em></td></tr>
-        ${calc.z.map((zi, i) => {
-          const a = cellStatus(A0[i]), b = cellStatus(B1[i]);
-          return `<tr><td>$z_${i}$ = ${zi}${i === s.y ? ' 🎯' : ''}<div style="font-size:0.62rem; color:var(--text-dim);">$z_${i} - m$ = ${shifted[i]}</div></td><td style="color:${a.c}; font-weight:700;">${a.t}</td><td style="color:${b.c}; font-weight:700;">${b.t}</td></tr>`;
-        }).join('')}`;
-
-      // ---- Thẻ 2: sơ đồ các bước của đường đang chọn
+      // ---- Thẻ 1: sơ đồ các bước của đường đang chọn
       const tabsEl = document.getElementById('route-tabs');
       tabsEl.innerHTML = calc.routes.map(rt =>
         `<button data-v="${rt.id}" class="${rt.id === s.mode ? 'active' : ''}">${rt.name.split(':')[0].split('.')[0]}. ${{ naive: 'Ngây thơ', safe: 'An toàn + ln', lse: 'Log-Sum-Exp' }[rt.id]} ${rt.ok ? '✅' : '❌'}</button>`).join('');
@@ -451,7 +413,7 @@
         </div>`;
       }).join('');
 
-      // ---- Thẻ 3: kết quả cuối (Loss + Gradient của cả ba đường)
+      // ---- Thẻ 2: kết quả cuối (Loss + Gradient của cả ba đường)
       const fmtG = (g) => Number.isFinite(g) ? `${g >= 0 ? '+' : ''}${g.toFixed(3)}` : 'NaN';
       const okc = (v) => (Array.isArray(v) ? v.every(Number.isFinite) : Number.isFinite(v)) ? GREEN : RED;
       const RES = [

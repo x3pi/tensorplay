@@ -263,10 +263,49 @@ export function buildRoutes(z, y, prec = 'fp32') {
   note(C[3], '\\mathrm{LSE} = m + \\ln S', '', '');
   note(C[4], `L = \\mathrm{LSE} - z_{${y}}`, '', '');
 
+  // ---- Chiều ngược: quy tắc dây chuyền đi lùi qua đúng các bước ở chiều xuôi (m coi là hằng số) ----
+  const rp = (v) => roundTo(v, prec);
+  const bad1 = (v) => (Array.isArray(v) ? v.some(x => !Number.isFinite(x)) : !Number.isFinite(v));
+  const setBack = (st, sym, value, why) => { st.back = { sym, value, level: bad1(value) ? 'bad' : '', why: why || '' }; };
+  const softmaxBack = (e, S, py) => {
+    // L = -ln(p_y), p = e / S
+    const gp = rp(-1 / py);                                   // ∂L/∂p_y = -1/p_y
+    const dS = rp(gp * -rp(e[y] / rp(S * S)));                // ∂L/∂S    = gp · (-e_y / S²)
+    const de = e.map((_, i) => rp(rp((i === y ? gp : 0) / S) + dS)); // ∂L/∂e_i = gp·[i=y]/S + ∂L/∂S
+    const dz = e.map((ei, i) => rp(ei * de[i]));              // ∂L/∂z_i = e_i · ∂L/∂e_i
+    return { gp, dS, de, dz };
+  };
+  const whyGp = (py, e) => (Number.isNaN(py) ? 'p_y = NaN nên mọi đạo hàm sau nó cũng NaN'
+    : py === 0 ? '−1/p_y = −1/0 = −∞. Cùng p_y = 0 đã làm Loss = +∞ ở chiều xuôi' : '');
+  const whyDs = (gp, e, S) => (Number.isNaN(gp) ? 'nhận NaN từ bước trước'
+    : gp === -Infinity ? `(−∞) × (e${sub(y)}/S² = 0) = NaN: vô cực nhân 0 không xác định` : '');
+
+  const bA = softmaxBack(eA, sA, pA[y]);
+  setBack(A[3], '\\partial L/\\partial L', 1, '');
+  setBack(A[2], `\\partial L/\\partial p_{${y}} = -1/p_{${y}}`, bA.gp, whyGp(pA[y]));
+  setBack(A[1], `\\partial L/\\partial S = \\partial L/\\partial p_{${y}}\\cdot(-e_{${y}}/S^2)`, bA.dS, whyDs(bA.gp, eA, sA));
+  setBack(A[0], '\\partial L/\\partial z_i = e_i\\cdot\\partial L/\\partial e_i', bA.dz, bA.dz.some(Number.isNaN) ? 'NaN lan xuống: gradient hỏng, SGD sẽ ghi NaN vào trọng số' : '');
+
+  const bB = softmaxBack(eB, sB, pB[y]);
+  setBack(B[3], '\\partial L/\\partial L', 1, '');
+  setBack(B[2], `\\partial L/\\partial p_{${y}} = -1/p_{${y}}`, bB.gp, whyGp(pB[y]));
+  setBack(B[1], '\\partial L/\\partial e_i', bB.de, whyDs(bB.gp, eB, sB));
+  setBack(B[0], '\\partial L/\\partial z_i = e_i\\cdot\\partial L/\\partial e_i', bB.dz, bB.dz.some(Number.isNaN) ? 'NaN lan xuống: gradient hỏng dù đã trừ max' : '');
+
+  // Đường C: L = LSE - z_y, mọi hệ số đều hữu hạn vì S ≥ 1
+  const invS = rp(1 / sB);
+  const deC = eB.map(() => invS);
+  const dzC = eB.map((ei, i) => rp(rp(ei * invS) - (i === y ? 1 : 0)));
+  setBack(C[4], '\\partial L/\\partial L', 1, '');
+  setBack(C[3], '\\partial L/\\partial \\mathrm{LSE}', 1, '');
+  setBack(C[2], '\\partial L/\\partial \\ln S', 1, '');
+  setBack(C[1], '\\partial L/\\partial e_i = 1/S', deC, 'chia cho S ≥ 1: không bao giờ chia cho 0');
+  setBack(C[0], `\\partial L/\\partial z_i = e_i/S - \\mathbb{1}[i=${y}]`, dzC, 'e_i/S chính là p_i: không cần chia p_y, nên không có −1/0');
+
   return [
-    { id: 'naive', name: 'A. Ngây thơ: exp(z) rồi chia, rồi ln', steps: A, loss: lossA, ok: Number.isFinite(lossA) },
-    { id: 'safe', name: 'B. Softmax an toàn (trừ max) rồi ln', steps: B, loss: lossB, ok: Number.isFinite(lossB) },
-    { id: 'lse', name: 'C. Log-Sum-Exp gộp (không tính p_y)', steps: C, loss: lossC, ok: Number.isFinite(lossC) }
+    { id: 'naive', name: 'A. Ngây thơ: exp(z) rồi chia, rồi ln', steps: A, loss: lossA, grad: bA.dz, ok: Number.isFinite(lossA) },
+    { id: 'safe', name: 'B. Softmax an toàn (trừ max) rồi ln', steps: B, loss: lossB, grad: bB.dz, ok: Number.isFinite(lossB) },
+    { id: 'lse', name: 'C. Log-Sum-Exp gộp (không tính p_y)', steps: C, loss: lossC, grad: dzC, ok: Number.isFinite(lossC) }
   ];
 }
 

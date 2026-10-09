@@ -106,7 +106,7 @@
           
           <!-- Thẻ 1: Sơ đồ các bước của đường đang chọn -->
           <div class="tp-panel">
-            <div class="tp-panel-title">🛤️ 1. Từ Logit Tới Loss, Từng Bước</div>
+            <div class="tp-panel-title">🛤️ 1. Chiều Xuôi Và Chiều Ngược, Từng Bước</div>
             <div id="range-note" style="font-size:0.74rem; color:var(--text-dim); margin-bottom:0.6rem;"></div>
             <div class="tp-seg" id="route-tabs" style="margin-bottom: 0.7rem;"></div>
             <div id="pipeline"></div>
@@ -115,7 +115,7 @@
           <!-- Thẻ 2: Kết quả cuối -->
           <div class="tp-panel">
             <div class="tp-panel-title">🏁 2. Kết Quả Cuối: Loss Và Gradient</div>
-            <div class="tp-matrix-caption" style="text-align:left; margin-bottom:0.4rem;">Gradient không dùng giá trị Loss. Nó được tính ngược qua đúng các bước ở Thẻ 1 (quy tắc dây chuyền), nên bước nào hỏng ở chiều xuôi thì chiều ngược hỏng theo. Gradient NaN thì trọng số cũng thành NaN.</div>
+            <div class="tp-matrix-caption" style="text-align:left; margin-bottom:0.4rem;">Gradient không dùng giá trị Loss: nó là kết quả của chuỗi đạo hàm ngược (dòng ◀ ở Thẻ 1) đi qua đúng các bước của chiều xuôi. Bước nào hỏng ở chiều xuôi thì đạo hàm đi qua nó cũng hỏng.</div>
             <table class="tp-kv-table" id="result-table"></table>
           </div>
 
@@ -386,7 +386,7 @@
       const SUB = ['₀', '₁'];
 
       document.getElementById('range-note').innerHTML =
-        `${calc.precisionName} chỉ chứa được $e^{z}$ khi <strong>${calc.underflowAt} &lt; z &lt; ${calc.overflowAt}</strong>. Lớn hơn thì tràn thành +∞, nhỏ hơn thì bị làm tròn về 0. Mỗi bước dưới đây gắn nhãn 🟠 hoặc 🔴 khi chạm ngưỡng đó.`;
+        `${calc.precisionName} chỉ chứa được $e^{z}$ khi <strong>${calc.underflowAt} &lt; z &lt; ${calc.overflowAt}</strong>. Lớn hơn thì tràn thành +∞, nhỏ hơn thì bị làm tròn về 0. Mỗi bước có dòng ▶ xuôi (tính Loss) và dòng ◀ ngược (tính gradient); 🟠 hoặc 🔴 là bước chạm ngưỡng đó.`;
 
       // ---- Thẻ 1: sơ đồ các bước của đường đang chọn
       const tabsEl = document.getElementById('route-tabs');
@@ -397,18 +397,34 @@
       const route = calc.routes.find(r => r.id === s.mode);
       const firstProblem = route.steps.findIndex(st => st.level === 'bad');
       const brokenFrom = firstProblem; // các bước sau nó nhận dữ liệu hỏng
-      document.getElementById('pipeline').innerHTML = route.steps.map((st, i) => {
+      const shared = firstProblem >= 0 ? route.steps[firstProblem] : null;
+      const sharedBanner = shared ? `
+        <div style="margin-bottom:0.7rem; padding:8px 10px; border-radius:8px; border:1px dashed ${RED}; background:rgba(239,68,68,0.07); font-size:0.76rem; line-height:1.5;">
+          <strong style="color:${RED};">🔗 Điểm hỏng chung: bước ${firstProblem + 1}, $${shared.sym}$</strong><br>
+          ▶ Xuôi: ${shared.why || 'giá trị hỏng'}<br>
+          ◀ Ngược: ${shared.back && shared.back.why ? shared.back.why : 'đạo hàm đi qua bước này nên cũng hỏng'}
+        </div>` : '';
+      document.getElementById('pipeline').innerHTML = sharedBanner + route.steps.map((st, i) => {
         const level = st.level || (st.bad ? 'bad' : '');
         const col = level === 'bad' ? RED : level === 'warn' ? ORANGE : GREEN;
         const dim = brokenFrom >= 0 && i > brokenFrom && !st.level;
         const icon = level === 'bad' ? '🔴' : level === 'warn' ? '🟠' : '✅';
+        const bk = st.back;
+        const bcol = bk && bk.level === 'bad' ? RED : GREEN;
+        const isShared = i === firstProblem;
         return `
-        <div style="display:flex; gap:10px; padding:8px 10px; margin-bottom:6px; border-radius:8px; border:1px solid ${level ? col : 'var(--border-subtle)'}; border-left:4px solid ${col}; background:${level ? 'rgba(255,255,255,0.03)' : 'transparent'}; ${dim ? 'opacity:0.55;' : ''}">
+        <div style="display:flex; gap:10px; padding:8px 10px; margin-bottom:6px; border-radius:8px; border:1px solid ${level ? col : 'var(--border-subtle)'}; border-left:4px solid ${col}; background:${level ? 'rgba(255,255,255,0.03)' : 'transparent'}; ${dim ? 'opacity:0.7;' : ''}">
           <div style="font-weight:700; color:var(--text-dim); min-width:1.2em;">${i + 1}</div>
           <div style="flex:1; min-width:0;">
+            <div style="font-size:0.7rem; color:var(--text-dim); letter-spacing:0.04em;">▶ XUÔI${isShared ? ' <span style="color:' + RED + ';">· điểm hỏng chung</span>' : ''}</div>
             <div style="font-size:0.95rem;">$${st.sym}$ <span style="color:var(--text-dim);">=</span> <span style="font-family:var(--font-mono); font-size:0.8rem; font-weight:700; color:${col}; word-break:break-all;">${fmtV(st.value)}</span> ${icon}</div>
             ${st.why ? `<div style="font-size:0.72rem; margin-top:3px; color:${level ? col : 'var(--text-dim)'};">${level === 'bad' ? '💥 ' : ''}${st.why}</div>` : ''}
-            ${dim ? `<div style="font-size:0.7rem; margin-top:3px; color:var(--text-dim);">Nhận dữ liệu hỏng từ bước ${firstProblem + 1}.</div>` : ''}
+            ${bk ? `
+            <div style="margin-top:6px; padding-top:6px; border-top:1px dashed var(--border-subtle);">
+              <div style="font-size:0.7rem; color:var(--text-dim); letter-spacing:0.04em;">◀ NGƯỢC</div>
+              <div style="font-size:0.88rem;">$${bk.sym}$ <span style="color:var(--text-dim);">=</span> <span style="font-family:var(--font-mono); font-size:0.8rem; font-weight:700; color:${bcol}; word-break:break-all;">${fmtV(bk.value)}</span> ${bk.level === 'bad' ? '🔴' : '✅'}</div>
+              ${bk.why ? `<div style="font-size:0.72rem; margin-top:3px; color:${bk.level === 'bad' ? RED : 'var(--text-dim)'};">${bk.level === 'bad' ? '💥 ' : ''}${bk.why}</div>` : ''}
+            </div>` : ''}
           </div>
         </div>`;
       }).join('');
@@ -417,9 +433,9 @@
       const fmtG = (g) => Number.isFinite(g) ? `${g >= 0 ? '+' : ''}${g.toFixed(3)}` : 'NaN';
       const okc = (v) => (Array.isArray(v) ? v.every(Number.isFinite) : Number.isFinite(v)) ? GREEN : RED;
       const RES = [
-        { id: 'naive', name: 'A. Ngây thơ', loss: calc.lossNaive, grad: calc.gradNaive },
-        { id: 'safe', name: 'B. An toàn + ln', loss: calc.lossSafeLog, grad: calc.gradSafe },
-        { id: 'lse', name: 'C. Log-Sum-Exp', loss: calc.lossLSE, grad: calc.grad }
+        { id: 'naive', name: 'A. Ngây thơ', loss: calc.lossNaive, grad: calc.routes[0].grad },
+        { id: 'safe', name: 'B. An toàn + ln', loss: calc.lossSafeLog, grad: calc.routes[1].grad },
+        { id: 'lse', name: 'C. Log-Sum-Exp', loss: calc.lossLSE, grad: calc.routes[2].grad }
       ];
       document.getElementById('result-table').innerHTML = `
         <tr><td><em>Đường</em></td><td><em>Loss</em></td><td><em>Gradient $[\\partial L/\\partial z_0,\\ \\partial L/\\partial z_1]$</em></td></tr>

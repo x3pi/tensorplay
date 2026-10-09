@@ -197,4 +197,30 @@ describe('lessons/cross_entropy_logsumexp/logic.js', () => {
     expect(texNum(162754.79)).toBe('1.63 \\times 10^{5}');
     expect(texNum(2.5)).toBe('2.5');
   });
+
+  it('chiều ngược: điểm hỏng chung với chiều xuôi (p_y = 0), đường C không bao giờ hỏng', () => {
+    const c = new LessonLogic().applyPreset(pick('underflow'));
+    const [A, B, C] = c.routes;
+    // Xuôi: p_y = 0 ở bước 3 (đỏ); ngược: ∂L/∂p_y = -1/0 = -Infinity ở đúng bước đó
+    expect(A.steps[2].level).toBe('bad');
+    expect(A.steps[2].back.value).toBe(-Infinity);
+    expect(A.steps[1].back.value).toBeNaN(); // (-Inf) * 0
+    expect(A.grad.every(Number.isNaN)).toBe(true);
+    expect(B.grad.every(Number.isNaN)).toBe(true);
+    expect(C.grad).toEqual([1, -1]);
+    C.steps.forEach(st => expect(st.back.level).toBe(''));
+  });
+
+  it('chiều ngược: tràn số làm NaN lan từ bước p; B và C giữ gradient hữu hạn', () => {
+    const [A, B, C] = new LessonLogic().applyPreset(pick('overflow')).routes;
+    expect(A.steps[2].back.value).toBeNaN();
+    expect(A.grad.every(Number.isNaN)).toBe(true);
+    expect(B.grad.every(Number.isFinite)).toBe(true);
+    expect(C.grad[0] + C.grad[1]).toBeCloseTo(0, 5);
+  });
+
+  it('chiều ngược: khi không hỏng, gradient mọi đường đều bằng p - 1[y]', () => {
+    const calc = new LessonLogic().applyPreset(pick('normal'));
+    calc.routes.forEach(r => r.grad.forEach((g, i) => expect(g).toBeCloseTo(calc.grad[i], 5)));
+  });
 });

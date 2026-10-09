@@ -141,6 +141,48 @@ def main() -> None:
     assert js["naiveBroken"] is False and abs(js["lossNaive"] - 0.31326) < 1e-4
 
 
+def naive_grad(z, y, dt, shift=False):
+    """Chuỗi đạo hàm ngược qua -ln(p_y), p = e / S, e = exp(z - m?), bằng kiểu số thật của numpy."""
+    z = np.array(z, dtype=dt)
+    with np.errstate(all="ignore"):
+        if shift:
+            z = (z - z.max()).astype(dt)
+        e = np.exp(z).astype(dt)
+        s = e.sum(dtype=dt)
+        py = (e[y] / s).astype(dt)
+        gp = dt(-1) / py
+        ds = (gp * -(e[y] / (s * s))).astype(dt)
+        de = np.array([(gp if i == y else dt(0)) / s + ds for i in range(len(z))], dtype=dt)
+        return (e * de).astype(dt)
+
+
+def main_backward() -> None:
+    """Chiều ngược: điểm hỏng chung với chiều xuôi, đối chiếu numpy float32/float16."""
+    cases = [([2.0, 1.0], 1, "fp32", np.float32), ([0.0, -110.0], 1, "fp32", np.float32),
+             ([100.0, 99.0], 0, "fp32", np.float32), ([12.0, 11.0], 0, "fp16", np.float16),
+             ([0.0, -20.0], 1, "fp16", np.float16), ([12.0, 11.0], 0, "fp32", np.float32)]
+    for z, y, prec, dt in cases:
+        js = js_calc("cross_entropy_logsumexp", state={"z0": z[0], "z1": z[1], "y": y, "mode": "naive", "precision": prec})
+        for idx, shift in ((0, False), (1, True)):
+            want = naive_grad(z, y, dt, shift)
+            got = js["routes"][idx]["grad"]
+            for w, g in zip(want, got):
+                if np.isfinite(w):
+                    assert g is not None and abs(g - float(w)) < 2e-3, (z, prec, idx, w, g)
+                else:
+                    assert g is None, (z, prec, idx, w, g)  # NaN/Inf được JSON ghi thành null
+        # đường C: luôn hữu hạn và bằng softmax - one-hot
+        gC = js["routes"][2]["grad"]
+        assert all(g is not None for g in gC)
+        assert abs(sum(gC)) < 2e-3
+    # điểm hỏng chung: underflow -> p_y = 0 (xuôi) và dL/dp_y = -inf (ngược) ở cùng bước
+    js = js_calc("cross_entropy_logsumexp", preset="underflow")
+    A = js["routes"][0]["steps"]
+    assert A[2]["level"] == "bad" and A[2]["back"]["level"] == "bad"
+    assert js["routes"][2]["grad"] == [1, -1]
+
+
 if __name__ == "__main__":
     main()
+    main_backward()
     print("✓ ĐẠT CHUẨN")

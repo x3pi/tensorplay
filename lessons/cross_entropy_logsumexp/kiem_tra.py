@@ -102,6 +102,27 @@ def main() -> None:
         assert all(v is not None for v in js["grad"]), preset
     assert js_calc("cross_entropy_logsumexp", preset="underflow")["grad"] == [1, -1]
 
+    # --- Đường B (Softmax an toàn rồi ln): numpy độc lập, đối chiếu JS ---
+    def safe_then_log(z, y, dt):
+        z = np.array(z, dtype=dt)
+        with np.errstate(all="ignore"):
+            e = np.exp(z - z.max())
+            p = (e / e.sum(dtype=dt)).astype(dt)
+            return float(-np.log(p[y]))
+    assert math.isclose(safe_then_log([100.0, 99.0], 0, np.float32), 0.31326, rel_tol=1e-4), "Trừ max cứu được tràn số"
+    assert safe_then_log([0.0, -110.0], 1, np.float32) == math.inf, "Trừ max KHÔNG cứu được hụt số"
+    assert safe_then_log([0.0, -20.0], 1, np.float16) == math.inf
+    assert math.isclose(safe_then_log([12.0, 11.0], 0, np.float16), 0.3135, abs_tol=2e-3)
+    for preset in ("normal", "overflow", "underflow", "fp16_overflow", "fp16_underflow"):
+        dt, z, y = cases[preset]
+        js = js_calc("cross_entropy_logsumexp", preset=preset)
+        ref = safe_then_log(z, y, dt)
+        if math.isinf(ref):
+            assert js["lossSafeLog"] is None and js["safeBroken"] is True, preset
+        else:
+            assert abs(js["lossSafeLog"] - ref) < 2e-3 and js["safeBroken"] is False, preset
+        assert [r["ok"] for r in js["routes"]][2] is True, "Đường C (LSE) luôn thành công"
+
     # --- FP32 vs FP16: cùng logit [12, 11] chỉ hỏng ở FP16 ---
     assert naive_loss([12.0, 11.0], 0, np.float32)[0] == naive_loss([12.0, 11.0], 0, np.float32)[0] > 0
     assert math.isnan(naive_loss([12.0, 11.0], 0, np.float16)[0])

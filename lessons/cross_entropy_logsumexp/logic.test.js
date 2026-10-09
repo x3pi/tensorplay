@@ -10,6 +10,7 @@ import {
   crossEntropyGrad,
   crossEntropyGradNaive,
   roundTo,
+  buildRoutes,
   OVERFLOW_AT,
   UNDERFLOW_AT
 } from './logic.js';
@@ -118,5 +119,48 @@ describe('lessons/cross_entropy_logsumexp/logic.js', () => {
       const g = crossEntropyGrad(z, 0, 'fp32');
       expect(Math.abs(g[0] + g[1])).toBeLessThan(1e-6);
     }
+  });
+
+  it('đường B (Softmax an toàn rồi ln) chống được tràn nhưng KHÔNG chống được hụt số', () => {
+    const over = new LessonLogic().applyPreset(pick('overflow'));
+    expect(Number.isNaN(over.lossNaive)).toBe(true);
+    expect(over.lossSafeLog).toBeCloseTo(0.3133, 3);
+    expect(over.safeBroken).toBe(false);
+
+    const under = new LessonLogic().applyPreset(pick('underflow'));
+    expect(under.lossSafeLog).toBe(Infinity);
+    expect(under.safeBroken).toBe(true);
+    expect(under.lossLSE).toBe(110);
+  });
+
+  it('ba đường đi ghi lại bước hỏng đầu tiên: A hỏng ở p khi hụt, ở exp khi tràn; C không hỏng bước nào', () => {
+    const under = buildRoutes([0, -110], 1, 'fp32');
+    const [A, B, C] = under;
+    expect(A.steps.findIndex(s => s.bad)).toBe(2); // p = exp / Σ (p_y = 0)
+    expect(B.steps.findIndex(s => s.bad)).toBe(2);
+    expect(C.steps.some(s => s.bad)).toBe(false);
+    expect([A.ok, B.ok, C.ok]).toEqual([false, false, true]);
+
+    const over = buildRoutes([100, 99], 0, 'fp32');
+    expect(over[0].steps.findIndex(s => s.bad)).toBe(0); // exp(z) = Infinity
+    expect(over.map(r => r.ok)).toEqual([false, true, true]);
+
+    const ok = buildRoutes([2, 1], 1, 'fp32');
+    expect(ok.every(r => r.ok && r.steps.every(s => !s.bad))).toBe(true);
+    expect(ok[0].loss).toBeCloseTo(ok[2].loss, 6);
+  });
+
+  it('chế độ safe cho kết luận riêng: tràn -> cứu được (warning), hụt -> vẫn hỏng (danger)', () => {
+    const logic = new LessonLogic();
+    logic.applyPreset(pick('overflow'));
+    logic.onUserUpdate({ mode: 'safe' });
+    expect(logic.calculate().verdict.type).toBe('warning');
+    logic.applyPreset(pick('underflow'));
+    logic.onUserUpdate({ mode: 'safe' });
+    const r = logic.calculate();
+    expect(r.verdict.type).toBe('danger');
+    expect(r.verdict.text).toContain('VẪN HỎNG');
+    expect(r.lossActive).toBe(Infinity);
+    expect(r.formulaKaTeX).toContain('+\\infty');
   });
 });

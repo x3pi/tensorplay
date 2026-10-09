@@ -122,6 +122,60 @@ export const PRESETS = [
   }
 ];
 
+/** Ba đường đi từ logits tới Loss, ghi lại giá trị trung gian và bước nào hỏng (NaN / vô cực / p_y = 0). */
+export function buildRoutes(z, y, prec = 'fp32') {
+  const m = Math.max(...z);
+  const bad = (v) => (Array.isArray(v) ? v.some(x => !Number.isFinite(x)) : !Number.isFinite(v));
+
+  // A. Naive: exp trực tiếp
+  const eA = z.map(v => expP(v, prec));
+  const sA = sumP(eA, prec);
+  const pA = eA.map(v => roundTo(v / sA, prec));
+  const lossA = roundTo(-Math.log(pA[y]), prec);
+  const A = [
+    { label: 'exp(z)', value: eA },
+    { label: 'Σ exp', value: sA },
+    { label: 'p = exp / Σ', value: pA },
+    { label: '−ln(p_y)', value: lossA }
+  ];
+  A.forEach(st => { st.bad = bad(st.value); });
+  A[2].bad = A[2].bad || pA[y] === 0; // p_y = 0 -> ln(0) = -Infinity ở bước kế
+
+  // B. Softmax an toàn (trừ max) rồi log
+  const shifted = z.map(v => roundTo(v - m, prec));
+  const eB = shifted.map(v => expP(v, prec));
+  const sB = sumP(eB, prec);
+  const pB = eB.map(v => roundTo(v / sB, prec));
+  const lossB = roundTo(-Math.log(pB[y]), prec);
+  const B = [
+    { label: 'z − max', value: shifted },
+    { label: 'exp', value: eB },
+    { label: 'p = exp / Σ', value: pB },
+    { label: '−ln(p_y)', value: lossB }
+  ];
+  B.forEach(st => { st.bad = bad(st.value); });
+  B[2].bad = B[2].bad || pB[y] === 0;
+
+  // C. Log-Sum-Exp: không bao giờ tính p, cũng không lấy ln của số cực nhỏ
+  const lnS = roundTo(Math.log(sB), prec);
+  const lse = roundTo(m + lnS, prec);
+  const lossC = roundTo(lse - z[y], prec);
+  const C = [
+    { label: 'z − max', value: shifted },
+    { label: 'exp', value: eB },
+    { label: 'ln Σ exp', value: lnS },
+    { label: '+ max = LSE', value: lse },
+    { label: '− z_y = Loss', value: lossC }
+  ];
+  C.forEach(st => { st.bad = bad(st.value); });
+
+  return [
+    { id: 'naive', name: 'A. Ngây thơ: exp(z) rồi chia, rồi ln', steps: A, loss: lossA, ok: Number.isFinite(lossA) },
+    { id: 'safe', name: 'B. Softmax an toàn (trừ max) rồi ln', steps: B, loss: lossB, ok: Number.isFinite(lossB) },
+    { id: 'lse', name: 'C. Log-Sum-Exp gộp (không tính p_y)', steps: C, loss: lossC, ok: Number.isFinite(lossC) }
+  ];
+}
+
 export class LessonLogic {
   constructor() {
     this.reset();
@@ -132,7 +186,7 @@ export class LessonLogic {
       z0: 2.0,
       z1: 1.0,
       y: 1,              // 0 hoặc 1 (Nhãn thật mục tiêu)
-      mode: 'lse',       // 'lse' | 'naive'
+      mode: 'lse',       // 'lse' | 'safe' | 'naive'
       precision: 'fp32'  // 'fp32' | 'fp16'
     };
     return this.calculate();
@@ -160,6 +214,8 @@ export class LessonLogic {
 
     const lossLSE = crossEntropyLSE(z, y, P);
     const lossNaive = crossEntropyNaive(z, y, P);
+    const lossSafeLog = roundTo(-Math.log(pSafe[y]), P);
+    const routes = buildRoutes(z, y, P);
     const grad = crossEntropyGrad(z, y, P);
     const gradNaive = crossEntropyGradNaive(z, y, P);
 
@@ -168,37 +224,54 @@ export class LessonLogic {
     const naiveBroken = isUnderflow || isOverflow;
     const gradNaiveBroken = gradNaive.some(g => !Number.isFinite(g));
 
+    const m = Math.max(z0, z1);
+
     let verdict;
     if (mode === 'naive') {
       if (isOverflow) {
         verdict = {
           type: 'danger',
-          text: `🚨 CÁCH NGÂY THƠ THẤT BẠI (${fmtName}): exp(${Math.max(z0, z1)}) tràn số (Infinity; ngưỡng ${fmtName} là logit ${round(OVERFLOW_AT[P], 2)}), phép chia ra NaN. Gradient cũng NaN nên một bước SGD sẽ làm hỏng toàn bộ trọng số.`
+          text: `🚨 ĐƯỜNG A (ngây thơ) THẤT BẠI (${fmtName}): exp(${Math.max(z0, z1)}) tràn số (Infinity; ngưỡng ${fmtName} là logit ${round(OVERFLOW_AT[P], 2)}), phép chia ra NaN. Gradient cũng NaN nên một bước SGD sẽ làm hỏng toàn bộ trọng số.`
         };
       } else if (isUnderflow) {
         verdict = {
           type: 'danger',
-          text: `🚨 CÁCH NGÂY THƠ SỤP ĐỔ (${fmtName}): xác suất lớp đúng bị làm tròn về 0 (Underflow, ngưỡng ${round(UNDERFLOW_AT[P], 2)}). log(0) = -Infinity nên Loss = +Infinity, gradient = NaN.`
+          text: `🚨 ĐƯỜNG A (ngây thơ) SỤP ĐỔ (${fmtName}): xác suất lớp đúng bị làm tròn về 0 (Underflow, ngưỡng ${round(UNDERFLOW_AT[P], 2)}). ln(0) = -Infinity nên Loss = +Infinity, gradient = NaN.`
         };
       } else {
         verdict = {
           type: 'warning',
-          text: `⚠️ CÁCH NGÂY THƠ: logit đang nhỏ nên ${fmtName} chưa gặp lỗi, Loss = ${round(lossNaive, 4)}. Nhưng chỉ cần logit vượt ${round(OVERFLOW_AT[P], 1)} hoặc xuống dưới ${round(UNDERFLOW_AT[P], 1)} là hỏng.`
+          text: `⚠️ ĐƯỜNG A (ngây thơ): logit đang nhỏ nên ${fmtName} chưa gặp lỗi, Loss = ${round(lossNaive, 4)}. Nhưng chỉ cần logit vượt ${round(OVERFLOW_AT[P], 1)} hoặc xuống dưới ${round(UNDERFLOW_AT[P], 1)} là hỏng.`
+        };
+      }
+    } else if (mode === 'safe') {
+      if (!Number.isFinite(lossSafeLog)) {
+        verdict = {
+          type: 'danger',
+          text: `🚨 ĐƯỜNG B (Softmax an toàn rồi ln) VẪN HỎNG (${fmtName}): trừ max đã chống được tràn số, nhưng p của lớp đúng vẫn về 0 (e^${round(z[y] - m, 1)} nhỏ hơn số ${fmtName} nhỏ nhất) nên ln(0) = -Infinity. Chỉ công thức gộp Log-Sum-Exp mới tránh được bước lấy ln của số cực nhỏ.`
+        };
+      } else if (naiveBroken) {
+        verdict = {
+          type: 'warning',
+          text: `⚠️ ĐƯỜNG B CỨU ĐƯỢC LẦN NÀY (${fmtName}): đường A đã hỏng nhưng trừ max giữ Loss = ${round(lossSafeLog, 4)}. Tuy vậy với logit chênh lệch lớn hơn nữa đường B cũng hỏng; chỉ đường C luôn an toàn.`
+        };
+      } else {
+        verdict = {
+          type: 'success',
+          text: `✅ ĐƯỜNG B (${fmtName}): Loss = ${round(lossSafeLog, 4)}, trùng với cách ngây thơ vì logit còn nhỏ.`
         };
       }
     } else if (naiveBroken) {
       verdict = {
         type: 'success',
-        text: `🛡️ LOG-SUM-EXP CỨU NGUY (${fmtName}): cách ngây thơ đã hỏng ở đây nhưng Loss = ${round(lossLSE, 4)} vẫn hữu hạn và gradient dội ngược chuẩn xác.`
+        text: `🛡️ ĐƯỜNG C (Log-Sum-Exp) CỨU NGUY (${fmtName}): đường A đã hỏng${Number.isFinite(lossSafeLog) ? '' : ' và đường B cũng hỏng'} nhưng Loss = ${round(lossLSE, 4)} vẫn hữu hạn, gradient dội ngược chuẩn xác.`
       };
     } else {
       verdict = {
         type: 'success',
-        text: `✅ LOG-SUM-EXP CHUẨN XÁC (${fmtName}): Loss = ${round(lossLSE, 4)}, gradient hữu hạn, không phụ thuộc độ lớn tuyệt đối của logit.`
+        text: `✅ ĐƯỜNG C (Log-Sum-Exp) CHUẨN XÁC (${fmtName}): Loss = ${round(lossLSE, 4)}, gradient hữu hạn, không phụ thuộc độ lớn tuyệt đối của logit.`
       };
     }
-
-    const m = Math.max(z0, z1);
 
     const zyFmt = z[y] < 0 ? `(${round(z[y], 4)})` : `${round(z[y], 4)}`;
     const formulaLSEKaTeX = `\\text{Loss}_{\\text{LSE}} = \\text{LogSumExp}(z) - z_{${y}} = ${round(lseVal, 4)} - ${zyFmt} = ${round(lossLSE, 4)}`;
@@ -213,7 +286,12 @@ export class LessonLogic {
       formulaNaiveKaTeX = `\\text{Loss}_{\\text{naive}} = -\\ln(p_{${y}}) = -\\ln(${pVal}) = ${round(lossNaive, 4)}`;
     }
 
-    const formulaActiveKaTeX = mode === 'lse' ? formulaLSEKaTeX : formulaNaiveKaTeX;
+    const pSafeY = Number.isFinite(pSafe[y]) ? pSafe[y] : 0;
+    const formulaSafeKaTeX = !Number.isFinite(lossSafeLog)
+      ? `\\text{Loss}_{\\text{safe}} = -\\ln(p_{${y}}) = -\\ln(${round(pSafeY, 4)}) = +\\infty \\quad (\\text{Hụt số dù đã trừ max})`
+      : `\\text{Loss}_{\\text{safe}} = -\\ln(p_{${y}}) = -\\ln(${round(pSafeY, 4)}) = ${round(lossSafeLog, 4)}`;
+
+    const formulaActiveKaTeX = mode === 'lse' ? formulaLSEKaTeX : mode === 'safe' ? formulaSafeKaTeX : formulaNaiveKaTeX;
 
     return {
       state: { ...this.state },
@@ -228,7 +306,10 @@ export class LessonLogic {
       pNaive,
       lossLSE,
       lossNaive,
-      lossActive: mode === 'lse' ? lossLSE : lossNaive,
+      lossActive: mode === 'lse' ? lossLSE : mode === 'safe' ? lossSafeLog : lossNaive,
+      lossSafeLog,
+      safeBroken: !Number.isFinite(lossSafeLog),
+      routes,
       grad,
       gradNaive,
       gradNaiveBroken,
@@ -239,6 +320,7 @@ export class LessonLogic {
       formulaKaTeX: formulaActiveKaTeX,
       formulaLSEKaTeX,
       formulaNaiveKaTeX,
+      formulaSafeKaTeX,
       formulaActiveKaTeX
     };
   }

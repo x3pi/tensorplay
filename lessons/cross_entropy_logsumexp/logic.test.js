@@ -197,4 +197,65 @@ describe('lessons/cross_entropy_logsumexp/logic.js', () => {
     expect(texNum(162754.79)).toBe('1.63 \\times 10^{5}');
     expect(texNum(2.5)).toBe('2.5');
   });
+
+  it('SGD trên logit với đường C (LSE): [0,-110] -> sau 1 bước z = [-1,-109], Loss 108; sau 10 bước Loss 90; sau 100 bước Loss ≈ 0', () => {
+    const L = new LessonLogic();
+    L.applyPreset(pick('underflow'));
+    let r = L.stepSGD(1);
+    expect([L.state.z0, L.state.z1]).toEqual([-1, -109]);
+    expect(r.lossActive).toBe(108);
+    r = L.stepSGD(9);
+    expect([L.state.z0, L.state.z1]).toEqual([-10, -100]);
+    expect(r.lossActive).toBe(90);
+    r = L.stepSGD(90);
+    expect(r.steps).toBe(100);
+    expect(r.lossActive).toBeLessThan(0.02);
+    expect(r.dead).toBe(false);
+    expect(r.history.length).toBe(101);
+    expect(r.history[0]).toBe(110);
+    for (let i = 1; i < r.history.length; i++) expect(r.history[i]).toBeLessThanOrEqual(r.history[i - 1] + 1e-6);
+  });
+
+  it('SGD với đường A (ngây thơ) ở tình huống lỗi: sau đúng 1 bước logit thành NaN, mô hình chết và không chạy tiếp', () => {
+    for (const id of ['underflow', 'overflow', 'fp16_overflow', 'fp16_underflow']) {
+      const L = new LessonLogic();
+      L.applyPreset({ ...pick(id), mode: 'naive' });
+      const r = L.stepSGD(1);
+      expect(r.dead, id).toBe(true);
+      expect(Number.isNaN(L.state.z0) && Number.isNaN(L.state.z1), id).toBe(true);
+      expect(r.verdict.text, id).toContain('ĐÃ CHẾT');
+      const again = L.stepSGD(10);
+      expect(again.steps, id).toBe(1);
+    }
+  });
+
+  it('khi logit nhỏ, đường A và đường C cho CÙNG quỹ đạo SGD (cách ngây thơ chỉ hỏng ở cực trị)', () => {
+    const a = new LessonLogic();
+    a.applyPreset({ ...pick('normal'), mode: 'naive' });
+    a.stepSGD(20);
+    const c = new LessonLogic();
+    c.applyPreset({ ...pick('normal'), mode: 'lse' });
+    c.stepSGD(20);
+    expect(a.state.z0).toBeCloseTo(c.state.z0, 4);
+    expect(a.state.z1).toBeCloseTo(c.state.z1, 4);
+    expect(c.calculate().lossActive).toBeLessThan(0.03);
+  });
+
+  it('tràn số FP32 [100, 99]: đường C hội tụ (Loss < 0.01 sau 50 bước), đường A chết ngay', () => {
+    const c = new LessonLogic();
+    c.applyPreset({ ...pick('overflow'), mode: 'lse' });
+    expect(c.stepSGD(50).lossActive).toBeLessThan(0.01);
+    const a = new LessonLogic();
+    a.applyPreset({ ...pick('overflow'), mode: 'naive' });
+    expect(a.stepSGD(1).dead).toBe(true);
+  });
+
+  it('đổi tham số bằng tay (thanh trượt, công tắc) đặt lại số bước và lịch sử Loss', () => {
+    const L = new LessonLogic();
+    L.stepSGD(5);
+    expect(L.calculate().steps).toBe(5);
+    const r = L.onUserUpdate({ z0: 3 });
+    expect(r.steps).toBe(0);
+    expect(r.history).toEqual([]);
+  });
 });

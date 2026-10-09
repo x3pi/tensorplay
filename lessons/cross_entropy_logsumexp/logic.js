@@ -224,18 +224,43 @@ export class LessonLogic {
       z1: 1.0,
       y: 1,              // 0 hoặc 1 (Nhãn thật mục tiêu)
       mode: 'lse',       // 'lse' | 'safe' | 'naive'
-      precision: 'fp32'  // 'fp32' | 'fp16'
+      precision: 'fp32', // 'fp32' | 'fp16'
+      lr: 1.0,           // tốc độ học cho bước SGD trên logit
+      steps: 0,          // số bước SGD đã chạy
+      history: []        // Loss (của đường đang chọn) sau mỗi bước, phần tử đầu là Loss ban đầu
     };
     return this.calculate();
   }
 
   applyPreset(presetState) {
-    this.state = { ...this.state, ...presetState };
+    this.state = { ...this.state, ...presetState, steps: 0, history: [] };
     return this.calculate();
   }
 
   onUserUpdate(partialState) {
-    this.state = { ...this.state, ...partialState };
+    this.state = { ...this.state, ...partialState, steps: 0, history: [] };
+    return this.calculate();
+  }
+
+  /**
+   * Chạy n bước SGD trên chính các logit: z <- z - lr * grad, grad lấy theo đường đang chọn
+   * (A: gradient lan truyền ngược qua -ln(softmax) ngây thơ; B, C: P - I_y).
+   * Logit chứa NaN/Infinity thì "mô hình đã chết", dừng lại.
+   */
+  stepSGD(n = 1) {
+    const hist = this.state.history;
+    for (let i = 0; i < n; i++) {
+      const c = this.calculate();
+      if (c.dead) break;
+      if (hist.length === 0) hist.push(c.lossActive);
+      const g = this.state.mode === 'naive' ? c.gradNaive : c.grad;
+      const P = this.state.precision;
+      this.state.z0 = roundTo(this.state.z0 - roundTo(this.state.lr * g[0], P), P);
+      this.state.z1 = roundTo(this.state.z1 - roundTo(this.state.lr * g[1], P), P);
+      this.state.steps += 1;
+      hist.push(this.calculate().lossActive);
+      if (hist.length > 400) hist.shift();
+    }
     return this.calculate();
   }
 
@@ -261,6 +286,8 @@ export class LessonLogic {
     const isOverflow = Number.isNaN(lossNaive) || !Number.isFinite(pNaive[0]) || !Number.isFinite(pNaive[1]);
     const naiveBroken = isUnderflow || isOverflow;
     const gradNaiveBroken = gradNaive.some(g => !Number.isFinite(g));
+    const dead = !Number.isFinite(z0) || !Number.isFinite(z1);
+    const gradActive = mode === 'naive' ? gradNaive : grad;
 
     const m = Math.max(z0, z1);
 
@@ -331,6 +358,13 @@ export class LessonLogic {
 
     const formulaActiveKaTeX = mode === 'lse' ? formulaLSEKaTeX : mode === 'safe' ? formulaSafeKaTeX : formulaNaiveKaTeX;
 
+    if (dead) {
+      verdict = {
+        type: 'danger',
+        text: `💀 MÔ HÌNH ĐÃ CHẾT: sau ${this.state.steps} bước SGD các logit đã thành NaN. Gradient hỏng (NaN) đã được ghi vào tham số, mọi phép tính sau đó đều NaN và không thể hồi phục. Bấm "Đặt Lại" và thử lại với đường C (Log-Sum-Exp).`
+      };
+    }
+
     return {
       state: { ...this.state },
       precision: P,
@@ -352,6 +386,11 @@ export class LessonLogic {
       grad,
       gradNaive,
       gradNaiveBroken,
+      dead,
+      gradActive,
+      lr: this.state.lr,
+      steps: this.state.steps,
+      history: [...this.state.history],
       isUnderflow,
       isOverflow,
       naiveBroken,

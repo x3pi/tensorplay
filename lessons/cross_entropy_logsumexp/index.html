@@ -108,23 +108,6 @@
         </div>
         <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
           
-          <!-- Thẻ 0: Công thức đầy đủ với số liệu sống (ưu tiên hiển thị) -->
-          <div class="tp-panel" id="panel-formulas">
-            <div class="tp-panel-title">📐 Công Thức Đầy Đủ (thay số trực tiếp theo thanh trượt)</div>
-            <div class="tp-formula-label">① Softmax ngây thơ (đường A)</div>
-            <div class="tp-math-box" id="f-softmax-naive"></div>
-            <div class="tp-formula-label">② Softmax an toàn, trừ max (đường B)</div>
-            <div class="tp-math-box" id="f-softmax-safe"></div>
-            <div class="tp-formula-label">③ Log-Sum-Exp (đường C)</div>
-            <div class="tp-math-box" id="f-lse"></div>
-            <div class="tp-formula-label">④ Loss theo từng đường (đường đang chọn được viền sáng)</div>
-            <div class="tp-math-box" id="f-lossA"></div>
-            <div class="tp-math-box" id="f-lossB" style="margin-top:0.3rem;"></div>
-            <div class="tp-math-box" id="f-lossC" style="margin-top:0.3rem;"></div>
-            <div class="tp-formula-label">⑤ Gradient dội ngược theo logit (từ công thức gộp)</div>
-            <div class="tp-math-box" id="f-grad"></div>
-          </div>
-
           <!-- Thẻ 1: Logits & Xác Suất -->
           <div class="tp-panel">
             <div class="tp-panel-title">📊 1. Logits &amp; Xác Suất Softmax</div>
@@ -162,7 +145,38 @@
             <div class="tp-panel-title">⚡ 3. Gradient Dội Ngược $\nabla_z \text{Loss} = P - I_y$</div>
             <div class="tp-math-box" id="katex-grad"></div>
             <table class="tp-kv-table" id="grad-table" style="margin-top: 0.6rem;"></table>
+
+            <div style="margin-top:0.9rem; padding-top:0.7rem; border-top:1px dashed var(--border-subtle);">
+              <div style="font-size:0.72rem; font-weight:700; color:var(--text-muted); margin-bottom:0.4rem;">
+                🚀 Thử cập nhật bằng gradient của đường đang chọn: $z \leftarrow z - \eta\,\nabla_z L$ ($\eta = 1$)
+              </div>
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <button class="tp-btn tp-btn-primary btn-sgd" data-n="1" style="padding:4px 10px; font-size:0.72rem;">▶ 1 bước</button>
+                <button class="tp-btn tp-btn-primary btn-sgd" data-n="10" style="padding:4px 10px; font-size:0.72rem;">⏩ 10 bước</button>
+                <button class="tp-btn tp-btn-primary btn-sgd" data-n="100" style="padding:4px 10px; font-size:0.72rem;">⏭️ 100 bước</button>
+              </div>
+              <table class="tp-kv-table" id="sgd-table" style="margin-top:0.6rem;"></table>
+              <svg id="loss-plot" viewBox="0 0 300 110" style="width:100%; margin-top:0.5rem; background:#090d15; border-radius:8px;"></svg>
+              <div class="tp-matrix-caption" id="loss-plot-caption"></div>
+            </div>
           </div>
+
+          <!-- Công thức đầy đủ (thu gọn, mở khi cần ôn lại) -->
+          <details class="tp-panel" id="panel-formulas">
+            <summary class="tp-panel-title" style="cursor:pointer;">📚 Công Thức Đầy Đủ (bấm để mở, thay số trực tiếp)</summary>
+            <div class="tp-formula-label">① Softmax ngây thơ (đường A)</div>
+            <div class="tp-math-box" id="f-softmax-naive"></div>
+            <div class="tp-formula-label">② Softmax an toàn, trừ max (đường B)</div>
+            <div class="tp-math-box" id="f-softmax-safe"></div>
+            <div class="tp-formula-label">③ Log-Sum-Exp (đường C)</div>
+            <div class="tp-math-box" id="f-lse"></div>
+            <div class="tp-formula-label">④ Loss theo từng đường (đường đang chọn được viền sáng)</div>
+            <div class="tp-math-box" id="f-lossA"></div>
+            <div class="tp-math-box" id="f-lossB" style="margin-top:0.3rem;"></div>
+            <div class="tp-math-box" id="f-lossC" style="margin-top:0.3rem;"></div>
+            <div class="tp-formula-label">⑤ Gradient dội ngược theo logit (từ công thức gộp)</div>
+            <div class="tp-math-box" id="f-grad"></div>
+          </details>
 
         </div>
       </section>
@@ -223,7 +237,7 @@
         heading: 'Gradient Dội Ngược: Đơn Giản & Hoàn Hảo',
         problem: 'Đạo hàm của hàm mất mát theo logit $z$ có bị ảnh hưởng bởi Log-Sum-Exp không?',
         mechanism: 'Đạo hàm của $\\text{LogSumExp}(z)$ theo $z_i$ chính là Softmax: $\\frac{\\partial \\text{LSE}}{\\partial z_i} = p_i$. Kết hợp với $\\frac{\\partial(-z_y)}{\\partial z_i}$ ta có:\n$$\\frac{\\partial \\text{Loss}}{\\partial z} = P - I_y$$\nTổng các phần tử luôn bằng 0 và luôn hữu hạn. Còn cách ngây thơ phải đi qua $\\frac{\\partial L}{\\partial p_y} = -\\frac{1}{p_y}$: khi $p_y = 0$ nó là $-\\infty$, nhân với đạo hàm Softmax bằng 0 ra $\\text{NaN}$.',
-        action: '👉 Thao tác (Cột 2): Xem Thẻ 3 ở Cột 3 với từng preset.\n👁️ Quan sát (Cột 3): Cột LSE luôn hữu hạn, cột "ngây thơ" ra NaN ở mọi preset lỗi.',
+        action: '👉 Thao tác (Cột 2): Bấm preset "Hụt số FP32: [0, -110]", chọn đường A rồi bấm "▶ 1 bước" ở thẻ Gradient; sau đó Đặt Lại, chọn đường C và bấm "⏭️ 100 bước".\n👁️ Quan sát (Cột 3): Đường A: logit thành NaN ngay sau 1 bước và mô hình chết. Đường C: Loss giảm đều từ 110 xuống gần 0.',
         takeaway: 'Một Loss $= \\infty$ chưa phải điều tệ nhất: gradient NaN lan vào trọng số ở bước cập nhật kế tiếp và phá hỏng cả mô hình.'
       },
       {
@@ -376,6 +390,14 @@
       });
     });
 
+    document.querySelectorAll('.btn-sgd').forEach(btn => {
+      btn.addEventListener('click', () => {
+        logic.stepSGD(Number(btn.dataset.n));
+        syncUIFromState();
+        renderAll();
+      });
+    });
+
     document.getElementById('btn-reset').addEventListener('click', () => {
       logic.reset();
       syncUIFromState();
@@ -391,8 +413,8 @@
 
     function syncUIFromState() {
       const s = logic.state;
-      sliderZ0.setValue(s.z0);
-      sliderZ1.setValue(s.z1);
+      if (Number.isFinite(s.z0)) sliderZ0.setValue(Math.max(-120, Math.min(120, s.z0)));
+      if (Number.isFinite(s.z1)) sliderZ1.setValue(Math.max(-120, Math.min(120, s.z1)));
       updateSegActive(segMode, s.mode);
       updateSegActive(segPrecision, s.precision);
       updateSegActive(segTarget, s.y.toString());
@@ -555,6 +577,40 @@
         <tr><td>$\\frac{\\partial \\text{Loss}}{\\partial z_1}$ (Lớp 1)</td><td>${fmtG(calc.grad[1])}</td><td>${fmtG(calc.gradNaive[1])}</td></tr>
         <tr><td>Tổng lực cân bằng (Sum)</td><td><strong>${gradSum.toFixed(4)}</strong> (≈ 0)</td><td>${calc.gradNaiveBroken ? '<span style="color:var(--color-negative);font-weight:700;">hỏng: SGD sẽ ghi NaN vào trọng số</span>' : '≈ 0'}</td></tr>
       `;
+
+      // Thẻ 3b: cập nhật SGD và đồ thị Loss
+      const sgdTable = document.getElementById('sgd-table');
+      const fz = (v) => Number.isFinite(v) ? v.toFixed(3) : '<span style="color:var(--color-negative);font-weight:700;">NaN</span>';
+      const stepVec = calc.gradActive.map(g => (Number.isFinite(g) ? -s.lr * g : NaN));
+      sgdTable.innerHTML = `
+        <tr><td>Gradient của đường đang chọn</td><td>[${fmtG2(calc.gradActive[0])}, ${fmtG2(calc.gradActive[1])}]</td></tr>
+        <tr><td>Bước cập nhật −η·∇</td><td>[${fz(stepVec[0])}, ${fz(stepVec[1])}]</td></tr>
+        <tr><td>Logit hiện tại z</td><td>[${fz(s.z0)}, ${fz(s.z1)}] sau ${calc.steps} bước</td></tr>
+        <tr><td>Loss (đường đang chọn)</td><td>${fmtL(calc.lossActive)}</td></tr>`;
+
+      const plot = document.getElementById('loss-plot');
+      const hist = calc.history;
+      const cap = document.getElementById('loss-plot-caption');
+      if (hist.length < 2) {
+        plot.innerHTML = '<text x="150" y="58" text-anchor="middle" fill="#64748b" font-size="11">Bấm "▶ 1 bước" để vẽ đường Loss</text>';
+        cap.textContent = calc.dead ? '💀 Mô hình đã chết (NaN).' : 'Chưa có bước SGD nào.';
+      } else {
+        const finite = hist.filter(Number.isFinite);
+        const maxL = Math.max(1e-9, ...finite);
+        const W = 300, H = 110, pad = 10;
+        const px = i => pad + (i / (hist.length - 1)) * (W - 2 * pad);
+        const py = v => H - pad - (Math.min(v, maxL) / maxL) * (H - 2 * pad);
+        let d = '', bad = '';
+        hist.forEach((v, i) => {
+          if (Number.isFinite(v)) d += `${d && Number.isFinite(hist[i - 1]) ? 'L' : 'M'}${px(i).toFixed(1)},${py(v).toFixed(1)} `;
+          else bad += `<circle cx="${px(i).toFixed(1)}" cy="${pad}" r="4" fill="#ef4444"/><text x="${px(i).toFixed(1)}" y="${pad + 14}" text-anchor="middle" fill="#f87171" font-size="9">${Number.isNaN(v) ? 'NaN' : '∞'}</text>`;
+        });
+        plot.innerHTML = `<path d="${d}" fill="none" stroke="#38bdf8" stroke-width="2"/>${bad}`;
+        const last = hist[hist.length - 1];
+        cap.textContent = calc.dead
+          ? `💀 Sau ${calc.steps} bước Loss thành NaN và không hồi phục.`
+          : `Loss từ ${Number(hist[0]).toFixed(3)} xuống ${Number.isFinite(last) ? last.toFixed(4) : last} sau ${calc.steps} bước.`;
+      }
 
       renderAllInlineMath(document.body);
     }

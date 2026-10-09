@@ -226,6 +226,40 @@ export function buildRoutes(z, y, prec = 'fp32') {
   ];
   C.forEach(st => { st.bad = bad(st.value); });
 
+  // Chú thích từng bước: ký hiệu công thức, mức độ (bad = hỏng, warn = cảnh báo) và lý do nêu đích danh biến
+  const hi = OVERFLOW_AT[prec].toFixed(2), lo = UNDERFLOW_AT[prec].toFixed(2);
+  const sub = (i) => '₀₁₂₃₄₅₆₇₈₉'[i];
+  const fz = (v) => (v < 0 ? `−${Math.abs(v)}` : String(v));
+  const note = (st, sym, level, why) => { st.sym = sym; if (level) st.level = level; if (why) st.why = why; };
+  const idx = (arr, f) => arr.map((v, i) => (f(v, i) ? i : -1)).filter(i => i >= 0);
+
+  const overI = idx(eA, v => v === Infinity);
+  const underA = idx(eA, (v, i) => v === 0 && Number.isFinite(z[i]));
+  note(A[0], 'e_i = e^{z_i}',
+    overI.length ? 'bad' : underA.length ? 'warn' : '',
+    overI.length ? overI.map(i => `exp(z${sub(i)}) với z${sub(i)} = ${fz(z[i])} > ${hi}: tràn thành +∞ (overflow)`).join('; ')
+      : underA.length ? underA.map(i => `exp(z${sub(i)}) với z${sub(i)} = ${fz(z[i])} < ${lo}: bị làm tròn về 0 (underflow)`).join('; ') : '');
+  note(A[1], 'S = \\sum_j e_j', Number.isFinite(sA) ? '' : 'bad', Number.isFinite(sA) ? '' : 'S chứa +∞ nên S = +∞');
+  note(A[2], `p_i = e_i / S`, A[2].bad ? 'bad' : '',
+    Number.isNaN(pA[y]) || pA.some(Number.isNaN) ? '+∞ / +∞ không xác định nên p = NaN'
+      : pA[y] === 0 ? `p${sub(y)} = e${sub(y)} / S = 0: xác suất lớp đúng đã mất hết` : '');
+  note(A[3], `L = -\\ln p_{${y}}`, A[3].bad ? 'bad' : '', pA[y] === 0 ? `−ln(0) = +∞` : Number.isNaN(lossA) ? 'ln(NaN) = NaN' : '');
+
+  note(B[0], 'z_i - m', '', '');
+  const underB = idx(eB, v => v === 0);
+  note(B[1], 'e_i = e^{z_i - m}', underB.length ? 'warn' : '',
+    underB.length ? underB.map(i => `exp(z${sub(i)}−m) với z${sub(i)}−m = ${fz(shifted[i])} < ${lo}: về 0 (underflow)`).join('; ') : 'z_i − m ≤ 0 nên e ∈ (0, 1]: không thể tràn');
+  note(B[2], 'p_i = e_i / S', pB[y] === 0 ? 'bad' : '', pB[y] === 0 ? `p${sub(y)} = 0 / S = 0: xác suất lớp đúng mất hết` : '');
+  note(B[3], `L = -\\ln p_{${y}}`, B[3].bad || pB[y] === 0 ? 'bad' : '', pB[y] === 0 ? '−ln(0) = +∞: trừ max chữa được tràn số nhưng không chữa được bước này' : '');
+
+  note(C[0], 'z_i - m', '', '');
+  note(C[1], 'e_i = e^{z_i - m}', '', underB.length
+    ? `exp(z${sub(underB[0])}−m) = 0 nhưng vô hại: chỉ cộng thêm 0 vào Σ`
+    : 'z_i − m ≤ 0 nên e ∈ (0, 1]: không thể tràn');
+  note(C[2], '\\ln S = \\ln\\sum_j e_j', '', 'Phần tử lớn nhất cho e = 1 nên S ≥ 1: không bao giờ phải lấy ln(0)');
+  note(C[3], '\\mathrm{LSE} = m + \\ln S', '', '');
+  note(C[4], `L = \\mathrm{LSE} - z_{${y}}`, '', '');
+
   return [
     { id: 'naive', name: 'A. Ngây thơ: exp(z) rồi chia, rồi ln', steps: A, loss: lossA, ok: Number.isFinite(lossA) },
     { id: 'safe', name: 'B. Softmax an toàn (trừ max) rồi ln', steps: B, loss: lossB, ok: Number.isFinite(lossB) },
@@ -371,6 +405,7 @@ export class LessonLogic {
       formulas,
       grad,
       gradNaive,
+      gradSafe: pSafe[y] === 0 ? grad.map(() => NaN) : grad,
       gradNaiveBroken,
       isUnderflow,
       isOverflow,

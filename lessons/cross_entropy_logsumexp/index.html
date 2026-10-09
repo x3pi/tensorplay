@@ -18,10 +18,6 @@
   <link rel="stylesheet" href="../../shared/styles/tokens.css">
   <link rel="stylesheet" href="../../shared/styles/layout.css">
   <link rel="stylesheet" href="../../shared/styles/components.css">
-  <style>
-    .tp-formula-label { font-size: 0.72rem; font-weight: 700; color: var(--text-muted); margin: 0.6rem 0 0.25rem; letter-spacing: 0.02em; }
-    #panel-formulas .tp-math-box { overflow-x: auto; padding: 0.5rem 0.6rem; }
-  </style>
 </head>
 <body class="theme-dark">
   <div class="lab-shell">
@@ -125,46 +121,24 @@
           <!-- Thẻ 2: LogSumExp & Live Loss -->
           <div class="tp-panel" id="panel-loss-calc">
             <div class="tp-panel-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
-              <span>📐 2. Phép Tính Loss &amp; So Sánh Công Thức</span>
+              <span id="card2-title" class="tp-has-formula" tabindex="0">📐 2. Phép Tính Loss &amp; So Sánh Ba Đường</span>
               <span id="active-mode-badge" class="tp-badge" style="font-size: 0.68rem; font-weight: 700;"></span>
             </div>
             
-            <div style="font-size: 0.72rem; color: var(--text-dim); margin-bottom: 0.4rem;" id="formula-caption">
-              Công thức của hàm đang kích hoạt:
-            </div>
-            <div class="tp-math-box" id="katex-lse-formula" style="transition: border-color 0.2s ease;"></div>
-
             <div style="margin-top: 0.85rem; font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;">
               Đối Chiếu Ba Phương Pháp Tính (A, B, C):
             </div>
             <table class="tp-kv-table" id="loss-table" style="margin-top: 0.4rem;"></table>
+            <div style="font-size: 0.7rem; color: var(--text-dim); margin-top: 0.3rem;">💡 Bấm vào một hàng để chọn đường đó; rê chuột vào mục gạch chấm để xem công thức.</div>
           </div>
 
           <!-- Thẻ 3: Gradient -->
           <div class="tp-panel">
-            <div class="tp-panel-title">⚡ 3. Gradient Dội Ngược $\nabla_z \text{Loss} = P - I_y$</div>
+            <div class="tp-panel-title"><span id="grad-title" class="tp-has-formula" tabindex="0">⚡ 3. Gradient Dội Ngược</span></div>
             <div class="tp-matrix-caption" style="text-align:left; margin-bottom:0.4rem;">Vì sao phải quan tâm: giá trị Loss chỉ để theo dõi, còn huấn luyện chạy trên gradient. Gradient NaN thì trọng số cũng thành NaN. Đây là hệ quả cuối cùng của việc tính Loss không ổn định.</div>
-            <div class="tp-math-box" id="katex-grad"></div>
             <table class="tp-kv-table" id="grad-table" style="margin-top: 0.6rem;"></table>
 
           </div>
-
-          <!-- Công thức đầy đủ (thu gọn, mở khi cần ôn lại) -->
-          <details class="tp-panel" id="panel-formulas">
-            <summary class="tp-panel-title" style="cursor:pointer;">📚 Công Thức Đầy Đủ (bấm để mở, thay số trực tiếp)</summary>
-            <div class="tp-formula-label">① Softmax ngây thơ (đường A)</div>
-            <div class="tp-math-box" id="f-softmax-naive"></div>
-            <div class="tp-formula-label">② Softmax an toàn, trừ max (đường B)</div>
-            <div class="tp-math-box" id="f-softmax-safe"></div>
-            <div class="tp-formula-label">③ Log-Sum-Exp (đường C)</div>
-            <div class="tp-math-box" id="f-lse"></div>
-            <div class="tp-formula-label">④ Loss theo từng đường (đường đang chọn được viền sáng)</div>
-            <div class="tp-math-box" id="f-lossA"></div>
-            <div class="tp-math-box" id="f-lossB" style="margin-top:0.3rem;"></div>
-            <div class="tp-math-box" id="f-lossC" style="margin-top:0.3rem;"></div>
-            <div class="tp-formula-label">⑤ Gradient dội ngược theo logit (từ công thức gộp)</div>
-            <div class="tp-math-box" id="f-grad"></div>
-          </details>
 
         </div>
       </section>
@@ -178,6 +152,7 @@
     import { createCommentSection } from '../../shared/components/CommentSection.js';
     import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
+    import { createFormulaTooltip, formulaAttr } from '../../shared/components/FormulaTooltip.js';
     import { LessonLogic, PRESETS } from './logic.js';
 
     const LESSON_ID = 'cross_entropy_logsumexp';
@@ -303,6 +278,9 @@
     };
 
     const logic = new LessonLogic();
+    createFormulaTooltip();
+    const fa = (tex, label) => `<span class="tp-has-formula" tabindex="0" data-formula="${formulaAttr(tex)}">${label}</span>`;
+    const GRAD_NAIVE_TEX = '\\frac{\\partial L}{\\partial z_i} = \\frac{\\partial L}{\\partial p_y}\\,\\frac{\\partial p_y}{\\partial z_i} = -\\frac{1}{p_y}\\cdot p_y\\,(\\mathbb{1}[i=y] - p_i) \\quad (p_y = 0 \\Rightarrow (-\\infty)\\cdot 0 = \\text{NaN})';
 
     // 1. Mount StepWizard
     const wizardMount = document.getElementById('mount-step-wizard');
@@ -402,6 +380,7 @@
 
     function renderAll() {
       const calc = logic.calculate();
+      const F = calc.formulas;
       const s = logic.state;
 
       // Sliders caption
@@ -421,16 +400,16 @@
       const fmtL = (l) => Number.isFinite(l) ? l.toFixed(4) : (Number.isNaN(l) ? '<span style="color:var(--color-negative);font-weight:700;">NaN</span>' : '<span style="color:var(--color-negative);font-weight:700;">+∞</span>');
       const fmtG2 = (g) => Number.isFinite(g) ? `${g >= 0 ? '+' : ''}${g.toFixed(3)}` : '<span style="color:var(--color-negative);font-weight:700;">NaN</span>';
       probsTable.innerHTML = `
-        <tr><td><strong>Lớp</strong></td><td><strong>Safe Softmax (trừ max)</strong></td><td><strong>Naive Softmax (exp trực tiếp)</strong></td></tr>
+        <tr><td><strong>Lớp</strong></td><td><strong>${fa(F.softmaxSafe, 'Safe Softmax (trừ max)')}</strong></td><td><strong>${fa(F.softmaxNaive, 'Naive Softmax (exp trực tiếp)')}</strong></td></tr>
         <tr><td>Lớp 0 (🛑)${targetBadge(0)}</td><td>${fmtProb(calc.pSafe[0])}</td><td>${fmtProb(calc.pNaive[0])}</td></tr>
         <tr><td>Lớp 1 (⬆️)${targetBadge(1)}</td><td>${fmtProb(calc.pSafe[1])}</td><td>${fmtProb(calc.pNaive[1])}</td></tr>
-        <tr style="border-top:1px solid var(--border-subtle);"><td><strong>→ Loss nếu lấy −ln(p_y)</strong></td><td>${fmtL(calc.lossSafeLog)}</td><td>${fmtL(calc.lossNaive)}</td></tr>
-        <tr><td><strong>→ Gradient nếu lan truyền ngược qua bước này</strong></td><td>[${fmtG2(calc.grad[0])}, ${fmtG2(calc.grad[1])}] (P − I_y)</td><td>[${fmtG2(calc.gradNaive[0])}, ${fmtG2(calc.gradNaive[1])}]</td></tr>
+        <tr style="border-top:1px solid var(--border-subtle);"><td><strong>→ Loss nếu lấy −ln(p_y)</strong></td><td>${fa(F.lossB, fmtL(calc.lossSafeLog))}</td><td>${fa(F.lossA, fmtL(calc.lossNaive))}</td></tr>
+        <tr><td><strong>→ Gradient nếu lan truyền ngược qua bước này</strong></td><td>${fa(F.grad, `[${fmtG2(calc.grad[0])}, ${fmtG2(calc.grad[1])}] (P − I_y)`)}</td><td>${fa(GRAD_NAIVE_TEX, `[${fmtG2(calc.gradNaive[0])}, ${fmtG2(calc.gradNaive[1])}]`)}</td></tr>
       `;
 
       document.getElementById('probs-caption').textContent =
         s.mode === 'naive' && (calc.isUnderflow || calc.isOverflow)
-          ? '⚠️ Naive Softmax gặp sự cố số học (Underflow/Overflow)!'
+          ? '⚠️ Naive Softmax gặp sự cố số học (Underflow/Overflow)! 💡 Rê chuột vào các mục gạch chấm để xem công thức.'
           : `Safe Softmax luôn có tổng xấp xỉ 100% ở ${calc.precisionName}, nhưng nếu p của lớp đúng vẫn về 0 thì -ln(p) vẫn ra +∞ (xem dòng "Loss" bên trên và đường B).`;
 
       // Telemetry Card 2: LSE & Loss Formula
@@ -447,28 +426,26 @@
         activeBadge.style.cssText = `background: ${bg}; color: ${fg}; border: 1px solid ${bd}; font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 4px;`;
         activeBadge.textContent = info.badge;
       }
-      const formulaCaption = document.getElementById('formula-caption');
-      if (formulaCaption) formulaCaption.innerHTML = info.cap;
-      const mathBox = document.getElementById('katex-lse-formula');
-      if (mathBox) mathBox.style.border = `1px solid ${info.border}`;
-      renderMath(mathBox, calc.formulaActiveKaTeX || calc.formulaKaTeX);
+      // Công thức của đường đang chọn: chỉ hiện khi rê chuột vào tiêu đề thẻ này
+      const card2Title = document.getElementById('card2-title');
+      card2Title.setAttribute('data-formula', calc.formulaActiveKaTeX || calc.formulaKaTeX);
 
       const fmtLoss = (l) => Number.isFinite(l) ? l.toFixed(4) : (Number.isNaN(l) ? '<span style="color:var(--color-negative);font-weight:700;">NaN</span>' : '<span style="color:var(--color-negative);font-weight:700;">+Infinity</span>');
 
       const lossTable = document.getElementById('loss-table');
       const ROWS = [
-        { mode: 'lse', title: 'C. Log-Sum-Exp', sub: `$\\text{Loss} = \\text{LogSumExp}(z) - z_{${s.y}}$`, value: calc.lossLSE, color: 'var(--color-positive)', bg: 'rgba(34, 197, 94, 0.08)', tag: 'rgba(34, 197, 94, 0.2)|#4ade80' },
-        { mode: 'safe', title: 'B. Softmax an toàn rồi ln', sub: `$\\text{Loss} = -\\ln(p_{${s.y}})$, $p$ tính sau khi trừ max`, value: calc.lossSafeLog, color: 'var(--color-warning)', bg: 'rgba(245, 158, 11, 0.08)', tag: 'rgba(245, 158, 11, 0.2)|#fbbf24' },
-        { mode: 'naive', title: 'A. Ngây thơ (exp rồi ln)', sub: `$\\text{Loss} = -\\ln(p_{${s.y}})$, $p$ tính trực tiếp`, value: calc.lossNaive, color: 'var(--color-negative)', bg: 'rgba(239, 68, 68, 0.08)', tag: 'rgba(239, 68, 68, 0.2)|#f87171' }
+        { mode: 'lse', title: 'C. Log-Sum-Exp', sub: `$\\text{Loss} = \\text{LogSumExp}(z) - z_{${s.y}}$`, tex: F.lossC, value: calc.lossLSE, color: 'var(--color-positive)', bg: 'rgba(34, 197, 94, 0.08)', tag: 'rgba(34, 197, 94, 0.2)|#4ade80' },
+        { mode: 'safe', title: 'B. Softmax an toàn rồi ln', sub: `$\\text{Loss} = -\\ln(p_{${s.y}})$, $p$ tính sau khi trừ max`, tex: F.lossB, value: calc.lossSafeLog, color: 'var(--color-warning)', bg: 'rgba(245, 158, 11, 0.08)', tag: 'rgba(245, 158, 11, 0.2)|#fbbf24' },
+        { mode: 'naive', title: 'A. Ngây thơ (exp rồi ln)', sub: `$\\text{Loss} = -\\ln(p_{${s.y}})$, $p$ tính trực tiếp`, tex: F.lossA, value: calc.lossNaive, color: 'var(--color-negative)', bg: 'rgba(239, 68, 68, 0.08)', tag: 'rgba(239, 68, 68, 0.2)|#f87171' }
       ];
       lossTable.innerHTML = ROWS.map(r => {
         const active = s.mode === r.mode;
         const [tbg, tfg] = r.tag.split('|');
         const ok = Number.isFinite(r.value);
         return `
-        <tr class="loss-row" data-mode="${r.mode}" style="cursor: pointer; ${active ? `background: ${r.bg};` : 'opacity: 0.85;'}" title="Click để chọn đường này">
+        <tr class="loss-row" data-mode="${r.mode}" style="cursor: pointer; ${active ? `background: ${r.bg};` : 'opacity: 0.85;'}">
           <td>
-            <div style="font-weight: 700; color: ${active ? r.color : 'inherit'};">${r.title}</div>
+            <div style="font-weight: 700; color: ${active ? r.color : 'inherit'};">${fa(r.tex, r.title)}</div>
             <div style="font-size: 0.7rem; color: var(--text-dim);">${r.sub}</div>
           </td>
           <td style="font-weight: 700; vertical-align: middle; color: ${ok ? 'var(--color-positive)' : 'var(--color-negative)'};">${ok ? r.value.toFixed(4) : (Number.isNaN(r.value) ? 'NaN' : '+Infinity')} ${ok ? '✅' : '❌'}</td>
@@ -480,7 +457,7 @@
         </tr>`;
       }).join('') + `
         <tr>
-          <td><span style="font-size: 0.74rem;">LogSumExp(z)</span></td>
+          <td><span style="font-size: 0.74rem;">${fa(F.lse, 'LogSumExp(z)')}</span></td>
           <td colspan="2"><strong style="font-size: 0.8rem;">${Number.isFinite(calc.lse) ? calc.lse.toFixed(4) : calc.lse}</strong></td>
         </tr>`;
       lossTable.querySelectorAll('.loss-row').forEach(row => {
@@ -510,7 +487,7 @@
         const firstBad = rt.steps.findIndex(st => st.bad);
         return `
         <div class="route-row" data-mode="${rt.id}" style="margin-bottom:0.7rem; padding:6px 8px; border-radius:8px; cursor:pointer; border:1px solid ${activeRt ? 'var(--color-info)' : 'var(--border-subtle)'}; background:${activeRt ? 'rgba(56,189,248,0.06)' : 'transparent'};">
-          <div style="font-size:0.72rem; font-weight:700; margin-bottom:4px; color:${rt.ok ? 'var(--color-positive)' : 'var(--color-negative)'};">${rt.name} → ${rt.ok ? 'Loss ' + fmtV(rt.loss) + ' ✅' : 'Loss ' + fmtV(rt.loss) + ' ❌'}</div>
+          <div style="font-size:0.72rem; font-weight:700; margin-bottom:4px; color:${rt.ok ? 'var(--color-positive)' : 'var(--color-negative)'};">${fa({ naive: F.softmaxNaive, safe: F.softmaxSafe, lse: F.lse }[rt.id], rt.name)} → ${rt.ok ? 'Loss ' + fmtV(rt.loss) + ' ✅' : 'Loss ' + fmtV(rt.loss) + ' ❌'}</div>
           <div style="display:flex; flex-wrap:wrap; gap:4px; align-items:stretch;">
             ${rt.steps.map((st, i) => `
               <div style="display:flex; align-items:center; gap:4px;">
@@ -531,22 +508,9 @@
         });
       });
 
-      // Thẻ 0: công thức đầy đủ với số liệu sống
-      const F = calc.formulas;
-      renderMath(document.getElementById('f-softmax-naive'), F.softmaxNaive, { displayMode: true });
-      renderMath(document.getElementById('f-softmax-safe'), F.softmaxSafe, { displayMode: true });
-      renderMath(document.getElementById('f-lse'), F.lse, { displayMode: true });
-      [['f-lossA', F.lossA, 'naive'], ['f-lossB', F.lossB, 'safe'], ['f-lossC', F.lossC, 'lse']].forEach(([id, tex, mode]) => {
-        const el = document.getElementById(id);
-        renderMath(el, tex, { displayMode: true });
-        el.style.border = s.mode === mode ? '1px solid var(--color-info)' : '1px solid var(--border-subtle)';
-        el.style.boxShadow = s.mode === mode ? '0 0 10px rgba(56,189,248,0.25)' : 'none';
-      });
-      renderMath(document.getElementById('f-grad'), F.grad, { displayMode: true });
-
       // Telemetry Card 3: Gradient Table
       const gradFormula = `\\nabla_z \\text{Loss} = [P_0 - I_{y=0}, \\; P_1 - I_{y=1}] = [${calc.grad[0].toFixed(4)}, \\; ${calc.grad[1].toFixed(4)}]`;
-      renderMath(document.getElementById('katex-grad'), gradFormula);
+      document.getElementById('grad-title').setAttribute('data-formula', gradFormula);
 
       const gradTable = document.getElementById('grad-table');
       const gradSum = calc.grad[0] + calc.grad[1];

@@ -115,7 +115,7 @@
           <!-- Thẻ 2: Kết quả cuối -->
           <div class="tp-panel">
             <div class="tp-panel-title">🏁 2. Kết Quả Cuối: Loss Và Gradient</div>
-            <div class="tp-matrix-caption" style="text-align:left; margin-bottom:0.4rem;">Huấn luyện chạy trên gradient, không phải trên giá trị Loss. Gradient NaN thì trọng số cũng thành NaN.</div>
+            <div class="tp-matrix-caption" style="text-align:left; margin-bottom:0.4rem;">Gradient không dùng giá trị Loss. Nó được tính ngược qua đúng các bước ở Thẻ 1 (quy tắc dây chuyền), nên bước nào hỏng ở chiều xuôi thì chiều ngược hỏng theo. Gradient NaN thì trọng số cũng thành NaN.</div>
             <table class="tp-kv-table" id="result-table"></table>
           </div>
 
@@ -427,7 +427,7 @@
           <td style="font-weight:700;">${r.name}</td>
           <td style="color:${okc(r.loss)}; font-weight:700;">${fmtV(r.loss)}</td>
           <td style="color:${okc(r.grad)}; font-weight:700;">[${fmtG(r.grad[0])}, ${fmtG(r.grad[1])}]</td></tr>`).join('')}
-        <tr><td colspan="3" style="font-size:0.7rem; color:var(--text-dim);">Đường C có gradient $p - \\mathbb{1}[y]$, luôn hữu hạn. Đường A và B tính gradient qua $-\\ln p_y$, nên $p_y = 0$ cho $(-\\infty)\\cdot 0 = \\text{NaN}$.</td></tr>`;
+        <tr><td colspan="3" style="font-size:0.7rem; color:var(--text-dim);">Đường C có gradient $p - \\mathbb{1}[y]$, không đi qua $p_y$ nên luôn hữu hạn. Đường A và B đi ngược qua bước $-\\ln p_y$ (đạo hàm $-1/p_y$); khi $p_y = 0$ ra $(-\\infty)\\cdot 0 = \\text{NaN}$.</td></tr>`;
 
       renderAllInlineMath(document.body);
     }

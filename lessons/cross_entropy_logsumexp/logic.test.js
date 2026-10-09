@@ -11,6 +11,7 @@ import {
   crossEntropyGradNaive,
   roundTo,
   buildRoutes,
+  texNum,
   OVERFLOW_AT,
   UNDERFLOW_AT
 } from './logic.js';
@@ -162,5 +163,38 @@ describe('lessons/cross_entropy_logsumexp/logic.js', () => {
     expect(r.verdict.text).toContain('VẪN HỎNG');
     expect(r.lossActive).toBe(Infinity);
     expect(r.formulaKaTeX).toContain('+\\infty');
+  });
+
+  it('công thức đầy đủ thay số sống: có softmax, LSE, loss 3 đường và gradient', () => {
+    const r = new LessonLogic().applyPreset(pick('normal'));
+    const F = r.formulas;
+    expect(Object.keys(F)).toEqual(['softmaxNaive', 'softmaxSafe', 'lse', 'lossA', 'lossB', 'lossC', 'grad']);
+    expect(F.softmaxNaive).toContain('\\frac{e^{z_i}}{\\sum_j e^{z_j}}');
+    expect(F.softmaxNaive).toContain('[7.3891,\\ 2.7183]');
+    expect(F.softmaxSafe).toContain('z - m');
+    expect(F.lse).toContain('\\ln(1.3679)');
+    expect(F.lossC).toContain('2.3133 - (1) = 1.3133');
+    expect(F.grad).toContain('[0.73106,\\ -0.73106]');
+  });
+
+  it('công thức đầy đủ ở tình huống lỗi hiển thị ∞ và NaN đúng chỗ', () => {
+    const under = new LessonLogic().applyPreset(pick('underflow')).formulas;
+    expect(under.lossA).toContain('-\\ln(0) = \\infty');
+    expect(under.lossB).toContain('= \\infty');
+    expect(under.lossC).toContain('0 - (-110) = 110');
+    const over = new LessonLogic().applyPreset(pick('overflow')).formulas;
+    expect(over.softmaxNaive).toContain('\\infty');
+    expect(over.softmaxNaive).toContain('\\text{NaN}');
+    expect(over.lossA).toContain('\\text{NaN}');
+    expect(over.lossB).toContain('0.73106');
+  });
+
+  it('texNum: ký hiệu khoa học cho số rất lớn/nhỏ, ∞ và NaN', () => {
+    expect(texNum(Infinity)).toBe('\\infty');
+    expect(texNum(NaN)).toBe('\\text{NaN}');
+    expect(texNum(0)).toBe('0');
+    expect(texNum(1.7e-48)).toBe('1.70 \\times 10^{-48}');
+    expect(texNum(162754.79)).toBe('1.63 \\times 10^{5}');
+    expect(texNum(2.5)).toBe('2.5');
   });
 });

@@ -123,6 +123,17 @@ def main() -> None:
             assert abs(js["lossSafeLog"] - ref) < 2e-3 and js["safeBroken"] is False, preset
         assert [r["ok"] for r in js["routes"]][2] is True, "Đường C (LSE) luôn thành công"
 
+    # --- Công thức hiển thị phải mang đúng số liệu (so với numpy) ---
+    F = js_calc("cross_entropy_logsumexp", preset="normal")["formulas"]
+    e = np.exp(np.array([2.0, 1.0], dtype=np.float32))
+    assert f"{e[0]:.4f}" in F["softmaxNaive"] and f"{e[1]:.4f}" in F["softmaxNaive"]
+    assert f"{e.sum():.3f}" in F["softmaxNaive"]
+    assert "2.3133" in F["lse"] and "1.3133" in F["lossC"] and "0.73106" in F["grad"]
+    Fu = js_calc("cross_entropy_logsumexp", preset="underflow")["formulas"]
+    assert "-\\ln(0) = \\infty" in Fu["lossA"] and "= 110" in Fu["lossC"]
+    Fo = js_calc("cross_entropy_logsumexp", preset="overflow")["formulas"]
+    assert "\\text{NaN}" in Fo["lossA"] and "\\infty" in Fo["softmaxNaive"]
+
     # --- FP32 vs FP16: cùng logit [12, 11] chỉ hỏng ở FP16 ---
     assert naive_loss([12.0, 11.0], 0, np.float32)[0] == naive_loss([12.0, 11.0], 0, np.float32)[0] > 0
     assert math.isnan(naive_loss([12.0, 11.0], 0, np.float16)[0])

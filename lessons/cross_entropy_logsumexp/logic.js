@@ -122,6 +122,43 @@ export const PRESETS = [
   }
 ];
 
+/** Số -> chuỗi LaTeX: ∞, NaN, 0, ký hiệu khoa học cho số rất lớn/nhỏ, còn lại làm tròn 4 chữ số. */
+export function texNum(v) {
+  if (Number.isNaN(v)) return '\\text{NaN}';
+  if (v === Infinity) return '\\infty';
+  if (v === -Infinity) return '-\\infty';
+  if (v === 0) return '0';
+  const a = Math.abs(v);
+  if (a >= 1e5 || a < 1e-3) {
+    const [mant, exp] = v.toExponential(2).split('e');
+    return `${mant} \\times 10^{${Number(exp)}}`;
+  }
+  return String(Number(v.toPrecision(5)));
+}
+const texVec = (arr) => `[${arr.map(texNum).join(',\\ ')}]`;
+
+/** Công thức đầy đủ với số liệu sống cho từng bước của ba đường đi. */
+export function buildFormulas({ z, y, routes, grad }) {
+  const [A, B, C] = routes;
+  const m = Math.max(...z);
+  const eA = A.steps[0].value, sA = A.steps[1].value, pA = A.steps[2].value;
+  const shifted = B.steps[0].value, eB = B.steps[1].value, pB = B.steps[2].value;
+  const lnS = C.steps[2].value, lse = C.steps[3].value;
+  const sB = eB.reduce((a, b) => a + b, 0);
+  return {
+    softmaxNaive:
+      `\\begin{aligned} p_i &= \\frac{e^{z_i}}{\\sum_j e^{z_j}} \\\\ e^{z} &= ${texVec(eA)} \\quad \\sum_j e^{z_j} = ${texNum(sA)} \\\\ p &= ${texVec(pA)} \\end{aligned}`,
+    softmaxSafe:
+      `\\begin{aligned} m &= \\max(z) = ${texNum(m)}, \\quad p_i = \\frac{e^{z_i - m}}{\\sum_j e^{z_j - m}} \\\\ z - m &= ${texVec(shifted)} \\quad e^{z-m} = ${texVec(eB)} \\quad \\sum = ${texNum(sB)} \\\\ p &= ${texVec(pB)} \\end{aligned}`,
+    lse:
+      `\\begin{aligned} \\text{LogSumExp}(z) &= m + \\ln\\sum_j e^{z_j - m} \\\\ &= ${texNum(m)} + \\ln(${texNum(sB)}) = ${texNum(m)} + ${texNum(lnS)} = ${texNum(lse)} \\end{aligned}`,
+    lossA: `\\text{A. Ngây thơ:}\\quad L = -\\ln(p_{${y}}) = -\\ln(${texNum(pA[y])}) = ${texNum(A.loss)}`,
+    lossB: `\\text{B. Softmax an toàn:}\\quad L = -\\ln(p_{${y}}) = -\\ln(${texNum(pB[y])}) = ${texNum(B.loss)}`,
+    lossC: `\\text{C. Log-Sum-Exp:}\\quad L = \\text{LSE}(z) - z_{${y}} = ${texNum(lse)} - (${texNum(z[y])}) = ${texNum(C.loss)}`,
+    grad: `\\frac{\\partial L}{\\partial z_i} = p_i - \\mathbb{1}[i = ${y}] \\;\\Rightarrow\\; \\nabla_z L = [${grad.map(texNum).join(',\\ ')}]`
+  };
+}
+
 /** Ba đường đi từ logits tới Loss, ghi lại giá trị trung gian và bước nào hỏng (NaN / vô cực / p_y = 0). */
 export function buildRoutes(z, y, prec = 'fp32') {
   const m = Math.max(...z);
@@ -217,6 +254,7 @@ export class LessonLogic {
     const lossSafeLog = roundTo(-Math.log(pSafe[y]), P);
     const routes = buildRoutes(z, y, P);
     const grad = crossEntropyGrad(z, y, P);
+    const formulas = buildFormulas({ z, y, routes, grad });
     const gradNaive = crossEntropyGradNaive(z, y, P);
 
     const isUnderflow = pNaive[y] === 0 || lossNaive === Infinity;
@@ -310,6 +348,7 @@ export class LessonLogic {
       lossSafeLog,
       safeBroken: !Number.isFinite(lossSafeLog),
       routes,
+      formulas,
       grad,
       gradNaive,
       gradNaiveBroken,

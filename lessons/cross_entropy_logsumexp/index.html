@@ -18,6 +18,10 @@
   <link rel="stylesheet" href="../../shared/styles/tokens.css">
   <link rel="stylesheet" href="../../shared/styles/layout.css">
   <link rel="stylesheet" href="../../shared/styles/components.css">
+  <style>
+    .tp-formula-label { font-size: 0.72rem; font-weight: 700; color: var(--text-muted); margin: 0.6rem 0 0.25rem; letter-spacing: 0.02em; }
+    #panel-formulas .tp-math-box { overflow-x: auto; padding: 0.5rem 0.6rem; }
+  </style>
 </head>
 <body class="theme-dark">
   <div class="lab-shell">
@@ -104,6 +108,23 @@
         </div>
         <div class="lab-col-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
           
+          <!-- Thẻ 0: Công thức đầy đủ với số liệu sống (ưu tiên hiển thị) -->
+          <div class="tp-panel" id="panel-formulas">
+            <div class="tp-panel-title">📐 Công Thức Đầy Đủ (thay số trực tiếp theo thanh trượt)</div>
+            <div class="tp-formula-label">① Softmax ngây thơ (đường A)</div>
+            <div class="tp-math-box" id="f-softmax-naive"></div>
+            <div class="tp-formula-label">② Softmax an toàn, trừ max (đường B)</div>
+            <div class="tp-math-box" id="f-softmax-safe"></div>
+            <div class="tp-formula-label">③ Log-Sum-Exp (đường C)</div>
+            <div class="tp-math-box" id="f-lse"></div>
+            <div class="tp-formula-label">④ Loss theo từng đường (đường đang chọn được viền sáng)</div>
+            <div class="tp-math-box" id="f-lossA"></div>
+            <div class="tp-math-box" id="f-lossB" style="margin-top:0.3rem;"></div>
+            <div class="tp-math-box" id="f-lossC" style="margin-top:0.3rem;"></div>
+            <div class="tp-formula-label">⑤ Gradient dội ngược theo logit (từ công thức gộp)</div>
+            <div class="tp-math-box" id="f-grad"></div>
+          </div>
+
           <!-- Thẻ 1: Logits & Xác Suất -->
           <div class="tp-panel">
             <div class="tp-panel-title">📊 1. Logits &amp; Xác Suất Softmax</div>
@@ -131,7 +152,7 @@
             <div class="tp-math-box" id="katex-lse-formula" style="transition: border-color 0.2s ease;"></div>
 
             <div style="margin-top: 0.85rem; font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;">
-              Đối Chiếu Hai Phương Pháp Tính:
+              Đối Chiếu Ba Phương Pháp Tính (A, B, C):
             </div>
             <table class="tp-kv-table" id="loss-table" style="margin-top: 0.4rem;"></table>
           </div>
@@ -315,13 +336,13 @@
     // 4. Sliders
     const sliderZ0 = createLiveSlider(document.getElementById('mount-slider-z0'), {
       label: 'Logit $z_0$ (Lớp 0: Dừng 🛑)',
-      min: -120, max: 120, step: 1, initial: logic.state.z0,
+      min: -120, max: 120, step: 0.5, initial: logic.state.z0,
       onChange: (v) => { logic.onUserUpdate({ z0: v }); renderAll(); }
     });
 
     const sliderZ1 = createLiveSlider(document.getElementById('mount-slider-z1'), {
       label: 'Logit $z_1$ (Lớp 1: Đi Thẳng ⬆️)',
-      min: -120, max: 120, step: 1, initial: logic.state.z1,
+      min: -120, max: 120, step: 0.5, initial: logic.state.z1,
       onChange: (v) => { logic.onUserUpdate({ z1: v }); renderAll(); }
     });
 
@@ -508,6 +529,19 @@
         });
       });
 
+      // Thẻ 0: công thức đầy đủ với số liệu sống
+      const F = calc.formulas;
+      renderMath(document.getElementById('f-softmax-naive'), F.softmaxNaive, { displayMode: true });
+      renderMath(document.getElementById('f-softmax-safe'), F.softmaxSafe, { displayMode: true });
+      renderMath(document.getElementById('f-lse'), F.lse, { displayMode: true });
+      [['f-lossA', F.lossA, 'naive'], ['f-lossB', F.lossB, 'safe'], ['f-lossC', F.lossC, 'lse']].forEach(([id, tex, mode]) => {
+        const el = document.getElementById(id);
+        renderMath(el, tex, { displayMode: true });
+        el.style.border = s.mode === mode ? '1px solid var(--color-info)' : '1px solid var(--border-subtle)';
+        el.style.boxShadow = s.mode === mode ? '0 0 10px rgba(56,189,248,0.25)' : 'none';
+      });
+      renderMath(document.getElementById('f-grad'), F.grad, { displayMode: true });
+
       // Telemetry Card 3: Gradient Table
       const gradFormula = `\\nabla_z \\text{Loss} = [P_0 - I_{y=0}, \\; P_1 - I_{y=1}] = [${calc.grad[0].toFixed(4)}, \\; ${calc.grad[1].toFixed(4)}]`;
       renderMath(document.getElementById('katex-grad'), gradFormula);
@@ -517,9 +551,9 @@
       const fmtG = (g) => Number.isFinite(g) ? `${g >= 0 ? '+' : ''}${g.toFixed(4)}` : `<span style="color:var(--color-negative);font-weight:700;">${Number.isNaN(g) ? 'NaN' : g}</span>`;
       gradTable.innerHTML = `
         <tr><td><em>Gradient</em></td><td><em>Công thức gộp (LSE)</em></td><td><em>Cách ngây thơ</em></td></tr>
-        <tr><td>dL / dz_0 (Lớp 0)</td><td>${fmtG(calc.grad[0])}</td><td>${fmtG(calc.gradNaive[0])}</td></tr>
-        <tr><td>dL / dz_1 (Lớp 1)</td><td>${fmtG(calc.grad[1])}</td><td>${fmtG(calc.gradNaive[1])}</td></tr>
-        <tr><td>Tổng</td><td><strong>${gradSum.toFixed(4)}</strong> (≈ 0)</td><td>${calc.gradNaiveBroken ? '<span style="color:var(--color-negative);font-weight:700;">hỏng: SGD sẽ ghi NaN vào trọng số</span>' : '≈ 0'}</td></tr>
+        <tr><td>$\\frac{\\partial \\text{Loss}}{\\partial z_0}$ (Lớp 0)</td><td>${fmtG(calc.grad[0])}</td><td>${fmtG(calc.gradNaive[0])}</td></tr>
+        <tr><td>$\\frac{\\partial \\text{Loss}}{\\partial z_1}$ (Lớp 1)</td><td>${fmtG(calc.grad[1])}</td><td>${fmtG(calc.gradNaive[1])}</td></tr>
+        <tr><td>Tổng lực cân bằng (Sum)</td><td><strong>${gradSum.toFixed(4)}</strong> (≈ 0)</td><td>${calc.gradNaiveBroken ? '<span style="color:var(--color-negative);font-weight:700;">hỏng: SGD sẽ ghi NaN vào trọng số</span>' : '≈ 0'}</td></tr>
       `;
 
       renderAllInlineMath(document.body);

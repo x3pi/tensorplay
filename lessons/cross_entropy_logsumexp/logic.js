@@ -136,6 +136,12 @@ export function texNum(v) {
   return String(Number(v.toPrecision(5)));
 }
 const texVec = (arr) => `[${arr.map(texNum).join(',\\ ')}]`;
+const RED = '#ef4444';
+const red = (s) => `{\\color{${RED}}${s}}`;
+/** Vector, tô đỏ phần tử hỏng (Infinity/NaN hoặc bị làm tròn về 0). */
+const texVecMark = (arr, isBad) => `[${arr.map((v, i) => (isBad(v, i) ? red(texNum(v)) : texNum(v))).join(',\\ ')}]`;
+/** Dòng chẩn đoán: ký hiệu nào hỏng, hỏng vì sao. */
+const diagRows = (items) => items.map(([sym, val, why]) => ` \\\\ ${red(`\\boxed{${sym} = ${val}}\\ \\text{${why}}`)}`).join('');
 
 /** Công thức đầy đủ với số liệu sống cho từng bước của ba đường đi. */
 export function buildFormulas({ z, y, routes, grad }) {
@@ -145,11 +151,25 @@ export function buildFormulas({ z, y, routes, grad }) {
   const shifted = B.steps[0].value, eB = B.steps[1].value, pB = B.steps[2].value;
   const lnS = C.steps[2].value, lse = C.steps[3].value;
   const sB = eB.reduce((a, b) => a + b, 0);
+  const whyInf = 'tràn số (overflow)';
+  const whyZero = 'về 0 (underflow)';
+  const diagA = [];
+  eA.forEach((v, i) => {
+    if (Number.isNaN(v) || v === Infinity) diagA.push([`e^{z_${i}}`, texNum(v), whyInf]);
+    else if (v === 0) diagA.push([`e^{z_${i}}`, '0', whyZero]);
+  });
+  if (!Number.isFinite(sA)) diagA.push(['\\textstyle\\sum_j e^{z_j}', texNum(sA), whyInf]);
+  pA.forEach((v, i) => { if (Number.isNaN(v)) diagA.push([`p_${i}`, 'NaN', '(vô cực chia vô cực: không xác định)']); });
+  if (pA[y] === 0) diagA.push([`p_${y}`, '0', 'về 0, nên -ln(p) thành vô cực']);
+  const diagB = [];
+  eB.forEach((v, i) => { if (v === 0) diagB.push([`e^{z_${i}-m}`, '0', whyZero]); });
+  if (pB[y] === 0) diagB.push([`p_${y}`, '0', 'về 0, nên -ln(p) thành vô cực']);
+  const okLine = (txt) => ` \\\\ \\text{${txt}}`;
   return {
     softmaxNaive:
-      `\\begin{aligned} p_i &= \\frac{e^{z_i}}{\\sum_j e^{z_j}} \\\\ e^{z} &= ${texVec(eA)} \\quad \\sum_j e^{z_j} = ${texNum(sA)} \\\\ p &= ${texVec(pA)} \\end{aligned}`,
+      `\\begin{aligned} p_i &= \\frac{e^{z_i}}{\\sum_j e^{z_j}} \\\\ e^{z} &= ${texVecMark(eA, (v) => !Number.isFinite(v) || v === 0)} \\quad \\sum_j e^{z_j} = ${Number.isFinite(sA) ? texNum(sA) : red(texNum(sA))} \\\\ p &= ${texVecMark(pA, (v, i) => !Number.isFinite(v) || (i === y && v === 0))}${diagA.length ? diagRows(diagA) : okLine('Không ký hiệu nào hỏng ở mức logit này.')} \\end{aligned}`,
     softmaxSafe:
-      `\\begin{aligned} m &= \\max(z) = ${texNum(m)}, \\quad p_i = \\frac{e^{z_i - m}}{\\sum_j e^{z_j - m}} \\\\ z - m &= ${texVec(shifted)} \\quad e^{z-m} = ${texVec(eB)} \\quad \\sum = ${texNum(sB)} \\\\ p &= ${texVec(pB)} \\end{aligned}`,
+      `\\begin{aligned} m &= \\max(z) = ${texNum(m)}, \\quad p_i = \\frac{e^{z_i - m}}{\\sum_j e^{z_j - m}} \\\\ z - m &= ${texVec(shifted)} \\quad e^{z-m} = ${texVecMark(eB, (v) => v === 0 || !Number.isFinite(v))} \\quad \\sum = ${texNum(sB)} \\\\ p &= ${texVecMark(pB, (v, i) => i === y && v === 0)}${diagB.length ? diagRows(diagB) : okLine('Không ký hiệu nào hỏng.')}${okLine('Sau khi trừ max, mọi số mũ đều không dương nên không thể tràn số.')} \\end{aligned}`,
     lse:
       `\\begin{aligned} \\text{LogSumExp}(z) &= m + \\ln\\sum_j e^{z_j - m} \\\\ &= ${texNum(m)} + \\ln(${texNum(sB)}) = ${texNum(m)} + ${texNum(lnS)} = ${texNum(lse)} \\end{aligned}`,
     lossA: `\\text{A. Ngây thơ:}\\quad L = -\\ln(p_{${y}}) = -\\ln(${texNum(pA[y])}) = ${texNum(A.loss)}`,

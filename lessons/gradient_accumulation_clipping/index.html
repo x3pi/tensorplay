@@ -121,7 +121,7 @@
 
     const STEPS = [
       {
-        step: 1, badge: 'Bước 1 / 4',
+        step: 1, badge: 'Bước 1 / 5',
         heading: 'Batch lớn mà RAM nhỏ',
         problem: 'Muốn huấn luyện với batch 8 mẫu nhưng activation của mỗi mẫu chiếm 1 GB, GPU chỉ chứa nổi 2 mẫu cùng lúc. Có cách nào có hiệu quả của batch 8 không?',
         mechanism: 'Chạy 4 micro-batch, mỗi lần 2 mẫu, cộng dồn gradient vào cùng một bộ đệm, chỉ cập nhật trọng số sau micro-batch thứ 4. Bộ nhớ activation chỉ còn 2 GB thay vì 8 GB. Vì mất mát là trung bình theo mẫu, trung bình 4 gradient của micro-batch bằng đúng gradient của batch 8 (bài [[lesson:minibatch_sgd]]).',
@@ -129,7 +129,7 @@
         takeaway: 'Gradient accumulation đổi thời gian lấy bộ nhớ: cùng kết quả toán học, chậm hơn một chút.'
       },
       {
-        step: 2, badge: 'Bước 2 / 4',
+        step: 2, badge: 'Bước 2 / 5',
         heading: 'Lỗi kinh điển: quên chia',
         problem: 'Mỗi lần `backward()` cộng thêm vào bộ đệm gradient. Nếu cứ cộng 4 lần rồi cập nhật thì sao?',
         mechanism: 'Tổng 4 gradient là $[1.0, 1.0]$, gấp đúng 4 lần trung bình $[0.25, 0.25]$. Bước học thực tế gấp 4 lần. Cách sửa: chia mất mát của mỗi micro-batch cho số bước tích lũy ngay từ đầu (hoặc chia gradient trước khi cập nhật). Giống lỗi quên chia $N$ ở [[lesson:data_parallel_allreduce]].',
@@ -137,7 +137,7 @@
         takeaway: 'Tích lũy luôn đi kèm hệ số $1/k$; không có nó, thêm bước tích lũy là tăng ngầm tốc độ học.'
       },
       {
-        step: 3, badge: 'Bước 3 / 4',
+        step: 3, badge: 'Bước 3 / 5',
         heading: 'Cú nhảy đột biến',
         problem: 'Một micro-batch chứa mẫu hỏng cho gradient $[11.8, 3.6]$. Ba micro-batch còn lại bình thường. Chuyện gì xảy ra nếu cứ cập nhật?',
         mechanism: 'Trung bình thành $[3.15, 1.125]$, chuẩn $3.34$ so với $0.35$ bình thường. Bước nhảy $\\eta \\lVert g \\rVert = 0.334$ gấp khoảng 9.5 lần bước thường lệ (0.035). Một bước như vậy đủ đẩy mô hình khỏi vùng đang học tốt, đặc biệt trong RNN ([[lesson:rnn_bptt]]) hay đầu huấn luyện LLM.',
@@ -145,12 +145,18 @@
         takeaway: 'Một mẫu xấu trong batch có thể phá hỏng cả bước cập nhật.'
       },
       {
-        step: 4, badge: 'Bước 4 / 4',
+        step: 4, badge: 'Bước 4 / 5',
         heading: 'Cắt theo chuẩn giữ hướng, cắt theo giá trị làm lệch hướng',
         problem: 'Hai cách phổ biến để chặn đột biến: ép từng thành phần vào $[-1, 1]$, hoặc co cả vector sao cho chuẩn không quá 1. Khác nhau gì?',
         mechanism: 'Theo giá trị: $[3.15, 1.125] \\to [1, 1]$, hướng đổi từ 19.6° lên 45° (cosine 0.904). Theo chuẩn: nhân cả vector với $1 / 3.34 = 0.299$ thành $[0.942, 0.336]$, hướng giữ nguyên (cosine 1), chuẩn đúng bằng 1. Vì thế LLM dùng cắt theo chuẩn toàn cục (`clip_grad_norm_`). Thứ tự đúng: cộng dồn và chia xong, rồi mới cắt, và với mixed precision phải unscale trước ([[lesson:mixed_precision]]).',
         action: '👉 Thao tác (Cột 2): Bấm lần lượt "Đột biến + cắt theo giá trị" và "Đột biến + cắt theo chuẩn ✅".\n👁️ Quan sát (Cột 3): Hình hướng: cắt theo chuẩn trùng đường xám, cắt theo giá trị lệch sang 45°.',
         takeaway: 'Cắt gradient nên thu nhỏ độ dài chứ không bẻ hướng.'
+      },
+      {
+        step: 5,
+        badge: 'Bước 5 / 5',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

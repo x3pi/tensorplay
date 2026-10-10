@@ -138,7 +138,7 @@
     const STEPS = [
       {
         step: 1,
-        badge: 'Bước 1 / 5',
+        badge: 'Bước 1 / 6',
         heading: 'Từ Điểm Số (Logits) Đến Xác Suất',
         problem: 'Đầu ra thô của nơ-ron là các con số thực bất kỳ $z \\in (-\\infty, +\\infty)$ (có thể âm, tổng không bằng 1). Làm sao chuyển chúng thành phân phối xác suất hợp lệ?',
         mechanism: 'Hàm mũ $e^z$ biến mọi số âm/dương thành số dương ($>0$) và khuếch đại điểm số dẫn đầu. Softmax chuẩn hóa chúng thành tỉ lệ phần trăm:\n$$P_i = \\frac{e^{z_i}}{\\sum e^{z_j}}$$\nTổng xác suất luôn luôn bằng $100\\%$ ($P_0 + P_1 = 1.0$).',
@@ -147,7 +147,7 @@
       },
       {
         step: 2,
-        badge: 'Bước 2 / 5',
+        badge: 'Bước 2 / 6',
         heading: 'Giới Hạn Phần Cứng: Cơn Ác Mộng Tràn Số FP32',
         problem: 'Trong phần cứng máy tính, kiểu số thực float32 chỉ lưu được giá trị tối đa $\\approx 3.4 \\times 10^{38}$. Khi $z > 88$, hàm $\\text{exp}(z)$ lập tức chạm trần tràn số!',
         mechanism: 'Khi $z = 1000$, $\\text{exp}(1000) = +\\infty$. Phép chia vô cùng $\\frac{\\infty}{\\infty}$ sinh ra mã lỗi phần cứng NaN (Not a Number), làm tê liệt và sụp đổ toàn bộ mạng nơ-ron.',
@@ -156,7 +156,7 @@
       },
       {
         step: 3,
-        badge: 'Bước 3 / 5',
+        badge: 'Bước 3 / 6',
         heading: 'Kỹ Thuật Cứu Nguy: Safe Softmax',
         problem: 'Làm thế nào để tính Softmax an toàn mà không bao giờ bị tràn số, ngay cả khi điểm $z$ lên tới hàng nghìn hay hàng triệu?',
         mechanism: 'Kỹ thuật Safe Softmax: Trừ đi giá trị cực đại $M = \\max(z)$. Khi đó số mũ lớn nhất luôn bằng $0$ ($e^0 = 1$), mọi số mũ khác đều âm ($e^{\\le 0} \\in (0, 1]$) — triệt tiêu $100\\%$ nguy cơ tràn số!',
@@ -165,7 +165,7 @@
       },
       {
         step: 4,
-        badge: 'Bước 4 / 5',
+        badge: 'Bước 4 / 6',
         heading: 'Chứng Minh Toán Học: Bất Biến Với Phép Tịnh Tiến',
         problem: 'Liệu việc tự ý trừ đi $M = \\max(z)$ có làm méo mó tỉ lệ xác suất đầu ra của mô hình không?',
         mechanism: 'Toán học chứng minh tính chất bất biến tịnh tiến: Thừa số $e^{-M}$ ở tử và mẫu tự triệt tiêu lẫn nhau:\n$$\\frac{e^{z_i - M}}{\\sum e^{z_j - M}} = \\frac{e^{z_i} \\cdot e^{-M}}{\\sum (e^{z_j} \\cdot e^{-M})} = \\frac{e^{-M} \\cdot e^{z_i}}{e^{-M} \\cdot \\sum e^{z_j}} = \\frac{e^{z_i}}{\\sum e^{z_j}}$$',
@@ -174,12 +174,18 @@
       },
       {
         step: 5,
-        badge: 'Bước 5 / 5',
+        badge: 'Bước 5 / 6',
         heading: 'Nhiệt Độ Softmax (Temperature Scaling $T$) & Độ Tự Tin',
         problem: 'Khi nào mô hình cần đưa ra quyết định dứt khoát 100% (Hard ArgMax) và khi nào cần giữ phân phối mềm dẻo để khám phá hay thận trọng (Soft Sampling)?',
         mechanism: 'Đưa thêm tham số nhiệt độ $T > 0$ vào số mũ:\n$$P_i = \\frac{e^{z_i / T}}{\\sum e^{z_j / T}}$$\n• Khi $T \\to 0$ (Nhiệt độ đóng băng, ví dụ $T = 0.2$): Khuếch đại tối đa chênh lệch điểm số $\\to$ Softmax tiệm cận hàm **ArgMax** (lớp cao hơn giành gần như $100\\%$ xác suất).\n• Khi $T$ lớn (Nhiệt độ nóng rực, ví dụ $T = 5.0$): San phẳng mọi khác biệt $\\to$ Phân phối tiến dần về đều ($50\\% - 50\\%$) giúp mô hình sáng tạo/thận trọng hơn.',
         action: '👉 Thao tác (Cột 2): Bấm thử preset ❄️ "Đóng Băng T=0.2" hoặc kéo thanh trượt "Nhiệt Độ T".\n👁️ Quan sát (Cột 3): Xem xác suất dồn $100\\%$ về lựa chọn dẫn đầu khi $T$ nhỏ, và san phẳng về $50\\% - 50\\%$ khi $T$ lớn!',
         takeaway: 'Temperature Scaling là chiếc núm vặn điều chỉnh tính quyết đoán vs sáng tạo trong LLM (ChatGPT/Claude) và là tiền đề của hệ số tỉ lệ $1/\\sqrt{d_k}$ trong [[lesson:self_attention]].'
+      },
+      {
+        step: 6,
+        badge: 'Bước 6 / 6',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

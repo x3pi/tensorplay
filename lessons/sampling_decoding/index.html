@@ -130,7 +130,7 @@
 
     const STEPS = [
       {
-        step: 1, badge: 'Bước 1 / 4',
+        step: 1, badge: 'Bước 1 / 5',
         heading: 'Từ logits đến một token',
         problem: 'Robot có 5 hành động kế tiếp, logits $z = [3, 2, 1, 0, -1]$. Hai hành động cuối ("bay", "nổ") là vô nghĩa. Làm sao chọn đúng một hành động?',
         mechanism: 'Softmax cho $P = [0.636, 0.234, 0.086, 0.032, 0.012]$ ([[lesson:softmax_stability]]). Greedy luôn lấy token cao nhất, "đi thẳng". An toàn nhưng hoàn toàn xác định: cùng đầu vào luôn ra cùng một đầu ra, nên văn bản dễ lặp. Bốc ngẫu nhiên: lấy số $u \\in [0, 1)$ rồi xem nó rơi vào đoạn nào của hàm phân phối tích lũy: $u = 0.5 \\to$ "đi thẳng", $u = 0.8 \\to$ "rẽ trái", $u = 0.95 \\to$ "dừng".',
@@ -138,7 +138,7 @@
         takeaway: 'Sinh văn bản là bốc từ một phân phối, không phải luôn lấy giá trị lớn nhất.'
       },
       {
-        step: 2, badge: 'Bước 2 / 4',
+        step: 2, badge: 'Bước 2 / 5',
         heading: 'Nhiệt độ: nhọn hay phẳng',
         problem: 'Muốn kiểm soát độ "liều" của việc bốc thì chỉnh gì?',
         mechanism: 'Chia logits cho $T$ trước softmax. $T = 0.5$ làm nhọn: $P_1 = 0.865$. $T = 2$ làm phẳng: $P_1 = 0.429$ và hai token vô nghĩa chiếm tới $0.154$. $T \\to 0$ tiến về greedy, $T \\to \\infty$ tiến về bốc đều.',
@@ -146,7 +146,7 @@
         takeaway: 'Xác suất lỗi nhỏ mỗi bước cộng dồn qua cả chuỗi dài thành gần như chắc chắn.'
       },
       {
-        step: 3, badge: 'Bước 3 / 4',
+        step: 3, badge: 'Bước 3 / 5',
         heading: 'Top-k và top-p: cắt đuôi',
         problem: 'Giữ độ đa dạng của nhiệt độ cao nhưng loại bỏ các token vô nghĩa thì sao?',
         mechanism: 'Top-k giữ $k$ token có xác suất cao nhất rồi chuẩn hóa lại: $k = 2$ cho $[0.731, 0.269]$ và đuôi xấu $= 0$. Top-p (nucleus) giữ tập nhỏ nhất có tổng xác suất $\\ge p$: ở $T = 1$, $p = 0.9$ giữ 3 token với tổng $0.957$. Top-p tự co giãn: phân phối nhọn thì giữ ít token, phân phối phẳng thì giữ nhiều.',
@@ -154,12 +154,18 @@
         takeaway: 'Top-k và top-p cắt phần đuôi nơi các token hiếm, vô nghĩa nằm.'
       },
       {
-        step: 4, badge: 'Bước 4 / 4',
+        step: 4, badge: 'Bước 4 / 5',
         heading: 'Không có cấu hình đúng cho mọi tác vụ',
         problem: 'Vậy chọn cấu hình nào?',
         mechanism: 'Tác vụ cần chính xác (dịch máy, sinh mã, trích xuất) dùng $T$ thấp hoặc greedy. Tác vụ sáng tạo dùng $T \\approx 0.7$–$1$ kèm top-p khoảng $0.9$. Các tham số này chỉ tốn một vài phép toán trên vector logits, không phải phép nhân ma trận, nên gần như miễn phí so với bước tính logits ([[lesson:kv_cache_anatomy]]).',
         action: '👉 Thao tác (Cột 2): Thử tổ hợp tùy ý và theo dõi entropy trước/sau lọc.\n👁️ Quan sát (Cột 3): Entropy (bit) giảm khi lọc: ít bất định hơn.',
         takeaway: 'Chiến lược giải mã là núm vặn giữa chính xác và đa dạng, tách biệt hoàn toàn khỏi mô hình.'
+      },
+      {
+        step: 5,
+        badge: 'Bước 5 / 5',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

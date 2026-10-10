@@ -7,10 +7,22 @@ import { renderInlineMath } from '../katex-render.js';
 
 export function createStepWizard(container, options = {}) {
   const {
-    steps = [],
+    steps: inputSteps = [],
     initialStep = 1,
     onStepChange = () => {}
   } = options;
+
+  const steps = [...inputSteps];
+  const hasFormulaSlide = steps.some(s => s.isFormulaSlide || s.type === 'formulas');
+  const hasFormulaMount = typeof document !== 'undefined' && typeof document.getElementById === 'function' && Boolean(document.getElementById('mount-formula-summary'));
+  if (!hasFormulaSlide && hasFormulaMount) {
+    steps.push({
+      step: steps.length + 1,
+      badge: `Bước ${steps.length + 1} / ${steps.length + 1}`,
+      heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+      isFormulaSlide: true
+    });
+  }
 
   let currentStep = Math.max(1, Math.min(initialStep, steps.length || 1));
 
@@ -38,7 +50,9 @@ export function createStepWizard(container, options = {}) {
 
       <div class="wizard-cards socratic-cards-list"></div>
 
-      <div class="wizard-slot-last-step" style="display: none; margin-top: 1.25rem;"></div>
+      <div class="wizard-formula-slide" style="display: none;">
+        <div class="wizard-formula-mount-point"></div>
+      </div>
 
       <div class="wizard-nav" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem;">
         <button class="tp-btn tp-btn-secondary btn-wizard-prev" title="Phím tắt: ←">◀ Trước</button>
@@ -80,139 +94,154 @@ export function createStepWizard(container, options = {}) {
 
   function updateView() {
     const stepData = steps[currentStep - 1] || {};
-    badgeEl.textContent = stepData.badge || `Bước ${currentStep} / ${steps.length}`;
+    badgeEl.textContent = (stepData.badge && !stepData.badge.startsWith('Bước '))
+      ? stepData.badge
+      : `Bước ${currentStep} / ${steps.length}`;
     headingEl.innerHTML = renderInlineMath(stepData.heading || '');
 
     if (selectEl) {
       selectEl.value = currentStep;
     }
 
-    const cards = getStepCards(stepData);
-    cardsContainer.innerHTML = cards.map((c, idx) => {
-      const stepBadges = {
-        problem: '1. VẤN ĐỀ',
-        mechanism: '2. BẢN CHẤT',
-        action: '3. THỰC NGHIỆM',
-        challenge: '3. THỬ THÁCH',
-        takeaway: '4. ĐÚC KẾT'
-      };
-      const badgeText = stepBadges[c.type] || `BƯỚC ${idx + 1}`;
+    const isFormulaSlide = Boolean(stepData.isFormulaSlide || stepData.type === 'formulas');
+    const formulaSlideEl = container.querySelector?.('.wizard-formula-slide');
+    const formulaMountPoint = container.querySelector?.('.wizard-formula-mount-point');
 
-      const highlightCues = (str) => {
-        return str
-          .replace(/(^|[\s(])"([^"\n<>=]+)"/g, '$1<span class="socratic-target-btn">"$2"</span>')
-          .replace(/`([^`]+)`/g, '<code class="socratic-code-badge">$1</code>')
-          .replace(/(•\s*)/g, '<span class="socratic-bullet">•</span> ');
-      };
+    if (isFormulaSlide) {
+      if (cardsContainer.style) cardsContainer.style.display = 'none';
+      if (formulaSlideEl && formulaSlideEl.style) formulaSlideEl.style.display = 'block';
 
-      let contentHtml = '';
-      const rawContent = c.content || '';
-      const isActionCard = c.type === 'action' || c.type === 'challenge';
-      const hasActionMarker = /👉\s*Thao tác/i.test(rawContent);
-      const hasObsMarker = /👁️\s*Quan sát/i.test(rawContent);
-
-      if (isActionCard && (hasActionMarker || hasObsMarker)) {
-        let actionText = '';
-        let obsText = '';
-
-        if (hasActionMarker && hasObsMarker) {
-          const parts = rawContent.split(/👁️\s*Quan sát[^:]*:?/i);
-          actionText = parts[0].replace(/👉\s*Thao tác[^:]*:?/i, '').trim();
-          obsText = (parts[1] || '').trim();
-        } else if (hasActionMarker) {
-          actionText = rawContent.replace(/👉\s*Thao tác[^:]*:?/i, '').trim();
-        } else {
-          obsText = rawContent.replace(/👁️\s*Quan sát[^:]*:?/i, '').trim();
-        }
-
-        let boxesHtml = '<div class="socratic-split-action">';
-        if (actionText) {
-          const actionParas = actionText.split('\n').filter(p => p.trim());
-          const formattedAction = actionParas.length > 1
-            ? actionParas.map(p => `<p class="socratic-p">${highlightCues(renderInlineMath(p))}</p>`).join('')
-            : highlightCues(renderInlineMath(actionText));
-
-          boxesHtml += `
-            <div class="socratic-subbox action-subbox">
-              <div class="socratic-subbox-header">
-                <span class="socratic-subbox-icon">👉</span>
-                <span class="socratic-subbox-tag action">Thao Tác (Cột 2)</span>
-              </div>
-              <div class="socratic-subbox-body">${formattedAction}</div>
-            </div>
-          `;
-        }
-        if (obsText) {
-          const obsParas = obsText.split('\n').filter(p => p.trim());
-          const formattedObs = obsParas.length > 1
-            ? obsParas.map(p => `<p class="socratic-p">${highlightCues(renderInlineMath(p))}</p>`).join('')
-            : highlightCues(renderInlineMath(obsText));
-
-          boxesHtml += `
-            <div class="socratic-subbox obs-subbox">
-              <div class="socratic-subbox-header">
-                <span class="socratic-subbox-icon">👁️</span>
-                <span class="socratic-subbox-tag obs">Điểm Nhìn (Cột 3)</span>
-              </div>
-              <div class="socratic-subbox-body">${formattedObs}</div>
-            </div>
-          `;
-        }
-        boxesHtml += '</div>';
-        contentHtml = boxesHtml;
-      } else {
-        // Normal content (problem, mechanism, takeaway)
-        const paras = rawContent.split('\n').filter(p => p.trim());
-        if (paras.length > 1) {
-          contentHtml = paras.map(p => {
-            const trimmed = p.trim();
-            if (trimmed.startsWith('$$') && trimmed.endsWith('$$')) {
-              return `<div class="socratic-display-math">${renderInlineMath(trimmed)}</div>`;
-            }
-            return `<p class="socratic-p">${highlightCues(renderInlineMath(p))}</p>`;
-          }).join('');
-        } else {
-          const trimmed = rawContent.trim();
-          if (trimmed.startsWith('$$') && trimmed.endsWith('$$')) {
-            contentHtml = `<div class="socratic-display-math">${renderInlineMath(trimmed)}</div>`;
-          } else {
-            contentHtml = highlightCues(renderInlineMath(rawContent));
+      if (typeof document !== 'undefined' && typeof document.getElementById === 'function') {
+        const extFormulaMount = document.getElementById('mount-formula-summary');
+        if (extFormulaMount && formulaMountPoint && typeof formulaMountPoint.appendChild === 'function') {
+          if (extFormulaMount.parentElement !== formulaMountPoint) {
+            formulaMountPoint.appendChild(extFormulaMount);
           }
+          if (extFormulaMount.style) extFormulaMount.style.display = 'block';
+        }
+      }
+    } else {
+      if (cardsContainer.style) cardsContainer.style.display = 'block';
+      if (formulaSlideEl && formulaSlideEl.style) formulaSlideEl.style.display = 'none';
+
+      if (typeof document !== 'undefined' && typeof document.getElementById === 'function') {
+        const extFormulaMount = document.getElementById('mount-formula-summary');
+        if (extFormulaMount && extFormulaMount.style) {
+          extFormulaMount.style.display = 'none';
         }
       }
 
-      return `
-        <div class="socratic-card ${c.type}">
-          <div class="socratic-card-icon">${c.icon}</div>
-          <div class="socratic-card-main">
-            <div class="socratic-card-header">
-              <span class="socratic-step-pill ${c.type}">${badgeText}</span>
-              <div class="socratic-card-title">${renderInlineMath(c.title || '')}</div>
+      const cards = getStepCards(stepData);
+      cardsContainer.innerHTML = cards.map((c, idx) => {
+        const stepBadges = {
+          problem: '1. VẤN ĐỀ',
+          mechanism: '2. BẢN CHẤT',
+          action: '3. THỰC NGHIỆM',
+          challenge: '3. THỬ THÁCH',
+          takeaway: '4. ĐÚC KẾT'
+        };
+        const badgeText = stepBadges[c.type] || `BƯỚC ${idx + 1}`;
+
+        const highlightCues = (str) => {
+          return str
+            .replace(/(^|[\s(])"([^"\n<>=]+)"/g, '$1<span class="socratic-target-btn">"$2"</span>')
+            .replace(/`([^`]+)`/g, '<code class="socratic-code-badge">$1</code>')
+            .replace(/(•\s*)/g, '<span class="socratic-bullet">•</span> ');
+        };
+
+        let contentHtml = '';
+        const rawContent = c.content || '';
+        const isActionCard = c.type === 'action' || c.type === 'challenge';
+        const hasActionMarker = /👉\s*Thao tác/i.test(rawContent);
+        const hasObsMarker = /👁️\s*Quan sát/i.test(rawContent);
+
+        if (isActionCard && (hasActionMarker || hasObsMarker)) {
+          let actionText = '';
+          let obsText = '';
+
+          if (hasActionMarker && hasObsMarker) {
+            const parts = rawContent.split(/👁️\s*Quan sát[^:]*:?/i);
+            actionText = parts[0].replace(/👉\s*Thao tác[^:]*:?/i, '').trim();
+            obsText = (parts[1] || '').trim();
+          } else if (hasActionMarker) {
+            actionText = rawContent.replace(/👉\s*Thao tác[^:]*:?/i, '').trim();
+          } else {
+            obsText = rawContent.replace(/👁️\s*Quan sát[^:]*:?/i, '').trim();
+          }
+
+          let boxesHtml = '<div class="socratic-split-action">';
+          if (actionText) {
+            const actionParas = actionText.split('\n').filter(p => p.trim());
+            const formattedAction = actionParas.length > 1
+              ? actionParas.map(p => `<p class="socratic-p">${highlightCues(renderInlineMath(p))}</p>`).join('')
+              : highlightCues(renderInlineMath(actionText));
+
+            boxesHtml += `
+              <div class="socratic-subbox action-subbox">
+                <div class="socratic-subbox-header">
+                  <span class="socratic-subbox-icon">👉</span>
+                  <span class="socratic-subbox-tag action">Thao Tác (Cột 2)</span>
+                </div>
+                <div class="socratic-subbox-body">${formattedAction}</div>
+              </div>
+            `;
+          }
+          if (obsText) {
+            const obsParas = obsText.split('\n').filter(p => p.trim());
+            const formattedObs = obsParas.length > 1
+              ? obsParas.map(p => `<p class="socratic-p">${highlightCues(renderInlineMath(p))}</p>`).join('')
+              : highlightCues(renderInlineMath(obsText));
+
+            boxesHtml += `
+              <div class="socratic-subbox obs-subbox">
+                <div class="socratic-subbox-header">
+                  <span class="socratic-subbox-icon">👁️</span>
+                  <span class="socratic-subbox-tag obs">Điểm Nhìn (Cột 3)</span>
+                </div>
+                <div class="socratic-subbox-body">${formattedObs}</div>
+              </div>
+            `;
+          }
+          boxesHtml += '</div>';
+          contentHtml = boxesHtml;
+        } else {
+          // Normal content (problem, mechanism, takeaway)
+          const paras = rawContent.split('\n').filter(p => p.trim());
+          if (paras.length > 1) {
+            contentHtml = paras.map(p => {
+              const trimmed = p.trim();
+              if (trimmed.startsWith('$$') && trimmed.endsWith('$$')) {
+                return `<div class="socratic-display-math">${renderInlineMath(trimmed)}</div>`;
+              }
+              return `<p class="socratic-p">${highlightCues(renderInlineMath(p))}</p>`;
+            }).join('');
+          } else {
+            const trimmed = rawContent.trim();
+            if (trimmed.startsWith('$$') && trimmed.endsWith('$$')) {
+              contentHtml = `<div class="socratic-display-math">${renderInlineMath(trimmed)}</div>`;
+            } else {
+              contentHtml = highlightCues(renderInlineMath(rawContent));
+            }
+          }
+        }
+
+        return `
+          <div class="socratic-card ${c.type}">
+            <div class="socratic-card-icon">${c.icon}</div>
+            <div class="socratic-card-main">
+              <div class="socratic-card-header">
+                <span class="socratic-step-pill ${c.type}">${badgeText}</span>
+                <div class="socratic-card-title">${renderInlineMath(c.title || '')}</div>
+              </div>
+              <div class="socratic-card-text ${c.type}-text">${contentHtml}</div>
             </div>
-            <div class="socratic-card-text ${c.type}-text">${contentHtml}</div>
           </div>
-        </div>
-      `;
-    }).join('');
+        `;
+      }).join('');
+    }
 
     prevBtn.disabled = currentStep <= 1;
     nextBtn.disabled = currentStep >= steps.length;
-
-    // Slot for formula summary & concluding synthesis on the final slide
-    const isLastStep = currentStep === steps.length;
-    const lastStepSlot = container.querySelector?.('.wizard-slot-last-step');
-    if (typeof document !== 'undefined' && typeof document.getElementById === 'function') {
-      const extFormulaMount = document.getElementById('mount-formula-summary');
-      if (extFormulaMount && lastStepSlot) {
-        if (typeof lastStepSlot.appendChild === 'function' && extFormulaMount.parentElement !== lastStepSlot) {
-          lastStepSlot.appendChild(extFormulaMount);
-        }
-        if (lastStepSlot.style) lastStepSlot.style.display = isLastStep ? 'block' : 'none';
-        if (extFormulaMount.style) extFormulaMount.style.display = isLastStep ? 'block' : 'none';
-      } else if (lastStepSlot && lastStepSlot.style) {
-        lastStepSlot.style.display = isLastStep ? 'block' : 'none';
-      }
-    }
 
     renderDots();
   }

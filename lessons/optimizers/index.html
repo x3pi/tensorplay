@@ -145,7 +145,7 @@
 
     const STEPS = [
       {
-        step: 1, badge: 'Bước 1 / 5',
+        step: 1, badge: 'Bước 1 / 6',
         heading: 'Cơn ác mộng thung lũng dẹt (Ill-conditioned Valley)',
         problem: 'Trong bài toán tối ưu thực tế, một số tham số nhạy cảm gấp hàng chục lần tham số khác. Ví dụ hàm $f(x, y) = \\frac{1}{2}(0.2x^2 + 4y^2)$ có độ cong trục $y$ dốc gấp 20 lần trục $x$.',
         mechanism: 'Gradient $\\nabla f = [0.2x, 4y]$. Vì thành phần đạo hàm theo $y$ quá lớn, vector gradient luôn chỉ thẳng vào vách núi thay vì hướng về đáy thung lũng dọc theo trục $x$.',
@@ -153,7 +153,7 @@
         takeaway: 'Tỉ số giữa độ cong lớn nhất và nhỏ nhất (Condition Number) quyết định độ khó của bài toán tối ưu đối với gradient bậc 1.'
       },
       {
-        step: 2, badge: 'Bước 2 / 5',
+        step: 2, badge: 'Bước 2 / 6',
         heading: 'Ranh giới bùng nổ: Tại sao không tăng learning rate?',
         problem: 'Để trục $x$ đi nhanh hơn, liệu ta có thể tăng vọt $\\alpha = 0.55$ không?',
         mechanism: 'Đạo hàm bậc hai trên trục $y$ là 4. Điều kiện hội tụ của phương trình sai phân $y_{t+1} = (1 - 4\\alpha) y_t$ đòi hỏi $|1 - 4\\alpha| < 1 \\implies \\alpha < 0.5$. Nếu $\\alpha = 0.55$, hệ số là $-1.2$, mỗi bước bước nhảy trên trục $y$ sẽ phóng đại 1.2 lần khiến quỹ đạo bay ra vô tận!',
@@ -161,7 +161,7 @@
         takeaway: 'Trong SGD thuần, chiều dốc nhất luôn kìm hãm tốc độ học của toàn bộ các chiều còn lại.'
       },
       {
-        step: 3, badge: 'Bước 3 / 5',
+        step: 3, badge: 'Bước 3 / 6',
         heading: 'Momentum: Tích lũy đà như hòn bi lăn dốc',
         problem: 'Làm thế nào để triệt tiêu dao động ziczac trên trục $y$ và phóng nhanh dọc theo trục $x$?',
         mechanism: 'Momentum bổ sung biến vận tốc $u_{t+1} = \\beta u_t + g_t$. Trên trục $y$, gradient đổi dấu liên tục nên cộng dồn triệt tiêu nhau. Trên trục $x$, gradient luôn cùng dấu âm nên vận tốc tích lũy nhân lên $\\frac{1}{1 - \\beta} = 10$ lần!',
@@ -169,7 +169,7 @@
         takeaway: 'Momentum đóng vai trò như một bộ lọc thông thấp (low-pass filter) lọc sạch nhiễu dao động tần số cao.'
       },
       {
-        step: 4, badge: 'Bước 4 / 5',
+        step: 4, badge: 'Bước 4 / 6',
         heading: 'Adam: Cân bằng bước nhảy riêng cho từng chiều',
         problem: 'Nếu muốn mỗi chiều tự động điều chỉnh tốc độ độc lập mà không cần chỉnh tay?',
         mechanism: 'Adam kết hợp cả Momentum ($m_t$, mô-men bậc 1) và RMSProp ($v_t = \\beta_2 v_{t-1} + (1-\\beta_2) g_t^2$, mô-men bậc 2). Khi chia cho $\\sqrt{v_t}$, chiều nào gradient lớn (như $y$) sẽ bị kìm hãm, chiều nào gradient nhỏ (như $x$) sẽ được phóng đại.',
@@ -177,12 +177,18 @@
         takeaway: 'Adam xấp xỉ ma trận đường chéo của Hessian, biến không gian elip méo mó thành không gian tròn trịa dễ tối ưu.'
       },
       {
-        step: 5, badge: 'Bước 5 / 5',
+        step: 5, badge: 'Bước 5 / 6',
         heading: 'Bẫy Cold Start: Sự cần thiết của Bias Correction',
         problem: 'Tại sao công thức Adam lại cần cụm chia cho $(1 - \\beta_1^t)$ và $(1 - \\beta_2^t)$?',
         mechanism: 'Vì $m_0 = 0, v_0 = 0$, ở các bước đầu $m_t$ và $v_t$ bị lệch mạnh về phía 0. Đặc biệt $\\beta_2 = 0.999$, ở bước 1 $v_1 = 0.001 g^2$ cực nhỏ, nếu không có hiệu chỉnh $\\frac{v_1}{1 - 0.999^1} = g^2$, mẫu số sẽ tính toán sai lệch!',
         action: '👉 Thao tác (Cột 2): Chọn Adam và bỏ chọn checkbox "Hiệu chỉnh sai số khởi động".\n👁️ Quan sát (Cột 3): Bảng telemetry cảnh báo bước nhảy khởi động bị ảnh hưởng.',
         takeaway: 'Bias correction giúp Adam ổn định ngay từ bước lặp đầu tiên $t=1$.'
+      },
+      {
+        step: 6,
+        badge: 'Bước 6 / 6',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

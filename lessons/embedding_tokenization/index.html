@@ -117,7 +117,7 @@
 
     const STEPS = [
       {
-        step: 1, badge: 'Bước 1 / 4',
+        step: 1, badge: 'Bước 1 / 5',
         heading: 'Máy chỉ biết số, không biết chữ',
         problem: 'Robot đọc biển báo cần biến chữ thành số trước khi đưa vào mạng. Cách đơn giản nhất: mỗi ký tự là một token. Văn bản "aaabdaaabac" có 11 ký tự thì chuỗi dài $N = 11$, từ vựng chỉ $V = 4$ ($a, b, c, d$).',
         mechanism: 'Self-Attention có chi phí tỉ lệ $N^2$ ([[lesson:self_attention]]): $11^2 = 121$ ô điểm số. Chuỗi càng dài, attention và KV-Cache càng đắt.',
@@ -125,7 +125,7 @@
         takeaway: 'Token hóa theo ký tự: từ vựng nhỏ gọn nhưng chuỗi rất dài.'
       },
       {
-        step: 2, badge: 'Bước 2 / 4',
+        step: 2, badge: 'Bước 2 / 5',
         heading: 'BPE: gộp cặp phổ biến nhất',
         problem: 'Cặp "aa" xuất hiện 4 lần, rất phổ biến. Nếu coi nó là một token riêng thì sao?',
         mechanism: 'Byte-Pair Encoding lặp lại: đếm mọi cặp token liền kề, gộp cặp nhiều nhất thành token mới. Gộp "aa" cho chuỗi $a a a b d a a a b a c \\to [aa, a, b, d, aa, a, b, a, c]$ ($N = 9$, $V = 5$). Gộp tiếp "aa"+"a" rồi "aaa"+"b" cho $N = 5$: $[aaab, d, aaab, a, c]$.',
@@ -133,7 +133,7 @@
         takeaway: 'Mỗi lần gộp rút ngắn chuỗi và làm bảng từ vựng lớn thêm đúng một token.'
       },
       {
-        step: 3, badge: 'Bước 3 / 4',
+        step: 3, badge: 'Bước 3 / 5',
         heading: 'Không có bữa trưa miễn phí',
         problem: 'Vậy cứ gộp thật nhiều cho chuỗi ngắn nhất?',
         mechanism: 'Bảng embedding là ma trận $V \\times d$: $V$ tăng thì bảng to ra ($16 \\to 28$ số trong ví dụ), và token hiếm được gặp ít nên học kém hơn. Thực tế GPT dùng $V \\approx 50\\,000$, $d = 4096$: bảng có $204\\,800\\,000$ tham số, khoảng 410 MB ở FP16. Mức ký tự thì bảng rất nhỏ nhưng một token trung bình dài khoảng 4 ký tự, nên $N$ lớn gấp 4 và attention đắt gấp 16.',
@@ -141,12 +141,18 @@
         takeaway: 'Kích thước từ vựng là một siêu tham số hệ thống: cân bằng chiều dài chuỗi với dung lượng bảng embedding.'
       },
       {
-        step: 4, badge: 'Bước 4 / 4',
+        step: 4, badge: 'Bước 4 / 5',
         heading: 'Tra embedding là đọc một hàng trong bộ nhớ',
         problem: 'Sau khi có token id, làm sao lấy vector của nó?',
         mechanism: 'Bảng $E$ lưu hàng-trước-cột trong bộ nhớ 1D ([[lesson:strides_views]]). Token id $i$ chiếm các phần tử từ $\\text{offset} = i \\times d$. Với "aaab" có id $6$ và $d = 4$: offset $= 24$, đọc 4 phần tử $24, 25, 26, 27$. Không có phép nhân ma trận nào, chỉ là một lần đọc bộ nhớ liền kề.',
         action: '👉 Thao tác (Cột 2): Chọn token khác ở mục "Token để tra bảng embedding".\n👁️ Quan sát (Cột 3): Offset đổi theo $id \\times 4$.',
         takeaway: 'Embedding lookup là phép gather theo chỉ số: rất rẻ về FLOPs nhưng phụ thuộc băng thông bộ nhớ.'
+      },
+      {
+        step: 5,
+        badge: 'Bước 5 / 5',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

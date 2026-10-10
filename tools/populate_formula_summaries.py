@@ -1320,6 +1320,33 @@ def process_lesson(slug, formulas):
             import_match.group(1) + "\n    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';"
         )
 
+    # 2.5 Ensure a dedicated formula slide exists at the end of STEPS
+    m_steps = re.search(r'const STEPS = \[([\s\S]*?)\];', html)
+    if m_steps:
+        block = m_steps.group(1)
+        if 'isFormulaSlide' not in block:
+            headings = re.findall(r'heading:\s*[\'\"]', block)
+            n = len(headings)
+            total = n + 1
+
+            def update_badge(bm):
+                return f'Bước {bm.group(1)} / {total}'
+
+            new_block = re.sub(r'Bước (\d+) / \d+', update_badge, block)
+            last_brace = new_block.rfind('}')
+            if last_brace != -1:
+                rest = new_block[last_brace+1:].strip()
+                comma = '' if rest.startswith(',') else ','
+                new_step = f'''{comma}
+      {{
+        step: {total},
+        badge: 'Bước {total} / {total}',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
+      }}\n    '''
+                final_block = new_block[:last_brace+1] + new_step
+                html = html[:m_steps.start(1)] + final_block + html[m_steps.end(1):]
+
     # 3. Format FORMULAS JS array
     formulas_js = "    const FORMULAS = [\n"
     for i, item in enumerate(formulas):

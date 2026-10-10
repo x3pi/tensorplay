@@ -143,7 +143,7 @@
 
     const STEPS = [
       {
-        step: 1, badge: 'Bước 1 / 6',
+        step: 1, badge: 'Bước 1 / 7',
         heading: 'Một vùng nhớ phẳng, nhiều cách nhìn',
         problem: 'Ma trận $2 \\times 3$ trong RAM thực chất chỉ là 6 ô liên tục `a b c d e f`. Vậy làm sao thư viện biết ô nào là "hàng 1, cột 2"?',
         mechanism: 'Mỗi tensor mang 3 thông tin nhỏ: shape, strides (bước nhảy mỗi chiều) và offset (điểm bắt đầu). Địa chỉ của phần tử $(i, j)$:\n$$\\text{addr} = \\text{offset} + i \\cdot s_0 + j \\cdot s_1$$\nVới shape $(2, 3)$ và strides $(3, 1)$: ô $(1, 2)$ nằm ở $0 + 1 \\cdot 3 + 2 \\cdot 1 = 5$.',
@@ -151,7 +151,7 @@
         takeaway: 'Tensor = con trỏ tới vùng nhớ + (shape, strides, offset). Phần "ma trận" chỉ là cách diễn giải.'
       },
       {
-        step: 2, badge: 'Bước 2 / 6',
+        step: 2, badge: 'Bước 2 / 7',
         heading: 'Transpose miễn phí: chỉ đổi chỗ strides',
         problem: 'Chuyển vị $X^T$ có cần sao chép 6 phần tử sang chỗ mới không?',
         mechanism: 'Không. Chỉ cần đổi chỗ shape và strides: $(2,3), (3,1) \\to (3,2), (1,3)$. Vùng nhớ giữ nguyên `a b c d e f`, nhưng giờ đi xuống một hàng logic chỉ nhảy 1 ô, sang một cột nhảy 3 ô.',
@@ -159,7 +159,7 @@
         takeaway: 'Transpose trong NumPy/PyTorch/Needle tốn $O(1)$: chỉ tạo một "view" mới.'
       },
       {
-        step: 3, badge: 'Bước 3 / 6',
+        step: 3, badge: 'Bước 3 / 7',
         heading: 'Cắt lát (slice) = dời offset',
         problem: 'Lấy `X[:, 1:]` (bỏ cột đầu) có sao chép dữ liệu không?',
         mechanism: 'Không. Giữ strides $(3, 1)$, đổi shape thành $(2, 2)$ và dời offset lên 1. Nhưng chú ý: giữa hàng 0 (`b c`) và hàng 1 (`e f`) có một "lỗ hổng" (`d`) — view này KHÔNG còn liền mạch.',
@@ -167,7 +167,7 @@
         takeaway: 'Slice rẻ, nhưng có thể làm dữ liệu bị "thủng lỗ" — ảnh hưởng tới các kernel cần đọc tuần tự.'
       },
       {
-        step: 4, badge: 'Bước 4 / 6',
+        step: 4, badge: 'Bước 4 / 7',
         heading: 'Broadcast: phép màu của stride 0',
         problem: 'Cộng bias $b$ (1 hàng) vào cả batch 3 hàng. Có phải nhân bản $b$ thành 3 hàng trong RAM không?',
         mechanism: 'Đặt stride của chiều được broadcast bằng 0: đi xuống hàng nào thì vẫn đọc lại cùng một hàng. Shape $(3,3)$, strides $(0, 1)$ → 9 phần tử logic chỉ dùng 3 ô nhớ thật.',
@@ -175,7 +175,7 @@
         takeaway: 'Broadcast không tốn bộ nhớ. Đây cũng là lý do gradient của broadcast phải CỘNG DỒN lại (xem [[lesson:broadcast_grad]]).'
       },
       {
-        step: 5, badge: 'Bước 5 / 6',
+        step: 5, badge: 'Bước 5 / 7',
         heading: 'Khi nào bắt buộc phải sao chép: compact()',
         problem: 'Muốn reshape $X^T$ thành vector 6 phần tử theo thứ tự `a d b e c f`. Có làm được chỉ bằng strides không?',
         mechanism: 'Không được: không có cặp strides nào cho thứ tự `a d b e c f` trên vùng nhớ `a b c d e f` dưới dạng 1 chiều. Khi đó phải gọi compact(): cấp phát vùng nhớ mới và sao chép theo thứ tự logic. Kernel CUDA/BLAS cũng thường đòi dữ liệu liền mạch.',
@@ -183,12 +183,18 @@
         takeaway: 'View rẻ, compact đắt. Thư viện tốt chỉ gọi compact khi thực sự cần.'
       },
       {
-        step: 6, badge: 'Bước 6 / 6',
+        step: 6, badge: 'Bước 6 / 7',
         heading: 'Tự chỉnh strides: bẫy vượt biên',
         problem: 'Nếu tự đặt shape $(3, 3)$ với strides $(3, 1)$ trên vùng nhớ chỉ có 6 ô thì sao?',
         mechanism: 'Phần tử $(2, 2)$ có $\\text{addr} = 2 \\cdot 3 + 2 = 8 > 5$ → đọc ra ngoài vùng nhớ. Python sẽ báo lỗi, nhưng C++ thì im lặng đọc rác hoặc crash.',
         action: '👉 Thao tác (Cột 2): Kéo thanh Số hàng lên 3 và Số cột lên 3, giữ $s_0 = 3, s_1 = 1$.\n👁️ Quan sát (Cột 3): Kết luận chuyển đỏ, các ô logic vượt biên hiện ⚠.',
         takeaway: 'Mọi hàm tạo view trong backend phải kiểm tra: $\\text{offset} + \\sum (n_k - 1) \\cdot s_k$ nhỏ hơn kích thước vùng nhớ.'
+      },
+      {
+        step: 7,
+        badge: 'Bước 7 / 7',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

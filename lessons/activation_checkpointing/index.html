@@ -151,7 +151,7 @@
     const STEPS = [
       {
         step: 1,
-        badge: 'Bước 1 / 5',
+        badge: 'Bước 1 / 6',
         heading: 'Nút Thắt Cổ Chai Bộ Nhớ Khi Train LLM',
         problem: 'Khi huấn luyện mô hình sâu, tại sao GPU cạn kiệt RAM (OOM) rất nhanh dù mô hình có ít tham số?',
         mechanism: 'Để thực hiện lan truyền ngược (backward pass), thuật toán Autograd bắt buộc phải lưu lại toàn bộ các tensor kích hoạt (activations) sinh ra trong forward pass. Với mạng $L=16$ tầng, bộ nhớ tăng tuyến tính $O(L)$, dễ dàng vượt quá ngân sách GPU!',
@@ -160,7 +160,7 @@
       },
       {
         step: 2,
-        badge: 'Bước 2 / 5',
+        badge: 'Bước 2 / 6',
         heading: 'Ý Tưởng Thiên Tài: Đổi Tính Toán Lấy RAM',
         problem: 'Làm thế nào để không phải lưu toàn bộ 16 activation mà vẫn có đủ dữ liệu để tính backward?',
         mechanism: 'Thay vì lưu tất cả, ta chỉ lưu một số điểm neo (checkpoints) cách nhau $k$ tầng. Khi backward đi lùi tới đoạn nào, ta chạy forward lại một đoạn ngắn từ điểm neo gần nhất để tái tạo các activation cần thiết rồi xóa ngay lập tức!',
@@ -169,7 +169,7 @@
       },
       {
         step: 3,
-        badge: 'Bước 3 / 5',
+        badge: 'Bước 3 / 6',
         heading: 'Công Thức Đỉnh Bộ Nhớ & Tỉ Lệ Vàng k = √L',
         problem: 'Chọn khoảng cách neo k bằng bao nhiêu thì tiết kiệm RAM nhất? Nếu k quá nhỏ hoặc quá lớn thì sao?',
         mechanism: 'Tổng bộ nhớ đỉnh gồm 2 phần: số điểm neo được lưu ($L/k$) cộng với bộ đệm tính lại ($k$):\n$$\\text{RAM Đỉnh} = \\frac{L}{k} + k$$\nĐạo hàm tìm cực trị cho thấy điểm tối ưu hoàn hảo là $k^* = \\sqrt{L}$. Với $L=16$, $k^* = \\sqrt{16} = 4$ cho bộ nhớ nhỏ nhất đúng bằng 8 GB!',
@@ -178,7 +178,7 @@
       },
       {
         step: 4,
-        badge: 'Bước 4 / 5',
+        badge: 'Bước 4 / 6',
         heading: 'Cái Giá Phải Trả: Chi Phí Thời Gian Tính Toán',
         problem: 'Việc tính lại (recompute) forward trong lúc backward làm chậm quá trình huấn luyện bao nhiêu phần trăm?',
         mechanism: 'Trong một chu trình bình thường: Forward = 1 đơn vị, Backward = 2 đơn vị $\\to$ Tổng = 3. Với Checkpointing, ta forward thêm 1 lần trong backward $\\to$ Tổng = $1 + 1 + 2 = 4$. Tỉ lệ thời gian là $4/3 \\approx 1.33$ (+33.3% thời gian tính toán).',
@@ -187,12 +187,18 @@
       },
       {
         step: 5,
-        badge: 'Bước 5 / 5',
+        badge: 'Bước 5 / 6',
         heading: 'Ứng Dụng Trong Huấn Luyện Transformer',
         problem: 'Các mô hình ngôn ngữ lớn (LLaMA, GPT-4) áp dụng kỹ thuật này như thế nào?',
         mechanism: 'Trong Transformer, mỗi Transformer Block (gồm Attention và MLP) được chọn làm một điểm checkpoint neo. PyTorch hỗ trợ sẵn qua `torch.utils.checkpoint.checkpoint`. Nhờ đó ta có thể tăng batch size gấp đôi hoặc tăng độ dài ngữ cảnh (context length) mà không bị tràn bộ nhớ!',
         action: '👉 Thao tác: Thử tăng ngân sách hoặc kéo số tầng $L=25$ để xem $k^* = 5$ thích ứng linh hoạt.\n👁️ Quan sát: Huy hiệu hoàn thành bài học sẽ bật sáng.',
         takeaway: 'Activation Checkpointing là vũ khí bắt buộc để huấn luyện các mô hình AI vượt quá giới hạn VRAM phần cứng.'
+      },
+      {
+        step: 6,
+        badge: 'Bước 6 / 6',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

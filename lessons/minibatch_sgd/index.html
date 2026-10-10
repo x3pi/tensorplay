@@ -220,6 +220,12 @@
         mechanism: "Phép nhân ma trận chuyển vị $X^T \\cdot G$: Lấy pixel thứ $j$ của mọi ảnh trong batch nhân với sai số tương ứng của lớp $c$, rồi tự động cộng dồn lại:\n$$\\nabla_\\theta L = X^T \\cdot G = \\sum_{i=1}^B X_i^T G_i$$\nXoay $X$ thành $X^T$ chính là bí quyết toán học để gộp gradient song song mà không cần bất kỳ vòng lặp thủ công nào!",
         action: "👉 Thao tác (Cột 2): Bấm nút \"Chạy 5 Bước ▶\" liên tiếp.\n👁️ Quan sát (Cột 3): Ma trận $\\theta$ tự điều chỉnh mượt mà, độ tự tin của cả 2 ảnh cùng lúc tăng lên và thanh Loss trung bình giảm rõ rệt!",
         takeaway: "Phép nhân ma trận chuyển vị $X^T G$ là trái tim của mọi framework học sâu (PyTorch, TensorFlow) khi xử lý mini-batch."
+      },
+      {
+        step: 5,
+        badge: 'Bước 5 / 5',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

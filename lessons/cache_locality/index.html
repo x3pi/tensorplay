@@ -116,7 +116,7 @@
     const STEPS = [
       {
         step: 1,
-        badge: 'Bước 1 / 5',
+        badge: 'Bước 1 / 6',
         heading: 'Kho Hàng RAM Xa Xôi vs Mặt Bàn L1 Cache',
         problem: 'Bộ nhớ RAM máy tính cách CPU hàng trăm chu kỳ xung nhịp. Nếu mỗi phép tính ma trận đều phải chờ đọc từ RAM, AI sẽ chạy chậm như rùa bò!',
         mechanism: 'CPU giải quyết bằng cách trang bị bộ đệm L1 Cache siêu tốc ngay sát lõi chip: L1 chỉ tốn $1$ cycle, trong khi đọc từ RAM tốn tới $100+$ cycles! Tốc độ chênh lệch hơn 100 lần.',
@@ -125,7 +125,7 @@
       },
       {
         step: 2,
-        badge: 'Bước 2 / 5',
+        badge: 'Bước 2 / 6',
         heading: 'Cơ Chế Cache Line: Nạp Nguyên Cụm',
         problem: 'Khi CPU cần đọc một ô số float 4 bytes tại `M[0][0]`, phần cứng có nạp lẻ 1 số đơn độc từ RAM không?',
         mechanism: 'Không bao giờ! CPU luôn nạp nguyên 1 khối Cache Line (thường là 64 bytes = 16 float). Trong mô phỏng này, 1 Cache Line chứa 4 ô liền kề.\nVí dụ nhẩm: Nạp ô [0] sẽ tự động kéo luôn ô [1, 2, 3] vào bộ đệm cache. Đọc 3 ô sau sẽ tốn đúng 1 chu kỳ!',
@@ -134,7 +134,7 @@
       },
       {
         step: 3,
-        badge: 'Bước 3 / 5',
+        badge: 'Bước 3 / 6',
         heading: 'Quét Theo Hàng (Row-Major: for r, for c)',
         problem: 'Thứ tự vòng lặp duyệt ma trận ảnh hưởng như thế nào đến số lần CPU phải chờ RAM?',
         mechanism: 'Vì mảng 2D trong C++ được lưu theo hàng (Row-Major), duyệt tuần tự `for r, for c` khớp hoàn hảo với các ô trong Cache Line vừa nạp.\nVí dụ nhẩm: Với 4 ô mỗi hàng, ô đầu Miss ($100$ cycles), 3 ô sau Hit ($3 \\times 1$ cycles). Tỉ lệ Hit đạt $3/4 = 75\\%$!',
@@ -143,7 +143,7 @@
       },
       {
         step: 4,
-        badge: 'Bước 4 / 5',
+        badge: 'Bước 4 / 6',
         heading: 'Thảm Họa Quét Theo Cột (Col-Major: for c, for r)',
         problem: 'Chuyện gì xảy ra nếu lập trình viên vô tình đảo thứ tự vòng lặp thành `for c, for r`?',
         mechanism: 'Duyệt theo cột khiến CPU nhảy cóc qua các hàng khác nhau trong RAM. Mỗi lần nhảy là một Cache Line khác, làm vô hiệu hóa toàn bộ Cache đã nạp!\nMỗi ô đều phải load từ RAM $\\implies 16 \\times 100$ cycles!',
@@ -152,12 +152,18 @@
       },
       {
         step: 5,
-        badge: 'Bước 5 / 5',
+        badge: 'Bước 5 / 6',
         heading: 'Đúc Kết Kỹ Nghệ Hệ Thống C++',
         problem: 'Làm thế nào để viết code Tensor hiệu năng cao chuẩn production?',
         mechanism: 'Quy tắc vàng: Luôn đảm bảo vòng lặp trong cùng (innermost loop) duyệt qua các phần tử có địa chỉ bộ nhớ kế tiếp nhau (`stride = 1`).',
         action: '👉 Thao tác (Cột 2): So sánh 2 preset Quét Hàng vs Quét Cột ở Cột 2.\n👁️ Quan sát (Cột 3): Bảng thống kê chu kỳ trễ (Latency Cycles) cho thấy sự vượt trội tuyệt đối của thiết kế thân thiện phần cứng!',
         takeaway: 'Hiểu kiến trúc bộ nhớ giúp kỹ sư AI viết code nhanh hơn 10x mà không tốn thêm bất kỳ chi phí phần cứng nào.'
+      },
+      {
+        step: 6,
+        badge: 'Bước 6 / 6',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

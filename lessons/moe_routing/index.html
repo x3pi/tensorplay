@@ -121,7 +121,7 @@
 
     const STEPS = [
       {
-        step: 1, badge: 'Bước 1 / 4',
+        step: 1, badge: 'Bước 1 / 5',
         heading: 'Nhiều tham số nhưng ít tính toán',
         problem: 'Muốn mô hình lớn hơn mà không tăng chi phí mỗi token tương ứng. Có cách nào?',
         mechanism: 'Thay một FFN bằng $E = 4$ chuyên gia FFN. Một khối đồ chơi ($d = 4$, $m = 4$) có $128$ tham số FFN ([[lesson:transformer_block_params]]); MoE có $512$ tham số tổng. Nhưng router chỉ gửi mỗi token tới top-$k$ chuyên gia: với $k = 2$ mỗi token chỉ dùng $256$ tham số, tức FLOPs mỗi token chỉ bằng $2$ chuyên gia dù mô hình có $4$.',
@@ -129,7 +129,7 @@
         takeaway: 'MoE tách số tham số (dung lượng) ra khỏi chi phí tính toán mỗi token.'
       },
       {
-        step: 2, badge: 'Bước 2 / 4',
+        step: 2, badge: 'Bước 2 / 5',
         heading: 'Router chấm điểm và chọn top-k',
         problem: '8 token, mỗi token có điểm cho 4 chuyên gia. Chọn thế nào?',
         mechanism: 'Softmax logits của từng token rồi lấy $k$ chuyên gia xác suất cao nhất. Với $k = 1$: token $t_0, t_1, t_3, t_4, t_7$ đều thích chuyên gia 0, $t_2$ thích chuyên gia 1, $t_5$ thích 2, $t_6$ thích 3. Phân bố $[5, 1, 1, 1]$: chuyên gia 0 nhận $5$ token, mức đều chỉ là $2$.',
@@ -137,7 +137,7 @@
         takeaway: 'Router tự do thì dễ "sụp": vài chuyên gia hút hết token (expert collapse).'
       },
       {
-        step: 3, badge: 'Bước 3 / 4',
+        step: 3, badge: 'Bước 3 / 5',
         heading: 'Hết chỗ thì bỏ token',
         problem: 'Mỗi chuyên gia chạy trên một phần cứng có bộ nhớ cố định. Chuyên gia 0 nhận 5 token nhưng chỉ đủ chỗ cho bao nhiêu?',
         mechanism: 'Dung lượng $\\text{cap} = \\lceil \\text{cf} \\times T k / E \\rceil = \\lceil 1.0 \\times 8 / 4 \\rceil = 2$. Token đến muộn ($t_3, t_4, t_7$) bị bỏ: chúng đi qua tầng mà không được chuyên gia nào xử lý (chỉ còn đường residual). Nâng capacity factor lên $2.5$ thì $\\text{cap} = 5$ không bỏ ai, nhưng 3 chuyên gia còn lại gần như rảnh và bộ nhớ phân bổ bị lãng phí.',
@@ -145,12 +145,18 @@
         takeaway: 'Mất cân bằng tải làm mất token hoặc lãng phí phần cứng; không thể chỉ chữa bằng dung lượng.'
       },
       {
-        step: 4, badge: 'Bước 4 / 4',
+        step: 4, badge: 'Bước 4 / 5',
         heading: 'Cân bằng tải',
         problem: 'Làm sao ép router rải đều token?',
         mechanism: 'Cách 1: thêm vào mất mát một số hạng phụ $\\text{aux} = E \\sum_i f_i P_i$ ($f_i$ là tỉ lệ token thật sự gửi tới chuyên gia $i$, $P_i$ là xác suất router trung bình): bằng $1$ khi đều, ở đây $1.486$ khi lệch. Cách 2: cộng một bias điều chỉnh vào logits của chuyên gia quá tải và giảm bias của chuyên gia dư tải. Với bias $[-1.5, 0, +0.5, +0.5]$ tải thành $[2, 2, 2, 2]$, $\\text{aux} = 1.0$ và không bỏ token nào.',
         action: '👉 Thao tác (Cột 2): Bấm preset "Top-1 + cân bằng tải ✅".\n👁️ Quan sát (Cột 3): Cả 4 thanh tải cao bằng nhau, kết luận xanh.',
         takeaway: 'Một MoE huấn luyện tốt cần cơ chế cân bằng tải ngay trong huấn luyện, không chỉ khi suy diễn.'
+      },
+      {
+        step: 5,
+        badge: 'Bước 5 / 5',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

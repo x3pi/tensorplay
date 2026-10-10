@@ -119,7 +119,7 @@
 
     const STEPS = [
       {
-        step: 1, badge: 'Bước 1 / 5',
+        step: 1, badge: 'Bước 1 / 6',
         heading: 'Vì sao ai cũng muốn dùng 16 bit?',
         problem: 'Một tensor FP32 tốn 4 byte mỗi phần tử. GPU có Tensor Core chỉ chạy cực nhanh ở FP16/BF16 (2 byte). Nếu chuyển hết sang 16 bit, bộ nhớ activation giảm một nửa và phép nhân ma trận nhanh hơn nhiều lần. Có cái giá nào không?',
         mechanism: 'Có: 16 bit chỉ có 65536 mã khác nhau. FP16 dành 5 bit cho số mũ nên số lớn nhất là $65504$ và số dương nhỏ nhất là $2^{-24} \\approx 6 \\times 10^{-8}$. Gradient của tầng sâu thường nhỏ hơn thế rất nhiều.',
@@ -127,7 +127,7 @@
         takeaway: 'Ít bit hơn nghĩa là hoặc mất dải số (FP16), hoặc mất độ chi tiết (BF16).'
       },
       {
-        step: 2, badge: 'Bước 2 / 5',
+        step: 2, badge: 'Bước 2 / 6',
         heading: 'Gradient biến mất không báo lỗi',
         problem: 'Một trọng số ở tầng sâu có gradient thật là $10^{-8}$. Lưu nó bằng FP16 thì sao?',
         mechanism: '$10^{-8}$ nhỏ hơn nửa bước subnormal nhỏ nhất ($\\approx 3 \\times 10^{-8}$), nên bị làm tròn thành $0$ tuyệt đối. Chương trình không báo lỗi, loss vẫn giảm, nhưng những trọng số như vậy không bao giờ được học.',
@@ -135,7 +135,7 @@
         takeaway: 'Underflow là lỗi im lặng: giống bug gán đè `=` ở [[lesson:broadcast_grad]], chỉ khác là nó nằm trong định dạng số.'
       },
       {
-        step: 3, badge: 'Bước 3 / 5',
+        step: 3, badge: 'Bước 3 / 6',
         heading: 'Loss Scaling: phóng to rồi thu nhỏ',
         problem: 'Làm sao cứu những gradient nhỏ mà không đổi định dạng?',
         mechanism: 'Nhân loss với $S = 1024$ trước khi lan truyền ngược: nhờ quy tắc dây chuyền, mọi gradient đều được nhân $S$. $10^{-8} \\times 1024 \\approx 1.02 \\times 10^{-5}$ nằm trong vùng FP16 biểu diễn được. Trước khi cập nhật trọng số, chia lại cho $S$ trong FP32.',
@@ -143,7 +143,7 @@
         takeaway: 'Loss scaling là phép dịch trục số mũ: dời gradient vào vùng mà FP16 còn chi tiết, rồi dời ngược lại.'
       },
       {
-        step: 4, badge: 'Bước 4 / 5',
+        step: 4, badge: 'Bước 4 / 6',
         heading: 'Scale quá tay: tràn số và NaN',
         problem: 'Vậy cứ chọn $S$ thật lớn cho chắc?',
         mechanism: 'Với gradient $1.0$ và $S = 2^{16} = 65536$, tích $65536$ vượt $65504$ nên thành $\\infty$. Gradient $\\infty$ qua vài phép tính sẽ thành NaN và phá hỏng toàn bộ trọng số. Vì vậy các framework dùng dynamic loss scaling: tràn thì bỏ bước đó và giảm $S$ một nửa, ổn định sau nhiều bước thì tăng $S$ gấp đôi.',
@@ -151,12 +151,18 @@
         takeaway: 'Không có $S$ cố định tốt cho mọi bước huấn luyện, nên $S$ phải tự điều chỉnh.'
       },
       {
-        step: 5, badge: 'Bước 5 / 5',
+        step: 5, badge: 'Bước 5 / 6',
         heading: 'BF16: đổi độ chi tiết lấy dải số',
         problem: 'Có cách nào khỏi phải lo scale không?',
         mechanism: 'BF16 giữ nguyên 8 bit số mũ của FP32 nên dải số y hệt, chỉ cắt mantissa còn 7 bit (sai số tương đối tới khoảng $0.4\\%$). Gradient $10^{-8}$ sống khỏe mà không cần scale. Đó là lý do TPU và các GPU đời mới (A100 trở đi) ưa dùng BF16 để huấn luyện LLM.',
         action: '👉 Thao tác (Cột 2): Bấm preset "BF16, không cần scale ✅".\n👁️ Quan sát (Cột 3): Giá trị lưu khác 0, sai số dưới 0.5%.',
         takeaway: 'FP16 cần Loss Scaling, BF16 thì không. Cả hai đều giữ bản master trọng số ở FP32 để cộng dồn các cập nhật nhỏ.'
+      },
+      {
+        step: 6,
+        badge: 'Bước 6 / 6',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

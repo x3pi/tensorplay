@@ -115,7 +115,7 @@
 
     const STEPS = [
       {
-        step: 1, badge: 'Bước 1 / 4',
+        step: 1, badge: 'Bước 1 / 5',
         heading: 'Tinh chỉnh toàn phần quá đắt',
         problem: 'Muốn dạy mô hình 6.57 tỉ tham số một nhiệm vụ mới. Tinh chỉnh toàn phần cần trọng số, gradient và Adam cho TẤT CẢ tham số: 16 byte mỗi tham số ([[lesson:mixed_precision]]), tức khoảng $105$ GB, và mỗi nhiệm vụ lại sinh một bản sao 13 GB.',
         mechanism: 'Quan sát: thay đổi cần học khi tinh chỉnh thường có hạng thấp. Thay vì học $\\Delta W$ cỡ $d \\times d$, ta phân rã $\\Delta W = B A$ với $B$ là $d \\times r$, $A$ là $r \\times d$, $r \\ll d$. Trọng số gốc $W$ đóng băng, chỉ $A$ và $B$ được huấn luyện.',
@@ -123,7 +123,7 @@
         takeaway: 'LoRA đổi tinh chỉnh toàn phần lấy một lượng nhỏ tham số học, mô hình gốc dùng chung cho mọi nhiệm vụ.'
       },
       {
-        step: 2, badge: 'Bước 2 / 4',
+        step: 2, badge: 'Bước 2 / 5',
         heading: 'Ma trận hạng 1 tính tay được',
         problem: 'Hãy xem một ví dụ $4 \\times 4$: $W = I$, $B = [1, 0, 2, 0]^\\top$, $A = [0, 1, 0, 1]$. $\\Delta W$ trông thế nào?',
         mechanism: '$\\Delta W = B A$ là tích ngoài: cột 1 và cột 3 bằng $[1, 0, 2, 0]^\\top$ còn các cột khác bằng 0; chỉ $4$ ô khác 0 và hạng đúng bằng $1$. Số tham số học là $8$ ($4 + 4$) thay vì $16$. Với $d$ lớn, tỉ lệ $2dr / d^2 = 2r / d$ nhỏ dần: $d = 4096$, $r = 8$ chỉ $0.39\\%$ mỗi ma trận.',
@@ -131,7 +131,7 @@
         takeaway: 'Hạng của $\\Delta W$ không vượt quá $r$: LoRA giả định thay đổi cần học nằm trong không gian con nhỏ.'
       },
       {
-        step: 3, badge: 'Bước 3 / 4',
+        step: 3, badge: 'Bước 3 / 5',
         heading: 'Khởi tạo B = 0: bắt đầu từ đúng chỗ cũ',
         problem: 'Nếu $A$ và $B$ khởi tạo ngẫu nhiên thì mô hình vừa gắn LoRA sẽ ra sao?',
         mechanism: 'Sẽ bị nhiễu ngay. Quy ước: $A$ ngẫu nhiên nhỏ, $B = 0$. Khi đó $\\Delta W = BA = 0$ và đầu ra y hệt mô hình gốc ($y = [1, 2, 3, 4]$ trong ví dụ). Gradient của $B$ vẫn khác 0 (phụ thuộc $A$) nên $B$ học được. Hệ số $\\alpha / r$ giữ cho độ lớn cập nhật không đổi khi đổi $r$.',
@@ -139,12 +139,18 @@
         takeaway: 'Khởi tạo $B = 0$ đảm bảo thêm LoRA không làm hỏng mô hình trước khi huấn luyện.'
       },
       {
-        step: 4, badge: 'Bước 4 / 4',
+        step: 4, badge: 'Bước 4 / 5',
         heading: 'Hợp nhất xong là không còn chi phí suy diễn',
         problem: 'Thêm hai ma trận nhỏ vào mỗi tầng có làm mô hình chậm đi lúc phục vụ không?',
         mechanism: 'Không, nếu hợp nhất: $W\' = W + \\frac{\\alpha}{r} B A$ có cùng kích thước $W$, nên suy diễn y hệt mô hình gốc. Ngoài ra có thể giữ nhiều bộ $(A, B)$ cho nhiều nhiệm vụ và đổi giữa chúng. Đổi $r$ đánh đổi dung lượng và chi phí: $r = 64$ vẫn chỉ $33.5$ triệu tham số, dưới $1\\%$ mô hình.',
         action: '👉 Thao tác (Cột 2): Lần lượt chọn $r = 1, 8, 16, 64$.\n👁️ Quan sát (Cột 3): Tham số học tăng tuyến tính theo $r$ (524 288 đến 33 554 432), RAM huấn luyện chỉ nhích từ 13.16 lên 13.7 GB.',
         takeaway: 'LoRA phổ biến vì rẻ lúc huấn luyện và miễn phí lúc suy diễn; QLoRA còn lượng tử hóa mô hình gốc xuống 4 bit ([[lesson:quantization_int8]]).'
+      },
+      {
+        step: 5,
+        badge: 'Bước 5 / 5',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

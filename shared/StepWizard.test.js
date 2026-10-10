@@ -275,7 +275,7 @@ describe('shared/components/StepWizard.js - Socratic Taxonomy & Narrative Struct
     }
   });
 
-  it('tự động tích hợp bảng công thức vào slide cuối cùng và ẩn ở các slide trước', () => {
+  it('tạo slide hoàn toàn mới ở cuối dành riêng cho công thức toán học và ẩn ở các slide trước', () => {
     const createMockNode = (tag = 'div') => {
       const children = [];
       const listeners = {};
@@ -302,11 +302,15 @@ describe('shared/components/StepWizard.js - Socratic Taxonomy & Narrative Struct
     };
 
     const container = createMockNode('div');
-    const slotMock = createMockNode('div');
+    const cardsMock = createMockNode('div');
+    const formulaSlideMock = createMockNode('div');
+    const formulaMountPointMock = createMockNode('div');
     const formulaMountMock = createMockNode('div');
 
     container.querySelector = (sel) => {
-      if (sel === '.wizard-slot-last-step') return slotMock;
+      if (sel === '.wizard-cards') return cardsMock;
+      if (sel === '.wizard-formula-slide') return formulaSlideMock;
+      if (sel === '.wizard-formula-mount-point') return formulaMountPointMock;
       return createMockNode();
     };
 
@@ -325,24 +329,34 @@ describe('shared/components/StepWizard.js - Socratic Taxonomy & Narrative Struct
         initialStep: 1
       });
 
-      // Ở bước 1 (slide đầu): mount-formula-summary phải bị ẩn
-      expect(slotMock.style.display).toBe('none');
+      // Ở bước 1 (slide đầu): thẻ slide công thức phải bị ẩn, thẻ bài học thường hiển thị
+      expect(cardsMock.style.display).toBe('block');
+      expect(formulaSlideMock.style.display).toBe('none');
       expect(formulaMountMock.style.display).toBe('none');
-      expect(formulaMountMock.parentElement).toBe(slotMock);
 
-      // Chuyển sang bước 2: vẫn bị ẩn
+      // Chuyển sang bước 2: vẫn là slide bài học thường
       wizard.setStep(2);
-      expect(slotMock.style.display).toBe('none');
+      expect(cardsMock.style.display).toBe('block');
+      expect(formulaSlideMock.style.display).toBe('none');
       expect(formulaMountMock.style.display).toBe('none');
 
-      // Chuyển sang bước 3 (slide cuối): hiển thị bảng công thức
+      // Chuyển sang bước 3: vẫn là slide bài học thường
       wizard.setStep(3);
-      expect(slotMock.style.display).toBe('block');
-      expect(formulaMountMock.style.display).toBe('block');
+      expect(cardsMock.style.display).toBe('block');
+      expect(formulaSlideMock.style.display).toBe('none');
+      expect(formulaMountMock.style.display).toBe('none');
 
-      // Quay lại bước 2: lại bị ẩn đi
+      // Chuyển sang bước 4 (slide công thức hoàn toàn mới ở cuối!):
+      wizard.setStep(4);
+      expect(cardsMock.style.display).toBe('none');
+      expect(formulaSlideMock.style.display).toBe('block');
+      expect(formulaMountMock.style.display).toBe('block');
+      expect(formulaMountMock.parentElement).toBe(formulaMountPointMock);
+
+      // Quay lại bước 3: slide công thức lại bị ẩn đi, slide 3 hiện lại
       wizard.prev();
-      expect(slotMock.style.display).toBe('none');
+      expect(cardsMock.style.display).toBe('block');
+      expect(formulaSlideMock.style.display).toBe('none');
       expect(formulaMountMock.style.display).toBe('none');
     } finally {
       globalThis.document = origDoc;

@@ -117,7 +117,7 @@
 
     const STEPS = [
       {
-        step: 1, badge: 'Bước 1 / 4',
+        step: 1, badge: 'Bước 1 / 5',
         heading: 'Bài toán: địa hình dốc lúc khởi đầu',
         problem: 'Đầu huấn luyện, mạng khởi tạo ngẫu nhiên nên loss thường rất "dốc": một bước nhảy vừa phải đã vọt qua đáy. Một mô hình giả lập 1 chiều có độ cong $a = 4$ trong 3 bước đầu rồi thoải dần xuống $a = 1$. Dùng lr cố định $0.6$ thì sao?',
         mechanism: 'Với hàm bậc hai, mỗi bước nhân $w$ với $(1 - \\eta a)$. Ở vùng dốc $1 - 0.6 \\times 4 = -1.4$, độ lớn $1.4 > 1$ nên $|w|$ tăng thay vì giảm: $1.0 \\to -1.52 \\to 2.25 \\to -3.27$. Chỉ khi lr $< 2/a = 0.5$ mới ổn định.',
@@ -125,7 +125,7 @@
         takeaway: 'lr "an toàn" phụ thuộc độ cong của địa hình, mà độ cong lúc đầu thường lớn nhất.'
       },
       {
-        step: 2, badge: 'Bước 2 / 4',
+        step: 2, badge: 'Bước 2 / 5',
         heading: 'Warmup: tăng lr từ từ',
         problem: 'Ta muốn lr lớn ($0.6$) cho các bước sau (địa hình thoải, học nhanh) nhưng không phá hỏng khởi đầu. Có cách nào?',
         mechanism: 'Warmup tăng tuyến tính lr qua $W = 4$ bước: $0.15, 0.3, 0.45, 0.6$. Ở các bước dốc, $|1 - \\eta a| = 0.4, 0.2, 0.8 < 1$ đều ổn định, nên $|w|$ không bao giờ vượt $1.0$.',
@@ -133,7 +133,7 @@
         takeaway: 'Warmup cho mô hình thời gian "làm quen địa hình" trước khi tăng tốc hết cỡ.'
       },
       {
-        step: 3, badge: 'Bước 3 / 4',
+        step: 3, badge: 'Bước 3 / 5',
         heading: 'Cosine decay: dọn nhiễu ở cuối',
         problem: 'Sau warmup, $w$ không về hẳn 0 mà dao động $\\pm 0.086$ mãi mãi. Vì sao?',
         mechanism: 'Nhiễu gradient $\\pm 0.2$ nhân với lr cố định $0.6$ luôn đẩy $w$ đi một đoạn cỡ $\\eta n / (1 + \\eta a)$. Muốn đáy sạch thì phải giảm lr. Cosine decay đưa lr về $0$ theo đường cong mượt: $\\eta_t = \\eta_{max} \\cdot \\frac{1}{2}(1 + \\cos \\pi s)$.',
@@ -141,12 +141,18 @@
         takeaway: 'Lịch lr chuẩn của LLM: warmup rồi cosine decay. Đầu êm, cuối sạch.'
       },
       {
-        step: 4, badge: 'Bước 4 / 4',
+        step: 4, badge: 'Bước 4 / 5',
         heading: 'Không phải lúc nào cũng cần warmup',
         problem: 'Vậy cứ luôn bật warmup? Hãy so với việc chọn lr nhỏ hơn.',
         mechanism: 'Với lr tối đa $0.4 < 0.5$ thì ngay cả vùng dốc cũng ổn định: không cần warmup, nhưng sau này vùng thoải ($a = 1$) lr $0.4$ hội tụ chậm hơn lr $0.6$. Warmup cho phép dùng lr lớn nhất có thể ở giai đoạn sau. Với Adam ([[lesson:adamw_weight_decay]]) bước nhảy mỗi lần xấp xỉ lr bất kể độ lớn gradient nên warmup càng quan trọng ở các bước đầu.',
         action: '👉 Thao tác (Cột 2): Bấm preset "lr nhỏ 0.4: an toàn nhưng chậm", rồi kéo thanh lr lên 0.6.\n👁️ Quan sát (Cột 3): Kết luận đổi từ xanh sang đỏ ngay khi lr vượt $0.5$.',
         takeaway: 'Warmup là cách "mua" lr lớn mà không trả giá bằng khởi đầu bùng nổ.'
+      },
+      {
+        step: 5,
+        badge: 'Bước 5 / 5',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

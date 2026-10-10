@@ -125,7 +125,7 @@
 
     const STEPS = [
       {
-        step: 1, badge: 'Bước 1 / 4',
+        step: 1, badge: 'Bước 1 / 5',
         heading: 'Hai câu, hai nghĩa trái ngược',
         problem: '"Chó cắn người" và "người cắn chó" dùng đúng ba từ nhưng nghĩa khác hẳn. Một mô hình ngôn ngữ phải phân biệt được chúng. [[lesson:self_attention]] cho thấy Self-Attention chỉ so sánh Query với Key, không hề hỏi từ nào đứng ở đâu.',
         mechanism: 'Mỗi token được biểu diễn chỉ bằng embedding của chính nó. Khi tính $\\text{out}_i = \\sum_j \\text{softmax}_j(x_i \\cdot x_j)\\, x_j$, phép cộng trên $j$ không quan tâm thứ tự. Đảo các từ chỉ làm đảo thứ tự các số hạng trong tổng.',
@@ -133,7 +133,7 @@
         takeaway: 'Self-Attention thuần túy là hàm bất biến theo hoán vị: nó nhìn câu như một cái túi từ.'
       },
       {
-        step: 2, badge: 'Bước 2 / 4',
+        step: 2, badge: 'Bước 2 / 5',
         heading: 'Cộng thêm "số nhà" cho từng token',
         problem: 'Muốn mô hình biết thứ tự, ta phải đưa vị trí vào chính dữ liệu đầu vào, vì tầng attention không tự tạo ra nó.',
         mechanism: 'Cộng vào embedding một vector phụ thuộc vị trí: $x_i = e_i + \\text{PE}(i)$. Ở đây $\\text{PE}(i) = [\\sin\\frac{i\\pi}{2}, \\cos\\frac{i\\pi}{2}]$ cho $[0,1], [1,0], [0,-1], [-1,0]$. Cùng từ "chó" nhưng ở vị trí 0 thành $[1,1]$ còn ở vị trí 2 thành $[1,-1]$.',
@@ -141,7 +141,7 @@
         takeaway: 'Mã vị trí biến "cùng từ" thành "khác vector" tùy chỗ đứng, nên attention có cái để phân biệt.'
       },
       {
-        step: 3, badge: 'Bước 3 / 4',
+        step: 3, badge: 'Bước 3 / 5',
         heading: 'Trọng số chú ý thay đổi theo thứ tự',
         problem: 'Mã vị trí thật sự làm thay đổi ai chú ý đến ai chứ?',
         mechanism: 'Trong câu A, "cắn" chú ý đều vào "chó" và "cắn" (mỗi bên $0.42$) và ít vào "người" ($0.16$). Sang câu B, nó dồn $0.71$ vào "người" đứng ngay trước. Cùng token, cùng embedding, chú ý khác nhau.',
@@ -149,12 +149,18 @@
         takeaway: 'Thứ tự từ giờ đã đi vào điểm số $QK^\\top$, nghĩa là đã đi vào mọi tầng phía sau.'
       },
       {
-        step: 4, badge: 'Bước 4 / 4',
+        step: 4, badge: 'Bước 4 / 5',
         heading: 'Trong thực tế: sin/cos nhiều tần số, RoPE, ALiBi',
         problem: 'Vài vị trí với một tần số thì chỉ lặp lại sau 4 bước. Mô hình 100 nghìn token thì sao?',
         mechanism: 'Transformer gốc dùng nhiều cặp sin/cos với tần số giảm dần (từ chu kỳ ngắn đến cực dài), mỗi cặp là một "kim đồng hồ" khác tốc độ. Các LLM hiện đại như Llama dùng RoPE: xoay vector Q và K theo vị trí để tích vô hướng phụ thuộc vào khoảng cách tương đối $i - j$.',
         action: '👉 Thao tác: Đọc chú giải bên dưới và so sánh với bảng PE ở Cột 2 (chỉ một tần số).\n👁️ Quan sát: Một tần số lặp sau 4 vị trí, nên cần nhiều tần số để gán nhãn duy nhất.',
         takeaway: 'Ý tưởng không đổi: tiêm thông tin vị trí vào Q và K. Chỉ có cách tiêm là tiến hóa.'
+      },
+      {
+        step: 5,
+        badge: 'Bước 5 / 5',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

@@ -4,7 +4,7 @@
  * to synthesize the essential mathematical formulas, notations, dimensions, and gotchas of the lesson.
  */
 
-import { renderInlineMath } from '../katex-render.js';
+import { renderInlineMath, whenKaTeXReady, renderAllInlineMath } from '../katex-render.js';
 
 export function createFormulaSummary(container, options = {}) {
   const {
@@ -23,7 +23,7 @@ export function createFormulaSummary(container, options = {}) {
     if (typeof document !== 'undefined' && typeof document.getElementById === 'function') {
       const wizardEl = document.getElementById('mount-step-wizard');
       if (wizardEl) {
-        const slot = wizardEl.querySelector?.('.wizard-slot-last-step');
+        const slot = wizardEl.querySelector?.('.wizard-formula-mount-point');
         if (slot && typeof slot.appendChild === 'function' && container.parentElement !== slot) {
           slot.appendChild(container);
         }
@@ -62,6 +62,11 @@ export function createFormulaSummary(container, options = {}) {
             ? `$$${formulaTex}$$`
             : `$${formulaTex}$`;
 
+          const rawShape = (item.shape || '').trim();
+          const shapeMath = rawShape
+            ? (rawShape.includes('$') ? rawShape : `$${rawShape}$`)
+            : '';
+
           return `
             <div class="tp-formula-card" data-idx="${idx}">
               <div class="tp-formula-card-header">
@@ -71,7 +76,7 @@ export function createFormulaSummary(container, options = {}) {
                 </div>
                 <div class="tp-formula-card-tags">
                   ${(item.tags || []).map(t => `<span class="tp-formula-tag">${t}</span>`).join('')}
-                  ${item.shape ? `<span class="tp-formula-tag shape">${renderInlineMath(item.shape)}</span>` : ''}
+                  ${shapeMath ? `<span class="tp-formula-tag shape">${renderInlineMath(shapeMath)}</span>` : ''}
                   ${formulaTex ? `
                     <button type="button" class="tp-btn-ghost btn-copy-formula" data-formula="${encodeURIComponent(formulaTex)}" title="Sao chép mã LaTeX">
                       📋 Copy
@@ -140,6 +145,14 @@ export function createFormulaSummary(container, options = {}) {
   }
 
   render();
+
+  if (typeof window !== 'undefined' && typeof whenKaTeXReady === 'function') {
+    whenKaTeXReady().then(() => {
+      if (container && typeof renderAllInlineMath === 'function') {
+        renderAllInlineMath(container);
+      }
+    });
+  }
 
   return {
     setFormulas: (newFormulas) => {

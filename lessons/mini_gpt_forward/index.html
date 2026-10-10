@@ -116,7 +116,7 @@
 
     const STEPS = [
       {
-        step: 1, badge: 'Bước 1 / 4',
+        step: 1, badge: 'Bước 1 / 5',
         heading: 'Từ chữ đến số: token và embedding',
         problem: 'Câu "Robot nhặt pin" đi vào mô hình như thế nào? Máy chỉ nhận số.',
         mechanism: 'Tokenizer gán mỗi từ một id ([[lesson:embedding_tokenization]]): $[0, 1, 2]$. Bảng embedding $E$ ($4 \\times 4$) cho mỗi id một hàng; ở đây $E = I$ nên token thành vector one-hot. Hai lần tra bảng này là phép gather theo chỉ số, gần như miễn phí về FLOPs. Rồi cộng mã vị trí ([[lesson:positional_encoding]]) để có $X \\in \\mathbb{R}^{3 \\times 4}$.',
@@ -124,7 +124,7 @@
         takeaway: 'Đầu vào của mọi tầng Transformer là một ma trận $T \\times d$: mỗi hàng một token.'
       },
       {
-        step: 2, badge: 'Bước 2 / 4',
+        step: 2, badge: 'Bước 2 / 5',
         heading: 'Khối Transformer: LayerNorm, Attention, Residual',
         problem: 'Một khối Pre-LN xử lý $X$ như thế nào?',
         mechanism: 'LayerNorm từng hàng ([[lesson:layernorm_residual]]) cho $H_1$; multi-head attention nhân quả với 2 đầu ([[lesson:multi_head_attention]], [[lesson:self_attention]]) trộn thông tin từ các token trước; cộng residual $X_1 = X + A$. Hàng đầu chỉ nhìn chính nó nên $A_0 = H_{1,0}$; hàng 2 là trung bình có trọng số của 2 token đầu: $[-0.888, 0.888, 0.888, -0.888]$.',
@@ -132,7 +132,7 @@
         takeaway: 'Mặt nạ nhân quả biến ma trận attention thành tam giác dưới: token chỉ nhìn quá khứ.'
       },
       {
-        step: 3, badge: 'Bước 3 / 4',
+        step: 3, badge: 'Bước 3 / 5',
         heading: 'FFN, residual và đầu ra',
         problem: 'Sau attention, khối làm gì tiếp và làm sao ra xác suất token kế tiếp?',
         mechanism: 'LayerNorm lần 2, FFN (ở bản toy là ReLU, ([[lesson:activation_valves]])), cộng residual lần 2 cho $X_2$. Rồi LayerNorm cuối và nhân với $E^\\top$ (dùng chung bảng embedding) cho logits $Z \\in \\mathbb{R}^{3 \\times 4}$: mỗi token có một điểm cho mỗi từ trong từ vựng. Softmax ([[lesson:softmax_stability]]) từng hàng ra xác suất; hàng cuối là phân phối token kế tiếp: $[0.126, 0.126, 0.705, 0.043]$.',
@@ -140,12 +140,18 @@
         takeaway: 'Dự đoán token kế tiếp chỉ là hàng cuối của một phép chiếu cuối cùng; kết quả này còn vô nghĩa vì mô hình chưa huấn luyện.'
       },
       {
-        step: 4, badge: 'Bước 4 / 4',
+        step: 4, badge: 'Bước 4 / 5',
         heading: 'Nhân quả và thứ tự là thật',
         problem: 'Hai tính chất quan trọng nhất của mô hình ngôn ngữ sinh văn bản: (1) token sau không ảnh hưởng token trước; (2) đảo thứ tự thì kết quả đổi. Mô hình này có không?',
         mechanism: 'Chọn câu "Robot nhặt sạc": nó chỉ khác "Robot nhặt pin" ở token cuối, và hai hàng đầu của MỌI tensor trùng hệt nhau, chỉ hàng cuối đổi. Đây là điều cho phép KV-Cache ([[lesson:kv_cache_anatomy]]): K, V của token cũ không bao giờ đổi nên được lưu lại. Chọn "pin nhặt Robot" (đảo thứ tự): kết quả đổi hoàn toàn nhờ mã vị trí, dù cùng một tập token.',
         action: '👉 Thao tác (Cột 2): Lần lượt chọn 3 câu, giữ giai đoạn 9.\n👁️ Quan sát (Cột 3): Hai hàng đầu của câu 1 và 2 giống hệt nhau; câu 3 khác hẳn.',
         takeaway: 'Nhân quả là điều kiện để sinh từng token và dùng KV-Cache; mã vị trí là lý do thứ tự có nghĩa.'
+      },
+      {
+        step: 5,
+        badge: 'Bước 5 / 5',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

@@ -109,7 +109,7 @@
 
     const STEPS = [
       {
-        step: 1, badge: 'Bước 1 / 4',
+        step: 1, badge: 'Bước 1 / 5',
         heading: 'Hai tập dữ liệu: một để học, một để kiểm tra',
         problem: 'Robot đoán độ sáng đèn pha theo khoảng cách. Quy luật thật là $y = x$, nhưng 4 phép đo train bị nhiễu: $y = [0.5, 0.5, 2.5, 2.5]$ thay vì $[0, 1, 2, 3]$. Làm sao biết mô hình học được quy luật chứ không phải thuộc lòng nhiễu?',
         mechanism: 'Ta giữ lại một tập val gồm 4 điểm mô hình chưa từng thấy: $x = [0.5, 1.5, 2.5, 3.5]$ với đáp án sạch $y = x$. Loss trên tập train cho biết mô hình khớp dữ liệu cũ tới đâu, loss trên val cho biết nó tổng quát hóa tới đâu.',
@@ -117,7 +117,7 @@
         takeaway: 'Loss train đo khả năng ghi nhớ, loss val mới đo khả năng hiểu.'
       },
       {
-        step: 2, badge: 'Bước 2 / 4',
+        step: 2, badge: 'Bước 2 / 5',
         heading: 'Bậc 3: đi qua mọi điểm, tệ nhất ngoài đời',
         problem: 'Đa thức bậc 3 có 4 hệ số, đủ để đi qua cả 4 điểm train. Lỗi train bằng 0 nghe như hoàn hảo, đúng không?',
         mechanism: 'Đường cong uốn lượn để chui qua từng điểm nhiễu: $\\hat{y} = 0.5 - 2.33x + 3x^2 - 0.67x^3$. Tại $x = 3.5$ nó dự đoán $0.5$ trong khi đáp án là $3.5$. Lỗi val vọt lên $2.375$, gấp hơn 39 lần bậc 1.',
@@ -125,7 +125,7 @@
         takeaway: 'Quá khớp (overfitting): mô hình đủ mạnh để thuộc cả nhiễu, nên loss train thấp mà lỗi thực tế cao.'
       },
       {
-        step: 3, badge: 'Bước 3 / 4',
+        step: 3, badge: 'Bước 3 / 5',
         heading: 'Dưới khớp và vừa vặn',
         problem: 'Vậy cứ chọn mô hình thật đơn giản cho an toàn?',
         mechanism: 'Bậc 0 chỉ đoán trung bình $1.5$: lỗi train $1.0$ và lỗi val $1.5$, cả hai đều cao (dưới khớp, underfitting). Bậc 1 cho lỗi val thấp nhất ($0.06$). Bậc 2 không cải thiện thêm vì hệ số $x^2$ ra đúng $0$. Lỗi train giảm đơn điệu theo bậc, còn lỗi val có dạng chữ U.',
@@ -133,12 +133,18 @@
         takeaway: 'Chọn độ phức tạp mô hình bằng lỗi val, không bao giờ bằng lỗi train.'
       },
       {
-        step: 4, badge: 'Bước 4 / 4',
+        step: 4, badge: 'Bước 4 / 5',
         heading: 'Quy tắc thực chiến',
         problem: 'Nếu tôi chỉnh siêu tham số cho đến khi lỗi val thấp nhất, lỗi val đó còn đáng tin không?',
         mechanism: 'Mỗi lần chỉnh theo val, thông tin của val rò rỉ vào mô hình, nên lỗi val dần lạc quan. Vì vậy cần ba tập: train để học, val để chọn mô hình và dừng sớm (early stopping), test để chấm một lần duy nhất ở cuối. Các kỹ thuật như [[lesson:dropout]] và weight decay giảm quá khớp mà không cần thu nhỏ mô hình.',
         action: '👉 Thao tác: Đọc chú giải ở dưới và xem lại bảng so sánh các bậc.\n👁️ Quan sát: Khoảng cách val trừ train (generalization gap) lớn nhất ở bậc 3.',
         takeaway: 'Quan sát loss train đi xuống nhưng loss val đi lên là tín hiệu dừng huấn luyện.'
+      },
+      {
+        step: 5,
+        badge: 'Bước 5 / 5',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

@@ -126,7 +126,7 @@
 
     const STEPS = [
       {
-        step: 1, badge: 'Bước 1 / 4',
+        step: 1, badge: 'Bước 1 / 5',
         heading: 'Một điểm số phải gánh mọi kiểu quan hệ',
         problem: 'Trong câu "Robot nhặt pin", từ "pin" cần biết ai là chủ thể (Robot) và hành động gì đang diễn ra (nhặt). Với 1 đầu attention, mỗi cặp token chỉ có đúng một điểm số.',
         mechanism: 'Tích vô hướng 4 chiều cộng gộp "vai trò" và "chủ đề" vào cùng một con số. Với Query "pin", điểm tới Robot và nhặt đều bằng 1 nên đầu duy nhất không phân biệt được hai kiểu quan hệ: nó cho trọng số $[0.21, 0.21, 0.58]$.',
@@ -134,7 +134,7 @@
         takeaway: 'Một đầu chỉ có thể trả lời một câu hỏi "nên chú ý vào đâu".'
       },
       {
-        step: 2, badge: 'Bước 2 / 4',
+        step: 2, badge: 'Bước 2 / 5',
         heading: 'Chia nhỏ d_model: mỗi đầu một góc nhìn',
         problem: 'Có thể hỏi nhiều câu hỏi cùng lúc mà không phải tăng chi phí tính toán?',
         mechanism: 'Cắt 4 chiều thành $h = 2$ đầu, mỗi đầu giữ $d_k = 2$ chiều. Đầu 1 chỉ thấy cột 0–1 (vai trò), đầu 2 chỉ thấy cột 2–3 (chủ đề). Với Query "pin": đầu 1 chú ý vào Robot ($0.42$), đầu 2 chú ý vào nhặt ($0.42$).',
@@ -142,7 +142,7 @@
         takeaway: 'Mỗi đầu học một "mối quan hệ" riêng, ví dụ chủ ngữ – vị ngữ, đại từ – danh từ, hay vị trí lân cận.'
       },
       {
-        step: 3, badge: 'Bước 3 / 4',
+        step: 3, badge: 'Bước 3 / 5',
         heading: 'Nối lại và trộn bằng W_O',
         problem: 'Sau khi mỗi đầu có đầu ra riêng, làm sao ghép thành một vector duy nhất cho tầng sau?',
         mechanism: 'Nối các đầu ra lại theo chiều đặc trưng được vector $d_{model} = 4$ chiều: $[0.84, 0.16 \\mid 0.16, 0.84]$. Ma trận $W_O$ (ở bản toy là ma trận đơn vị) trộn thông tin giữa các đầu để tầng sau dùng chung.',
@@ -150,12 +150,18 @@
         takeaway: 'Số chiều vào và ra của khối attention không đổi, nên có thể xếp chồng khối này lên nhau.'
       },
       {
-        step: 4, badge: 'Bước 4 / 4',
+        step: 4, badge: 'Bước 4 / 5',
         heading: 'Thêm đầu không tốn thêm tham số, nhưng không miễn phí',
         problem: 'Vậy cứ chia thật nhiều đầu cho mạnh?',
         mechanism: 'Bốn ma trận $W_Q, W_K, W_V, W_O$ đều là $d \\times d$ nên tổng tham số là $4d^2 = 64$ cho mọi $h$. KV-Cache ([[lesson:kv_cache_anatomy]]) mỗi token vẫn là $2 \\cdot h \\cdot d_k = 2 d = 8$ phần tử. Nhưng khi $h = 4$, mỗi đầu chỉ còn $d_k = 1$ chiều: hai đầu ở giữa chỉ thấy một con số nên chú ý đều $\\frac{1}{3}$, gần như vô dụng.',
         action: '👉 Thao tác (Cột 2): Bấm preset "4 đầu (mỗi đầu 1 chiều)".\n👁️ Quan sát (Cột 3): Đầu 2 và 3 có trọng số $[0.33, 0.33, 0.33]$ — không phân biệt được gì.',
         takeaway: 'Số đầu và độ rộng mỗi đầu $d_k$ đánh đổi nhau: đầu quá hẹp thì mất khả năng biểu diễn.'
+      },
+      {
+        step: 5,
+        badge: 'Bước 5 / 5',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

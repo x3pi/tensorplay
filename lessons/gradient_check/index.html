@@ -138,7 +138,7 @@
 
     const STEPS = [
       {
-        step: 1, badge: 'Bước 1 / 5',
+        step: 1, badge: 'Bước 1 / 6',
         heading: 'Làm sao biết backward của mình đúng?',
         problem: 'Bạn vừa tự viết hàm backward cho một phép toán mới. Chương trình chạy, không báo lỗi. Nhưng [[lesson:broadcast_grad]] đã cho thấy: gradient sai vẫn có thể làm loss giảm. Có cách nào kiểm tra độc lập không?',
         mechanism: 'Đạo hàm là độ dốc. Ta có thể đo độ dốc trực tiếp: nhích $w_0$ một chút $\\varepsilon$ sang hai phía rồi xem $f$ thay đổi bao nhiêu:\n$$\\frac{\\partial f}{\\partial w_0} \\approx \\frac{f(w_0 + \\varepsilon) - f(w_0 - \\varepsilon)}{2\\varepsilon}$$\nCách này không cần biết công thức đạo hàm, chỉ cần gọi forward 2 lần.',
@@ -146,7 +146,7 @@
         takeaway: 'Gradient check = so đáp án của công thức với đáp án của phép đo.'
       },
       {
-        step: 2, badge: 'Bước 2 / 5',
+        step: 2, badge: 'Bước 2 / 6',
         heading: 'Bắt quả tang 3 bug kinh điển',
         problem: 'Ba lỗi hay gặp khi viết backward: quên hệ số 2 khi đạo hàm bình phương, quên nhân đạo hàm của hàm bên trong (quy tắc chuỗi), và sai dấu. Phép đo có phát hiện được cả 3 không?',
         mechanism: 'Tự tính: $w \\cdot x - y = 0.5 + 1 - 3 = -1.5$. Gradient đúng $= 2 \\cdot (-1.5) \\cdot [1, 2] = [-3, -6]$. Quên 2: $[-1.5, -3]$. Quên $x$: $[-3, -3]$. Sai dấu: $[3, 6]$. Gradient số không phụ thuộc code backward nên luôn là $[-3, -6]$.',
@@ -154,7 +154,7 @@
         takeaway: 'Ngưỡng thực hành: sai số tương đối dưới $10^{-3}$ (với float64 thường đạt $10^{-7}$ trở xuống) là đáng tin.'
       },
       {
-        step: 3, badge: 'Bước 3 / 5',
+        step: 3, badge: 'Bước 3 / 6',
         heading: 'Hậu quả nếu không kiểm tra',
         problem: 'Giả sử bỏ qua bước kiểm tra và huấn luyện luôn 1 bước với lr $0.1$. Mỗi phiên bản bug gây hậu quả gì?',
         mechanism: 'Đúng: $w = [0.8, 1.1]$, $f = 0$ (khớp hoàn hảo). Quên 2: $f = 0.5625$ (học chậm). Quên $x$: $f = 0.36$. Sai dấu: $w = [0.2, -0.1]$, $f = 9$, loss tăng gấp 4 lần.',
@@ -162,7 +162,7 @@
         takeaway: 'Bug \"quên hệ số\" giống như lr bị đổi, rất khó nhận ra bằng mắt khi chỉ nhìn đường loss.'
       },
       {
-        step: 4, badge: 'Bước 4 / 5',
+        step: 4, badge: 'Bước 4 / 6',
         heading: 'Chọn ε: không quá to, không quá nhỏ',
         problem: 'ε càng nhỏ thì càng gần định nghĩa đạo hàm. Vậy cứ chọn $\\varepsilon = 10^{-10}$ cho chắc?',
         mechanism: 'Có hai loại sai số kéo ngược nhau. ε lớn: sai số cắt cụt (sai phân tiến lệch cỡ $\\varepsilon$, trung tâm cỡ $\\varepsilon^2$). ε nhỏ: $f(w + \\varepsilon) - f(w)$ là hiệu của hai số gần bằng nhau, sai số làm tròn bị phóng đại cỡ $10^{-16} / \\varepsilon$.',
@@ -170,12 +170,18 @@
         takeaway: 'Dùng sai phân trung tâm với ε khoảng $10^{-4}$ đến $10^{-6}$ trong float64.'
       },
       {
-        step: 5, badge: 'Bước 5 / 5',
+        step: 5, badge: 'Bước 5 / 6',
         heading: 'Bẫy float32: báo động giả',
         problem: 'GPU thường tính bằng float32. Chạy gradient check bằng float32 với $\\varepsilon = 10^{-8}$ thì sao?',
         mechanism: 'float32 chỉ có khoảng 7 chữ số thập phân. $0.5 + 10^{-8}$ được làm tròn lại thành đúng $0.5$, nên $f(w + \\varepsilon) = f(w - \\varepsilon)$ và gradient số bằng $0$. Code đúng nhưng bị báo sai.',
         action: '👉 Thao tác (Cột 2): Bấm preset \"float32, ε = 10⁻⁸\", rồi kéo ε về $10^{-3}$.\n👁️ Quan sát (Cột 3): Gradient số từ $[0, 0]$ trở lại gần $[-3, -6]$. Đồ thị quét có hình chữ V.',
         takeaway: 'Luôn chạy gradient check bằng float64. Needle và PyTorch (`torch.autograd.gradcheck`) đều khuyên như vậy.'
+      },
+      {
+        step: 6,
+        badge: 'Bước 6 / 6',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

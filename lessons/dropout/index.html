@@ -134,7 +134,7 @@
 
     const STEPS = [
       {
-        step: 1, badge: 'Bước 1 / 5',
+        step: 1, badge: 'Bước 1 / 6',
         heading: 'Co-Adaptation: Nơ-ron dựa dẫm vào nhau',
         problem: 'Trong mạng nơ-ron nhận diện biển báo, nếu nơ-ron A luôn ỷ lại vào nơ-ron B để sửa sai, mạng sẽ dễ bị quá khớp (overfitting) khi gặp nhiễu thực tế.',
         mechanism: 'Dropout phá vỡ sự dựa dẫm bằng cách tắt ngẫu nhiên một tỉ lệ nơ-ron với xác suất $p$ trong mỗi lượt huấn luyện. Mỗi nơ-ron buộc phải tự học các đặc trưng độc lập và hữu ích.',
@@ -142,7 +142,7 @@
         takeaway: 'Dropout tương đương với việc huấn luyện một quần thể (ensemble) gồm $2^N$ mạng nơ-ron con với trọng số chia sẻ.'
       },
       {
-        step: 2, badge: 'Bước 2 / 5',
+        step: 2, badge: 'Bước 2 / 6',
         heading: 'Nghịch lý năng lượng: Tắt một nửa thì tổng giảm một nửa?',
         problem: 'Nếu có 4 nơ-ron mang tín hiệu $h = [4, 2, 6, 4]$, tổng năng lượng ban đầu là 16. Khi tắt 2 nơ-ron ngẫu nhiên ($p = 0.5$), tổng tín hiệu truyền tiếp chỉ còn 10 hoặc 8.',
         mechanism: 'Nếu cứ để nguyên như vậy (Naive Dropout), các tầng phía sau lúc train chỉ nhận mức tín hiệu trung bình bằng một nửa. Khi sang bước dự đoán (Eval) mở lại toàn bộ nơ-ron, tín hiệu sẽ tăng vọt gấp đôi làm vỡ hàm kích hoạt!',
@@ -150,7 +150,7 @@
         takeaway: 'Cần một kỹ thuật để giữ kỳ vọng năng lượng không đổi giữa Train và Eval.'
       },
       {
-        step: 3, badge: 'Bước 3 / 5',
+        step: 3, badge: 'Bước 3 / 6',
         heading: 'Inverted Dropout: Phóng đại nơ-ron sống ngay lúc Train',
         problem: 'Làm thế nào để không phải tính toán hay scale gì trong pha dự đoán (Inference)?',
         mechanism: 'Thay vì chờ đến Eval mới chia đôi, kỹ thuật Inverted Dropout nhân phóng đại các nơ-ron còn sống ngay trong pha Train với hệ số $\\frac{1}{1 - p}$. Với $p = 0.5$, hệ số là 2. Nơ-ron mang giá trị 4 được nhân thành 8:\n$$\\mathbb{E}[\\text{out}] = (1 - p) \\times \\frac{h}{1 - p} = h$$\nKhi sang Eval, ta chỉ việc tắt Dropout mà không cần sửa đổi bất kỳ trọng số nào!',
@@ -158,7 +158,7 @@
         takeaway: 'Inverted Dropout dồn toàn bộ chi phí tính toán scale vào quá trình train, tối ưu tốc độ triển khai inference.'
       },
       {
-        step: 4, badge: 'Bước 4 / 5',
+        step: 4, badge: 'Bước 4 / 6',
         heading: 'Chuyển sang Eval: Toàn bộ nơ-ron tái hợp',
         problem: 'Khi đưa mô hình ra xe tự hành chạy thực tế, ta có dùng Dropout nữa không?',
         mechanism: 'Không! Trong pha Eval/Inference, toàn bộ nơ-ron hoạt động 100% ($m = [1, 1, 1, 1]$) để đạt độ chính xác cao nhất.',
@@ -166,12 +166,18 @@
         takeaway: 'Quên chuyển `model.eval()` là một trong những bug kinh điển khiến độ chính xác dự đoán giảm sút.'
       },
       {
-        step: 5, badge: 'Bước 5 / 5',
+        step: 5, badge: 'Bước 5 / 6',
         heading: 'Backward Pass: Mặt nạ là chiếc van khóa gradient',
         problem: 'Khi đạo hàm dội ngược về, nơ-ron bị tắt lúc forward sẽ nhận gradient như thế nào?',
         mechanism: 'Vì $\\text{out}_i = h_i \\cdot \\frac{m_i}{1 - p}$, đạo hàm theo $h_i$ là $\\frac{\\partial L}{\\partial h_i} = \\frac{\\partial L}{\\partial \\text{out}_i} \\cdot \\frac{m_i}{1 - p}$. Nếu $m_i = 0$, gradient dội về bằng 0 tuyệt đối. Nơ-ron bị tắt sẽ không được cập nhật trọng số ở lượt này.',
         action: '👉 Thao tác (Cột 2): Chuyển về Train, bấm ô mask số 0 để tắt/bật.\n👁️ Quan sát (Cột 3): Lưới Gradient dội ngược đổi màu và nhảy về 0 ngay tức thì.',
         takeaway: 'Mặt nạ nhị phân $m$ phải được lưu lại từ forward để tái sử dụng trong backward pass.'
+      },
+      {
+        step: 6,
+        badge: 'Bước 6 / 6',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

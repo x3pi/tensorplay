@@ -130,7 +130,7 @@
 
     const STEPS = [
       {
-        step: 1, badge: 'Bước 1 / 5',
+        step: 1, badge: 'Bước 1 / 6',
         heading: 'Truyền tin qua 10 tầng: trò chơi \"tam sao thất bản\"',
         problem: 'Mạng nhận diện biển báo có 10 tầng ẩn, mỗi tầng 4 nơ-ron. Nếu mỗi tầng làm tín hiệu yếu đi một nửa, thì đến tầng 10 tín hiệu còn bao nhiêu?',
         mechanism: 'Mỗi tầng nhân năng lượng tín hiệu với cùng một hệ số $g$. Sau $L$ tầng: $E_L = g^L$. Với $g = 0.5$: $0.5^{10} \\approx 0.001$. Với $g = 2$: $2^{10} = 1024$. Chỉ $g = 1$ mới giữ được tín hiệu.',
@@ -138,7 +138,7 @@
         takeaway: 'Lũy thừa biến một sai lệch nhỏ ở mỗi tầng thành thảm họa ở mạng sâu.'
       },
       {
-        step: 2, badge: 'Bước 2 / 5',
+        step: 2, badge: 'Bước 2 / 6',
         heading: 'Hệ số $g$ đến từ đâu?',
         problem: 'Hệ số $g$ phụ thuộc vào những gì mà ta có thể chọn?',
         mechanism: 'Một nơ-ron cộng $n$ tích $w_i h_i$. Phương sai của tổng = tổng phương sai, nên năng lượng nhân thêm $n \\cdot \\sigma^2$. ReLU chặn phần âm, giữ lại một nửa năng lượng ($k = \\tfrac{1}{2}$):\n$$g = n \\cdot \\sigma^2 \\cdot k$$\nVới $n = 4$ và $\\sigma^2 = 0.01$: $g = 4 \\cdot 0.01 \\cdot 0.5 = 0.02$.',
@@ -146,7 +146,7 @@
         takeaway: '\"Khởi tạo số nhỏ cho an toàn\" là sai lầm phổ biến: nó giết tín hiệu ở mạng sâu.'
       },
       {
-        step: 3, badge: 'Bước 3 / 5',
+        step: 3, badge: 'Bước 3 / 6',
         heading: 'Kaiming: chọn $\\sigma^2$ sao cho $g = 1$',
         problem: 'Muốn $g = n \\cdot \\sigma^2 \\cdot \\tfrac{1}{2} = 1$ thì phải chọn $\\sigma^2$ bằng bao nhiêu?',
         mechanism: 'Giải ra $\\sigma^2 = 2/n$. Với $n = 4$: $\\sigma^2 = 0.5$. Đây là khởi tạo Kaiming (He et al., 2015), mặc định cho mạng ReLU.',
@@ -154,7 +154,7 @@
         takeaway: 'Kaiming không phải phép màu, chỉ là giải phương trình $g = 1$.'
       },
       {
-        step: 4, badge: 'Bước 4 / 5',
+        step: 4, badge: 'Bước 4 / 6',
         heading: 'Xavier không sai, chỉ là dành cho hàm khác',
         problem: 'Xavier dùng $\\sigma^2 = 1/n$. Vì sao nó tốt với mạng tanh/tuyến tính nhưng làm mạng ReLU tiêu biến?',
         mechanism: 'Với kích hoạt tuyến tính (hoặc tanh gần 0), $k = 1$ nên $g = n \\cdot \\tfrac{1}{n} = 1$. Thay bằng ReLU thì $k = \\tfrac{1}{2}$, $g = 0.5$, mất một nửa năng lượng mỗi tầng.',
@@ -162,12 +162,18 @@
         takeaway: 'Khởi tạo phải khớp với hàm kích hoạt. Hệ số $2$ trong Kaiming chính là để bù cho ReLU.'
       },
       {
-        step: 5, badge: 'Bước 5 / 5',
+        step: 5, badge: 'Bước 5 / 6',
         heading: 'Gradient đi ngược cũng chịu cùng số phận',
         problem: 'Tiêu biến ở chiều xuôi thì liên quan gì tới việc học?',
         mechanism: 'Khi lan truyền ngược, gradient đi qua cùng các ma trận $W^T$ và cùng các van ReLU, nên cũng bị nhân $g$ mỗi tầng. Với $g = 0.5$ và 10 tầng, gradient về tới tầng đầu nhỏ đi khoảng 1000 lần: tầng đầu gần như đứng yên.',
         action: '👉 Thao tác (Cột 2): Giữ \"Xavier + ReLU\", kéo Số tầng từ 3 lên 20.\n👁️ Quan sát (Cột 3): Kết luận chuyển từ vàng (tạm ổn) sang đỏ khi vượt khoảng 10 tầng.',
         takeaway: 'Khởi tạo tốt là điều kiện để mạng sâu học được ngay từ bước đầu tiên. BatchNorm ([[lesson:batch_norm_dynamics]]) là một cách khác để giữ $g \\approx 1$ trong suốt quá trình huấn luyện.'
+      },
+      {
+        step: 6,
+        badge: 'Bước 6 / 6',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

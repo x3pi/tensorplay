@@ -191,7 +191,7 @@
     const STEPS = [
       {
         step: 1,
-        badge: 'Bước 1 / 5',
+        badge: 'Bước 1 / 6',
         heading: 'Chấm Điểm Tuyến Tính (Logits $Z = X \\cdot W$)',
         problem: 'Robot có 2 mắt cảm biến $X = [x_0, x_1]$ để quan sát đường đi. Làm sao từ 2 tín hiệu cảm biến này tính ra điểm số để quyết định DỪNG (lớp 0) hay ĐI THẲNG (lớp 1)?',
         mechanism: '• **Đầu vào $X = [x_0, x_1]$ (Cảm biến quan sát):**\n  - $x_0$: Tín hiệu cảm biến đo vạch ngang (đang đo được mức $2.0$).\n  - $x_1$: Tín hiệu cảm biến đo vạch dọc (đang đo được mức $1.0$).\n• **Đầu ra $Z = [z_0, z_1]$ (Điểm số quyết định / Logits):**\n  - $z_0$: Điểm số dành cho hành động **Dừng Lại (🛑)**.\n  - $z_1$: Điểm số dành cho hành động **Đi Thẳng (⬆️)**.\n• **Bộ não chấm điểm $Z = X \\cdot W$:** Mỗi cột của ma trận trọng số $W$ là một bộ tiêu chí chấm điểm riêng:\n$$Z = [x_0 w_{00} + x_1 w_{10}, \\; x_0 w_{01} + x_1 w_{11}]$$\n• **Trạng thái ban đầu ($W = 0$):** Khi chưa học ($W = 0$), điểm số là $Z = [0.0, 0.0] \\implies$ robot phân vân $50\\% - 50\\%$. Quá trình huấn luyện sẽ tự điều chỉnh $W$ sao cho hành động đúng có điểm $Z$ cao vượt trội.',
@@ -200,7 +200,7 @@
       },
       {
         step: 2,
-        badge: 'Bước 2 / 5',
+        badge: 'Bước 2 / 6',
         heading: 'Chuẩn Hóa Xác Suất & Hàm Mất Mát Loss',
         problem: 'Điểm thô $Z$ có thể âm hoặc rất lớn. Làm sao biến thành xác suất tin cậy và đo lường chính xác mức độ sai lệch của robot so với thực tế?',
         mechanism: 'Hàm Softmax đưa điểm số về xác suất $P_i = e^{Z_i} / \\sum e^{Z_j}$ với tổng đúng bằng $1.0$ ($100\\%$). Hàm mất mát Cross-Entropy Loss đo lường mức độ sai lầm:\n$$\\text{Loss} = -\\ln(P_{target})$$\n• Khi chưa học ($W = 0$): $Z = [0, 0] \\implies P = [0.50, 0.50]$. Với nhãn đúng là Lớp 0 (Biển Dừng):\n$$\\text{Loss} = -\\ln(0.50) \\approx 0.693$$\n• Nếu đoán chuẩn tự tin ($P_{target} \\to 1.0 \\implies \\text{Loss} \\to 0$). Nếu đoán sai lệch ($P_{target} \\to 0 \\implies \\text{Loss} \\to +\\infty$).',
@@ -209,7 +209,7 @@
       },
       {
         step: 3,
-        badge: 'Bước 3 / 5',
+        badge: 'Bước 3 / 6',
         heading: 'Vector Sai Số Dội Ngược $G = P - I_y$',
         problem: 'Làm sao các nơ-ron biết mình đang thừa hay thiếu bao nhiêu điểm so với thực tế khách quan?',
         mechanism: 'Đạo hàm của Cross-Entropy theo điểm số $Z$ cho kết quả đẹp kỳ diệu: $G = P - I_y$ (với $I_y$ là vector One-hot của nhãn đúng).\nVí dụ nhẩm trực tiếp từ màn hình: Nhãn đúng là lớp 0 ($I_y = [1, 0]$), robot đang đoán $P = [0.50, 0.50]$:\n$$G = [0.50 - 1, \\; 0.50 - 0] = [-0.50, \\; +0.50]$$\nÝ nghĩa trực giác:\n• Lớp 0 (Đúng): $G_0 = -0.50$ mang dấu âm $\\implies$ thiếu điểm, cần **tăng điểm**!\n• Lớp 1 (Sai): $G_1 = +0.50$ mang dấu dương $\\implies$ thừa điểm, cần **giảm điểm**!\n• Tổng lực kéo luôn cân bằng hoàn hảo: $-0.50 + 0.50 = 0$.',
@@ -218,7 +218,7 @@
       },
       {
         step: 4,
-        badge: 'Bước 4 / 5',
+        badge: 'Bước 4 / 6',
         heading: 'Đạo Hàm Ma Trận: $\\nabla_W = X^T \\cdot G$',
         problem: 'Làm sao phân bổ lực sai số $G$ từ đầu ra dội ngược về từng trọng số cụ thể trong $W_{ij}$?',
         mechanism: 'Quy tắc chuỗi ma trận: $\\nabla_W = X^T \\cdot G$. Từng phần tử của ma trận gradient là tích giữa cảm biến đầu vào $x_i$ và sai số dội ngược $G_j$:\n$$\\nabla_W = \\begin{bmatrix} x_0 \\\\ x_1 \\end{bmatrix} \\begin{bmatrix} G_0 & G_1 \\end{bmatrix} = \\begin{bmatrix} x_0 G_0 & x_0 G_1 \\\\ x_1 G_0 & x_1 G_1 \\end{bmatrix}$$\nVới $X = [2.0, 1.0]$ và $G = [-0.5, +0.5]$, tính nhẩm tức thì:\n$$\\nabla_W = \\begin{bmatrix} 2.0 \\times (-0.5) & 2.0 \\times (+0.5) \\\\ 1.0 \\times (-0.5) & 1.0 \\times (+0.5) \\end{bmatrix} = \\begin{bmatrix} -1.0 & +1.0 \\\\ -0.5 & +0.5 \\end{bmatrix}$$\nCảm biến nào đo tín hiệu mạnh ($x_0 = 2.0$) sẽ gánh chịu lực gradient gấp đôi cảm biến $x_1 = 1.0$; cảm biến nào bằng 0 ($x_i = 0$) có gradient bằng 0!',
@@ -227,12 +227,18 @@
       },
       {
         step: 5,
-        badge: 'Bước 5 / 5',
+        badge: 'Bước 5 / 6',
         heading: 'Cập Nhật SGD: Robot Thông Minh Hơn!',
         problem: 'Sau khi tính xong gradient $\\nabla_W$, làm sao để cập nhật trọng số $W$? Tại sao công thức lại dùng dấu trừ: $W \\leftarrow W - \\alpha \\cdot \\nabla_W$?',
         mechanism: 'Thuật toán Gradient Descent (SGD): $W_{new} = W - \\alpha \\cdot \\nabla_W$ (với tốc độ học $\\alpha = 0.1$).\n• **Vì sao dùng dấu trừ?** Gradient $\\nabla_W$ chỉ hướng làm Loss tăng mạnh nhất (leo dốc). Muốn giảm Loss về 0, ta bắt buộc phải đi **ngược chiều gradient** (dấu trừ).\n• **Cơ chế thưởng/phạt tự động kỳ diệu:**\n  - Lớp đúng (cột 0) có sai số âm ($G_0 = -0.5$): Hai dấu trừ triệt tiêu lẫn nhau $(- \\alpha \\times - = +)$ $\\implies$ Trọng số được **TĂNG THÊM** ($+0.10, +0.05$)!\n  - Lớp sai (cột 1) có sai số dương ($G_1 = +0.5$): Dấu trừ giữ nguyên $(- \\alpha \\times + = -)$ $\\implies$ Trọng số bị **GIẢM TRỪ** ($-0.10, -0.05$)!\n• **Kết quả:** Điểm số mới $Z = [0.25, -0.25] \\implies$ Lớp đúng ngay lập tức vươn lên dẫn đầu với xác suất $62.2\\%$!',
         action: '👉 Thao tác (Cột 2): Nhìn huy hiệu (ΔW) màu xanh/đỏ trên các thanh trượt $W$, rồi bấm nút "Chạy 1 Bước ▶".\n👁️ Quan sát (Cột 3): Xem Thẻ 4 hiển thị phép tính ma trận $W_{new} = W - \\alpha \\nabla_W$. Thanh trượt nhảy đúng bằng lượng ΔW và Loss tụt giảm thần tốc!',
         takeaway: 'Gradient Descent tự động thưởng điểm cho nơ-ron đoán đúng và trừ điểm nơ-ron đoán sai mà không cần bất kỳ câu lệnh rẽ nhánh if/else nào!'
+      },
+      {
+        step: 6,
+        badge: 'Bước 6 / 6',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

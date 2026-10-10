@@ -122,7 +122,7 @@
 
     const STEPS = [
       {
-        step: 1, badge: 'Bước 1 / 4',
+        step: 1, badge: 'Bước 1 / 5',
         heading: 'Chia batch, mỗi GPU tính gradient riêng',
         problem: 'Batch 4 mẫu quá lớn cho một GPU nên ta chia cho 2 GPU, mỗi GPU 2 mẫu. Mỗi GPU chỉ tính được gradient trung bình của shard mình. Làm sao ra đúng gradient của cả batch?',
         mechanism: 'Gradient từng mẫu là $[-1, -4, 0, -16]$. GPU 0 (mẫu 1–2) có trung bình $-2.5$, GPU 1 (mẫu 3–4) có $-8$. Vì mất mát là trung bình của các mẫu, gradient cả batch là trung bình có trọng số theo cỡ shard: $(2 \\times (-2.5) + 2 \\times (-8)) / 4 = -5.25$.',
@@ -130,7 +130,7 @@
         takeaway: 'Data parallel cho kết quả y hệt chạy tuần tự, miễn là gộp gradient đúng cách.'
       },
       {
-        step: 2, badge: 'Bước 2 / 4',
+        step: 2, badge: 'Bước 2 / 5',
         heading: 'Lỗi 1: quên chia cho số GPU',
         problem: 'Nhiều người dùng phép cộng (sum all-reduce) rồi quên chia. Chuyện gì xảy ra với bước học?',
         mechanism: 'Cộng thẳng hai trung bình cho $-2.5 + (-8) = -10.5$, gấp đúng $N = 2$ lần gradient thật. Bước học thực tế gấp 2 lần: $w = 1 - 0.1 \\times (-10.5) = 2.05$ thay vì $1.525$. Thêm GPU thì lr hiệu dụng tăng theo, dễ gây phân kỳ mà không báo lỗi.',
@@ -138,7 +138,7 @@
         takeaway: 'Luôn chia cho số GPU (hoặc đưa hệ số 1/N vào loss) khi gộp gradient.'
       },
       {
-        step: 3, badge: 'Bước 3 / 4',
+        step: 3, badge: 'Bước 3 / 5',
         heading: 'Lỗi 2: shard không đều',
         problem: 'Nếu batch chia lệch 3 + 1 và ta lấy trung bình của hai trung bình thì sao?',
         mechanism: 'Shard 3 mẫu có trung bình $-1.667$, shard 1 mẫu có trung bình $-16$. Trung bình đơn giản cho $-8.833$, sai xa $-5.25$: mẫu lẻ loi nhận trọng số 1/2 thay vì 1/4. Sửa bằng trọng số theo cỡ shard: $(3 \\times (-1.667) + 1 \\times (-16)) / 4 = -5.25$. Batch cuối của một epoch hay bị lệch kiểu này.',
@@ -146,12 +146,18 @@
         takeaway: 'Gộp gradient phải theo số mẫu, không theo số GPU.'
       },
       {
-        step: 4, badge: 'Bước 4 / 4',
+        step: 4, badge: 'Bước 4 / 5',
         heading: 'Ring all-reduce: chi phí truyền thông gần như phẳng',
         problem: 'Gộp gradient cần cả $N$ GPU trao đổi dữ liệu. Nếu ai cũng gửi hết gradient cho mọi người, 4 GPU với gradient 14 GB tốn bao nhiêu?',
         mechanism: 'Cách ngây thơ: mỗi GPU gửi $S$ cho $N - 1$ người, tức $(N - 1) S = 42$ GB. Ring all-reduce chia gradient thành $N$ mảnh: $N - 1$ bước reduce-scatter rồi $N - 1$ bước all-gather, mỗi bước gửi $S/N$ cho hàng xóm. Tổng mỗi GPU gửi $2(N-1)S/N = 21$ GB. Khi $N \\to \\infty$ con số này tiến tới $2S$, độc lập với số GPU.',
         action: '👉 Thao tác (Cột 2): Kéo thanh số GPU từ $k = 1$ đến $k = 3$ hoặc bấm preset "8 GPU: ring vẫn ≈ 2S".\n👁️ Quan sát (Cột 3): Cột ring chỉ tăng từ 14 lên 24.5 GB, trong khi cột ngây thơ tăng từ 14 lên 98 GB.',
         takeaway: 'Ring all-reduce là lý do huấn luyện data parallel mở rộng được tới hàng nghìn GPU.'
+      },
+      {
+        step: 5,
+        badge: 'Bước 5 / 5',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

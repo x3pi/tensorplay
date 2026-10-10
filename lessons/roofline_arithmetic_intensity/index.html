@@ -119,7 +119,7 @@
 
     const STEPS = [
       {
-        step: 1, badge: 'Bước 1 / 4',
+        step: 1, badge: 'Bước 1 / 5',
         heading: 'Hai giới hạn: tính toán và băng thông',
         problem: 'Một GPU có đỉnh $P = 200$ TFLOP/s nhưng chỉ đọc được $B = 2$ TB/s từ bộ nhớ. Để làm 1 phép nhân-cộng cần đọc vài byte. Phép tính nào sẽ chạy gần đỉnh $P$, phép nào bị kẹt ở $B$?',
         mechanism: 'Cường độ số học $\\text{AI} = \\text{FLOPs} / \\text{byte truyền}$. Hiệu năng đạt được $= \\min(P,\\ \\text{AI} \\times B)$. Điểm gấp ở $\\text{AI} = P / B = 100$ FLOP/byte: bên trái là "chờ dữ liệu" (memory-bound), bên phải là "chờ tính toán" (compute-bound).',
@@ -127,7 +127,7 @@
         takeaway: 'Cộng, nhân từng phần tử gần như không có gì để "tái sử dụng" dữ liệu, nên luôn bị kẹt băng thông.'
       },
       {
-        step: 2, badge: 'Bước 2 / 4',
+        step: 2, badge: 'Bước 2 / 5',
         heading: 'Giải mã từng token: 1% sức GPU',
         problem: 'Khi LLM sinh từng token, mỗi lần chỉ có 1 vector kích hoạt nhân với toàn bộ ma trận trọng số $4096 \\times 4096$. GPU dùng được bao nhiêu phần sức?',
         mechanism: 'Với batch $b = 1$: FLOPs $= 2n^2$, byte $\\approx 2n^2$ (phải đọc cả ma trận) nên $\\text{AI} \\approx 1$. Hiệu năng đạt được $\\approx 2$ TFLOP/s, chỉ 1% đỉnh. Mô hình 7B phải đọc 14 GB trọng số mỗi bước: $14\\ \\text{GB} / 2\\ \\text{TB/s} = 7$ ms, tức khoảng 143 token/s dù GPU còn gần như rảnh.',
@@ -135,7 +135,7 @@
         takeaway: 'Giải mã LLM là bài toán băng thông bộ nhớ, không phải bài toán tính toán.'
       },
       {
-        step: 3, badge: 'Bước 3 / 4',
+        step: 3, badge: 'Bước 3 / 5',
         heading: 'Gom batch: dùng lại trọng số đã đọc',
         problem: 'Đọc trọng số là chi phí cố định cho mỗi bước. Làm sao chia chi phí đó cho nhiều người dùng?',
         mechanism: 'Với batch $b$ chuỗi, cùng một lần đọc trọng số phục vụ $b$ vector: $\\text{AI} \\approx b / (1 + 2b/n)$. Batch 64 cho $\\text{AI} \\approx 62$ và thời gian bước vẫn 7 ms nên thông lượng nhảy lên $9143$ token/s. Batch 128 vượt điểm gấp ($\\text{AI} \\approx 120$), từ đó bước dài ra theo $b$ và hiệu năng chạm trần 200 TFLOP/s.',
@@ -143,12 +143,18 @@
         takeaway: 'Continuous batching trong LLM serving là cách đưa phép tính qua điểm gấp.'
       },
       {
-        step: 4, badge: 'Bước 4 / 4',
+        step: 4, badge: 'Bước 4 / 5',
         heading: 'Tiling và FlashAttention là cách nâng AI',
         problem: 'Nếu không thể tăng batch (ví dụ attention của một chuỗi), còn cách nào nâng AI?',
         mechanism: 'Giảm số byte phải di chuyển cho cùng lượng FLOPs: tiling với shared memory ([[lesson:shared_memory_tiling]]) dùng lại mỗi dữ liệu nhiều lần trong SRAM, còn [[lesson:flash_attention]] tránh ghi ma trận $N \\times N$ ra HBM. Lượng tử hóa trọng số xuống INT8 hay INT4 cũng giảm byte nên đẩy AI lên và tăng token/s ở vùng nghẽn băng thông.',
         action: '👉 Thao tác: Quan sát lại preset "Huấn luyện (batch 4096) ✅" so với "Elementwise".\n👁️ Quan sát: Cùng một GPU nhưng hiệu năng đạt được chênh nhau hơn 500 lần chỉ vì AI khác nhau.',
         takeaway: 'Trước khi tối ưu, hãy hỏi: phép tính này đang nằm bên trái hay bên phải điểm gấp?'
+      },
+      {
+        step: 5,
+        badge: 'Bước 5 / 5',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

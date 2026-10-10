@@ -122,7 +122,7 @@
 
     const STEPS = [
       {
-        step: 1, badge: 'Bước 1 / 4',
+        step: 1, badge: 'Bước 1 / 5',
         heading: 'Điều ta thật sự cần: điểm phụ thuộc khoảng cách',
         problem: 'Trong câu, điều quan trọng thường là hai từ cách nhau bao xa (từ liền trước, cách 2 từ...), không phải chúng đứng ở vị trí tuyệt đối số mấy. Cộng mã vị trí vào embedding ([[lesson:positional_encoding]]) có cho tính chất này không?',
         mechanism: 'Không trực tiếp: điểm $(q + PE_m)\\cdot(k + PE_n)$ chứa các số hạng riêng của $m$ và $n$, nên dịch cả câu ra sau 2 vị trí làm điểm đổi. Mô hình phải tự học lại "cách 2 từ" ở mọi vị trí tuyệt đối khác nhau.',
@@ -130,7 +130,7 @@
         takeaway: 'Cộng PE tuyệt đối không cho điểm tương đối.'
       },
       {
-        step: 2, badge: 'Bước 2 / 4',
+        step: 2, badge: 'Bước 2 / 5',
         heading: 'RoPE: xoay thay vì cộng',
         problem: 'Có cách nào để chính phép nhân vô hướng $q \\cdot k$ chỉ còn phụ thuộc $m - n$?',
         mechanism: 'Xoay $q$ đi $m\\theta$ và $k$ đi $n\\theta$ (xoay 2D bảo toàn độ dài). Vì $R_a^\\top R_b = R_{b-a}$ nên $(R_{m\\theta}q)\\cdot(R_{n\\theta}k) = q^\\top R_{(n-m)\\theta} k$: chỉ còn hiệu vị trí. Với $q = k = [1, 0]$ và $\\theta = 90°$: điểm $= \\cos(90° \\times (m - n))$, hiệu $0, 1, 2, 3$ cho $1, 0, -1, 0$.',
@@ -138,7 +138,7 @@
         takeaway: 'RoPE nhúng khoảng cách tương đối thẳng vào tích vô hướng của attention.'
       },
       {
-        step: 3, badge: 'Bước 3 / 4',
+        step: 3, badge: 'Bước 3 / 5',
         heading: 'Kiểm tra bất biến theo dịch',
         problem: 'Nếu cả câu bị dịch xa hơn trong ngữ cảnh (ví dụ sau một đoạn văn dài) thì điểm có đổi không?',
         mechanism: 'Với RoPE, dịch cả $m, n$ thêm $s$ không đổi $m - n$ nên điểm giữ nguyên. Ví dụ $\\theta = 45°$, $(m, n) = (3, 1) \\to (5, 3)$: RoPE vẫn $0$; cộng PE đổi từ $2.414$ sang $1$. Đây là lý do mô hình ngoại suy tốt hơn sang vị trí chưa gặp.',
@@ -146,12 +146,18 @@
         takeaway: 'RoPE đúng cho mọi vị trí tuyệt đối vì chỉ nhìn vào hiệu.'
       },
       {
-        step: 4, badge: 'Bước 4 / 4',
+        step: 4, badge: 'Bước 4 / 5',
         heading: 'Nhiều tần số: nhìn gần và nhìn xa',
         problem: 'Một góc xoay duy nhất lặp lại sau $360° / \\theta$ vị trí (4 vị trí với 90°). Làm sao phân biệt vị trí xa?',
         mechanism: 'Vector $d$ chiều được chia thành $d/2$ cặp, mỗi cặp xoay với tần số riêng $\\theta_i = 10000^{-2i/d}$: cặp đầu xoay nhanh (nhạy với khoảng cách vài token), cặp cuối xoay chậm (phân biệt hàng nghìn token). Bài này chỉ minh họa một cặp. Chọn $\\theta = 30°$ thì chu kỳ 12 vị trí: điểm chỉ về 0 lúc cách 3 vị trí và về $-1$ lúc cách 6.',
         action: '👉 Thao tác (Cột 2): Bấm preset "Xoay chậm 30°" và xem bảng điểm theo khoảng cách.\n👁️ Quan sát (Cột 3): $\\cos(30° d)$ giảm chậm: $1, 0.866, 0.5, 0, -0.5$.',
         takeaway: 'Dùng nhiều tần số xoay để biểu diễn cả khoảng cách gần lẫn xa.'
+      },
+      {
+        step: 5,
+        badge: 'Bước 5 / 5',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

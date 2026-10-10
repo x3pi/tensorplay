@@ -117,7 +117,7 @@
 
     const STEPS = [
       {
-        step: 1, badge: 'Bước 1 / 4',
+        step: 1, badge: 'Bước 1 / 5',
         heading: 'Hai nửa của một khối',
         problem: 'Từ các bài trước ta đã có Self-Attention, Multi-Head, LayerNorm và Residual. Ráp chúng lại thành một khối Transformer hoàn chỉnh thì mỗi khối có bao nhiêu tham số?',
         mechanism: 'Một khối Pre-LN gồm hai nửa: $x \\leftarrow x + \\text{MHA}(\\text{LN}(x))$ ([[lesson:multi_head_attention]], [[lesson:layernorm_residual]]) rồi $x \\leftarrow x + \\text{FFN}(\\text{LN}(x))$. Attention có bốn ma trận $d \\times d$: $4d^2$. FFN có hai ma trận $d \\times md$ và $md \\times d$: $2md^2$. Với $d = 4$, $m = 4$: attention $64$, FFN $128$.',
@@ -125,7 +125,7 @@
         takeaway: 'Số tham số của khối không phụ thuộc số đầu attention, chỉ phụ thuộc $d$ và $m$.'
       },
       {
-        step: 2, badge: 'Bước 2 / 4',
+        step: 2, badge: 'Bước 2 / 5',
         heading: 'FFN mới là phần nặng',
         problem: 'Attention nổi tiếng nhưng tham số chủ yếu nằm ở đâu?',
         mechanism: 'Với $m = 4$: $4d^2 + 8d^2 = 12d^2$, FFN chiếm $8/12 = 2/3$ tham số. Đổi $m = 2$ thì còn $4d^2 + 4d^2 = 8d^2$ và FFN chiếm 50%. Hệ số $m$ là núm vặn chính để đánh đổi dung lượng mô hình và chi phí.',
@@ -133,7 +133,7 @@
         takeaway: 'Khi nói "mô hình 7B", phần lớn 7 tỉ đó là các ma trận FFN.'
       },
       {
-        step: 3, badge: 'Bước 3 / 4',
+        step: 3, badge: 'Bước 3 / 5',
         heading: 'Xếp chồng L khối và thêm bảng embedding',
         problem: 'Mô hình thật có bao nhiêu tham số?',
         mechanism: 'Tổng $= L \\times 12d^2 + V d$ (khối + bảng embedding, xem [[lesson:embedding_tokenization]]). GPT-2 small: $d = 768$, $L = 12$, $V = 50257$ cho $84\\,934\\,656 + 38\\,597\\,376 \\approx 123.5$ triệu. Cỡ "7B": $d = 4096$, $L = 32$ cho $6\\,442\\,450\\,944 + 131\\,072\\,000 \\approx 6.57$ tỉ. Khi $d$ lớn, embedding chỉ còn vài phần trăm.',
@@ -141,12 +141,18 @@
         takeaway: 'Tham số tăng theo $L d^2$: nhân đôi chiều ẩn là gấp 4 tham số.'
       },
       {
-        step: 4, badge: 'Bước 4 / 4',
+        step: 4, badge: 'Bước 4 / 5',
         heading: 'Từ tham số sang RAM và FLOPs',
         problem: 'Biết số tham số, ta suy ra được gì về phần cứng cần dùng?',
         mechanism: 'Suy diễn FP16 tốn $2$ byte/tham số: 6.57 tỉ cho $13.1$ GB. Huấn luyện bằng Adam mixed precision tốn $16$ byte/tham số ([[lesson:mixed_precision]]): $105$ GB chưa tính activation. Mỗi token cần khoảng $2 \\times$ tham số FLOPs: $13.1$ GFLOPs. Giải mã phải đọc cả 13.1 GB mỗi bước nên bị nghẽn băng thông ([[lesson:roofline_arithmetic_intensity]]).',
         action: '👉 Thao tác (Cột 2): Giữ preset "Cỡ \'7B\'" và xem bảng chi phí.\n👁️ Quan sát (Cột 3): FP16 $13.147$ GB, huấn luyện $105.176$ GB, $13.147$ GFLOPs/token.',
         takeaway: 'Chỉ cần $d$, $L$, $m$, $V$ là ước lượng được RAM và FLOPs của một LLM trên giấy.'
+      },
+      {
+        step: 5,
+        badge: 'Bước 5 / 5',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

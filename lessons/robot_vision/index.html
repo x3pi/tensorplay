@@ -167,7 +167,7 @@
     const STEPS = [
       {
         step: 1,
-        badge: 'Bước 1 / 8',
+        badge: 'Bước 1 / 9',
         heading: 'Máy tính đọc ảnh như thế nào?',
         problem: 'Camera robot thu nhận photon ánh sáng từ biển báo. Nhưng robot không có "mắt" sinh học — nó làm cách nào chuyển hình ảnh thị giác thành dữ liệu để xử lý?',
         mechanism: 'Ảnh được số hóa thành lưới $2 \\times 2$ ô vuông ($1$: sáng, $0$: tối). Trong RAM máy tính, lưới này được trải phẳng (flatten) thành một vector gồm 4 số liên tục: $X = [x_0, x_1, x_2, x_3]$.',
@@ -176,7 +176,7 @@
       },
       {
         step: 2,
-        badge: 'Bước 2 / 8',
+        badge: 'Bước 2 / 9',
         heading: 'Khuôn dập điểm: Phép nhân vô hướng (Dot Product)',
         problem: 'Robot đang có ảnh $X$. Làm sao biết ảnh này là Biển Dừng (Gạch Ngang) hay Biển Khác? Cần một cơ chế chấm điểm tương quan hình học.',
         mechanism: 'Áp một "khuôn dập mẫu chuẩn" $W$. Lấy từng pixel nhân với trọng số tương ứng rồi cộng dồn lại (Tích vô hướng $Z = X \\cdot W$):\n$$Z = (x_0 w_0) + (x_1 w_1) + (x_2 w_2) + (x_3 w_3)$$\nKhi khớp chuẩn: $Z = (1 \\times 1) + (1 \\times 1) + (0 \\times 0) + (0 \\times 0) = +2.0$ điểm.',
@@ -185,7 +185,7 @@
       },
       {
         step: 3,
-        badge: 'Bước 3 / 8',
+        badge: 'Bước 3 / 9',
         heading: 'Thử thách thực tế: Ống kính dính bụi',
         problem: 'Trên đường chạy thực tế, một hạt bụi bám vào camera khiến pixel bị mờ xám ($0.5$). Liệu robot có bị "mù" và phán đoán sai lệch không?',
         mechanism: 'Mô hình đặt ngưỡng quyết định an toàn ($Z > 1.0$). Khi dính bụi nhẹ, điểm số chỉ giảm một phần ($Z = 1 + 1 + 0.5 \\times 0 = 2.0$ hoặc $Z = 1 + 0.5 = 1.5$), vẫn vượt ngưỡng nhận diện.',
@@ -194,7 +194,7 @@
       },
       {
         step: 4,
-        badge: 'Bước 4 / 8',
+        badge: 'Bước 4 / 9',
         heading: 'Thảm họa đèn pha: Lỗ hổng của trọng số dương',
         problem: 'Xe tải đối diện bật đèn pha cực mạnh, rọi sáng cả 4 ô pixel ($X = [1, 1, 1, 1]$). Nếu khuôn chỉ có số dương $[1, 1, 0, 0]$, điều gì thảm khốc sẽ xảy ra?',
         mechanism: 'Lỗ hổng chết người: Tích $Z = (1 \\times 1) + (1 \\times 1) + (1 \\times 0) + (1 \\times 0) = +2.0$ điểm tối đa! Robot tưởng nhầm vệt đèn pha là biển báo và phanh gấp giữa đường!',
@@ -203,7 +203,7 @@
       },
       {
         step: 5,
-        badge: 'Bước 5 / 8',
+        badge: 'Bước 5 / 9',
         heading: 'Vũ khí bí mật: Trọng số âm (Bằng chứng bác bỏ)',
         problem: 'Biển Gạch Ngang chuẩn bắt buộc 2 ô bên dưới phải tối đen. Nếu 2 ô dưới sáng lên, làm sao để robot tự động trừ điểm và loại trừ nguồn sáng giả?',
         mechanism: 'Gán trọng số âm $-1$ vào 2 ô bên dưới ($W = [1, 1, -1, -1]$). Khi đèn pha rọi sáng cả 4 ô, điểm phạt kích hoạt:\n$$Z = (1 \\times 1) + (1 \\times 1) + (1 \\times -1) + (1 \\times -1) = 2 - 2 = 0.0$$',
@@ -212,7 +212,7 @@
       },
       {
         step: 6,
-        badge: 'Bước 6 / 8',
+        badge: 'Bước 6 / 9',
         heading: 'Kiểm chứng độ bền vững',
         problem: 'Sau khi gán trọng số âm ở 2 ô dưới, liệu biển Gạch Ngang thật sự có bị trừ điểm oan uổng không?',
         mechanism: 'Khi gặp biển chuẩn, 2 ô dưới tối đen ($x_2 = 0, x_3 = 0$), tích phạt bằng $0$:\n$$0 \\times (-1) = 0$$\nTrọng số âm chỉ phạt khi photon xuất hiện sai vị trí, hoàn toàn không làm giảm điểm biển chuẩn!',
@@ -221,7 +221,7 @@
       },
       {
         step: 7,
-        badge: 'Bước 7 / 8',
+        badge: 'Bước 7 / 9',
         heading: 'Cuộc chiến phân loại: Biển Ngang vs Biển Dọc',
         problem: 'Nếu trên đường có thêm Biển Đi Thẳng (Gạch Dọc), làm thế nào để mạng nơ-ron cùng lúc phân biệt được cả 2 biển báo này?',
         mechanism: 'Mỗi lớp phân loại cần một vector khuôn dập riêng. Ghép 2 vector thành ma trận trọng số $W_{4 \\times 2} = [W_{\\text{ngang}} \\mid W_{\\text{dọc}}]$. Phép nhân ma trận $Z = X \\cdot W$ sẽ tính song song 2 điểm số thô (Logits):\n$$Z = [Z_{\\text{ngang}}, \\; Z_{\\text{dọc}}]$$',
@@ -230,12 +230,18 @@
       },
       {
         step: 8,
-        badge: 'Bước 8 / 8',
+        badge: 'Bước 8 / 9',
         heading: 'Kỹ nghệ C++: Trải phẳng bộ nhớ (Row-major)',
         problem: 'Trong C/C++, ma trận 2D được cấp phát dưới dạng mảng 1D liên tục `float* ptr` trong RAM. Làm sao máy tính truy cập đúng pixel ở hàng $r$, cột $c$?',
         mechanism: 'Công thức ánh xạ Row-Major: Địa chỉ con trỏ được tính bằng công thức bù bước nhảy:\n$$\\text{index} = r \\times N + c$$\n(với $N = 2$ là số cột). Giúp CPU đọc tuần tự từ trái qua phải, tận dụng tối đa L1 Cache.',
         action: '👉 Thao tác (Cột 2 & Cột 3): Nhấp vào từng ô của dải 1D RAM bên phải hoặc ảnh X bên trái để kiểm tra liên kết 2 chiều.\n👁️ Quan sát (Cột 3): Thẻ RAM tự động mở rộng và sáng rực (Trọng tâm C++). Xem công thức `index = r * 2 + c` và địa chỉ con trỏ `*(ptr + index)` tự động nhảy nhịp nhàng tương ứng với từng byte trong RAM!',
         takeaway: 'Mọi phép toán Tensor nhiều chiều trong C++/CUDA bản chất là các phép tính offset con trỏ trên mảng 1D liên tục: index = r * N + c.'
+      },
+      {
+        step: 9,
+        badge: 'Bước 9 / 9',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

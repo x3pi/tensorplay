@@ -116,7 +116,7 @@
 
     const STEPS = [
       {
-        step: 1, badge: 'Bước 1 / 4',
+        step: 1, badge: 'Bước 1 / 5',
         heading: 'KV-Cache là thứ ăn hết VRAM',
         problem: 'Giải mã LLM giữ K và V của mọi token đã sinh ([[lesson:kv_cache_anatomy]]). Mô hình 70B có 64 đầu, mỗi đầu giữ riêng K,V ($d_{head} = 128$) ở mỗi trong 80 tầng. Mỗi token tốn bao nhiêu?',
         mechanism: '$2 \\times 80 \\times 64 \\times 128 \\times 2\\ \\text{B} = 2\\,621\\,440$ B $= 2.5$ MiB mỗi token. Một chuỗi 4096 token là $10$ GiB. Phục vụ 16 chuỗi cùng lúc cần $160$ GiB, nhiều hơn cả trọng số mô hình ($140$ GB).',
@@ -124,7 +124,7 @@
         takeaway: 'Ở batch lớn và ngữ cảnh dài, KV-Cache thay trọng số làm nút cổ chai bộ nhớ (xem [[lesson:roofline_arithmetic_intensity]]).'
       },
       {
-        step: 2, badge: 'Bước 2 / 4',
+        step: 2, badge: 'Bước 2 / 5',
         heading: 'GQA: nhiều đầu query dùng chung một cặp K,V',
         problem: 'Đầu query khác nhau thật sự cần K,V khác nhau đến vậy không?',
         mechanism: 'Grouped-Query Attention chia 64 đầu query thành 8 nhóm, mỗi nhóm 8 đầu dùng chung một cặp K,V. Đầu query $h$ dùng cặp K,V số $\\lfloor h/8 \\rfloor$. Cache còn $2 \\times 80 \\times 8 \\times 128 \\times 2 = 327\\,680$ B (320 KiB mỗi token), nhỏ hơn 8 lần: chuỗi 4096 token chỉ $1.25$ GiB, batch 16 chỉ $20$ GiB.',
@@ -132,7 +132,7 @@
         takeaway: 'GQA giữ mọi đầu query riêng nhưng chia sẻ K,V: cache giảm đúng bằng kích thước nhóm.'
       },
       {
-        step: 3, badge: 'Bước 3 / 4',
+        step: 3, badge: 'Bước 3 / 5',
         heading: 'MQA: cực đoan hơn nữa, và cái giá',
         problem: 'Cho cả 64 đầu dùng chung một cặp K,V thì sao?',
         mechanism: 'Multi-Query Attention ($n_{kv} = 1$): cache còn $40$ KiB mỗi token, nhỏ hơn MHA $64$ lần; chuỗi 4096 token chỉ $0.156$ GiB. Đổi lại mô hình mất khả năng biểu diễn: mỗi đầu query chỉ khác nhau ở $Q$, nên chất lượng thường giảm. GQA là điểm giữa: gần chất lượng MHA, gần dung lượng MQA. Số tham số $W_K, W_V$ cũng giảm từ $10.7$ tỉ xuống $1.34$ tỉ ở GQA-8.',
@@ -140,12 +140,18 @@
         takeaway: '$n_{kv}$ là núm vặn giữa chất lượng mô hình và dung lượng phục vụ.'
       },
       {
-        step: 4, badge: 'Bước 4 / 4',
+        step: 4, badge: 'Bước 4 / 5',
         heading: 'Ngữ cảnh dài làm khác biệt lộ rõ',
         problem: 'Ngữ cảnh 32k token và 8 chuỗi cùng lúc thì MHA với GQA khác nhau cỡ nào?',
         mechanism: 'Mỗi chuỗi 32 768 token: MHA $80$ GiB (một chuỗi đã bằng cả một GPU 80 GB), GQA-8 chỉ $10$ GiB. Batch 8: MHA $640$ GiB, GQA $80$ GiB. Đây là lý do các mô hình ngữ cảnh dài đều dùng GQA, đi kèm [[lesson:rope_rotary]] để định vị token trong ngữ cảnh dài.',
         action: '👉 Thao tác (Cột 2): Bấm lần lượt "MHA + ngữ cảnh 32k, batch 8 ❌" và "GQA + ngữ cảnh 32k, batch 8".\n👁️ Quan sát (Cột 3): 640 GiB so với 80 GiB.',
         takeaway: 'Muốn phục vụ ngữ cảnh dài và nhiều người dùng, phải giảm KV-Cache từ kiến trúc, không chỉ từ phần cứng.'
+      },
+      {
+        step: 5,
+        badge: 'Bước 5 / 5',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

@@ -134,7 +134,7 @@
 
     const STEPS = [
       {
-        step: 1, badge: 'Bước 1 / 5',
+        step: 1, badge: 'Bước 1 / 6',
         heading: 'Hai cách chuẩn hóa: cắt theo cột hay cắt theo hàng?',
         problem: '[[lesson:batch_norm_dynamics]] chuẩn hóa mỗi đặc trưng bằng thống kê của cả batch. Với ma trận $X = \\begin{bmatrix} 1 & 3 \\\\ 2 & 6 \\end{bmatrix}$ (2 mẫu, 2 đặc trưng), có cách nào chuẩn hóa mà không cần nhìn sang mẫu khác?',
         mechanism: 'LayerNorm tính trung bình và độ lệch chuẩn trên chính hàng của mẫu đó. Hàng $[1, 3]$ có $\\mu = 2, \\sigma = 1$ nên thành $[-1, 1]$. Hàng $[2, 6]$ có $\\mu = 4, \\sigma = 2$ cũng thành $[-1, 1]$.',
@@ -142,7 +142,7 @@
         takeaway: 'BatchNorm cắt theo cột (qua batch), LayerNorm cắt theo hàng (qua đặc trưng).'
       },
       {
-        step: 2, badge: 'Bước 2 / 5',
+        step: 2, badge: 'Bước 2 / 6',
         heading: 'Sinh token: batch chỉ còn 1 mẫu',
         problem: 'Khi LLM sinh từng token (như trong [[lesson:kv_cache_anatomy]]), mỗi lượt chỉ có 1 chuỗi trong batch. BatchNorm lúc này tính phương sai trên đúng 1 giá trị mỗi cột. Chuyện gì xảy ra?',
         mechanism: 'Mỗi cột chỉ có một phần tử nên $\\sigma^2 = 0$ và $x - \\mu = 0$: toàn bộ đầu ra sụp về 0. LayerNorm không quan tâm batch có bao nhiêu mẫu nên vẫn ra $[-1, 1]$.',
@@ -150,7 +150,7 @@
         takeaway: 'Mô hình phải cho cùng một kết quả dù được chạy chung với 1 hay 100 mẫu khác — đó là lý do Transformer chọn LayerNorm.'
       },
       {
-        step: 3, badge: 'Bước 3 / 5',
+        step: 3, badge: 'Bước 3 / 6',
         heading: 'Mẫu của bạn có bị "hàng xóm" làm lệch?',
         problem: 'Ngay cả khi BatchNorm không sụp, đầu ra của mẫu 1 có giống nhau khi nó được chạy một mình và khi chạy cạnh mẫu 2 không?',
         mechanism: 'Với BatchNorm, mẫu 1 ra $[0, 0]$ khi chạy một mình nhưng ra $[-1, -1]$ khi chạy cạnh mẫu 2. Kết quả của bạn phụ thuộc vào ai ngồi cùng batch. LayerNorm cho độ lệch đúng 0.',
@@ -158,7 +158,7 @@
         takeaway: 'Phụ thuộc chéo giữa các mẫu là nguồn bug khó thấy: cùng một ảnh, đổi batch là đổi dự đoán.'
       },
       {
-        step: 4, badge: 'Bước 4 / 5',
+        step: 4, badge: 'Bước 4 / 6',
         heading: 'Mạng sâu: gradient chết dần qua từng tầng',
         problem: 'Giả sử mỗi tầng có đạo hàm cục bộ $f\' = 0.1$. Sau 6 tầng, gradient chạm tới đầu vào còn bao nhiêu?',
         mechanism: 'Quy tắc dây chuyền nhân các đạo hàm: $0.1^6 = 10^{-6}$. Tầng đầu gần như không nhận được tín hiệu học. Đây là cùng bệnh tiêu biến gradient của RNN ([[lesson:rnn_bptt]]).',
@@ -166,12 +166,18 @@
         takeaway: 'Nhân nhiều số nhỏ hơn 1 liên tiếp là công thức làm gradient tiêu biến.'
       },
       {
-        step: 5, badge: 'Bước 5 / 5',
+        step: 5, badge: 'Bước 5 / 6',
         heading: 'Residual: mở một đường cao tốc cho gradient',
         problem: 'Làm sao để gradient có một lối đi không bị nhân với số nhỏ?',
         mechanism: 'Với $y = x + f(x)$ thì $\\frac{\\partial y}{\\partial x} = 1 + f\'(x)$. Số $1$ là "đường cao tốc" đi thẳng. Sau $L$ tầng ta có $(1 + f\')^L = 1.1^6 \\approx 1.77$ thay vì $10^{-6}$. Mỗi khối Transformer đều dùng $y = x + \\text{Sublayer}(\\text{LN}(x))$.',
         action: '👉 Thao tác (Cột 2): Bật "Có residual" và kéo thanh độ sâu từ 1 đến 6.\n👁️ Quan sát (Cột 3): Gradient có residual luôn quanh mức 1, không có residual rơi theo hàm mũ.',
         takeaway: 'LayerNorm giữ tín hiệu ổn định theo chiều ngang, residual giữ gradient sống theo chiều sâu. Hai thứ này gộp lại thành khối Transformer.'
+      },
+      {
+        step: 6,
+        badge: 'Bước 6 / 6',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

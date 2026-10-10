@@ -1006,6 +1006,23 @@ div[id$="-mount"],
   border-top: 1px solid var(--border-subtle);
 }
 
+/* Khi nằm trong Slide riêng của StepWizard: ẩn header accordion thừa, bỏ viền trên, đưa danh sách công thức lên ngay sau tiêu đề slide */
+.wizard-formula-slide .tp-formula-summary {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+  gap: 0.75rem;
+}
+
+.wizard-formula-slide .tp-formula-summary-header {
+  display: none !important;
+}
+
+.wizard-formula-slide .tp-formula-summary-body {
+  display: flex !important;
+  margin-top: 0;
+}
+
 .tp-formula-summary-header {
   display: flex;
   align-items: center;
@@ -1073,11 +1090,11 @@ div[id$="-mount"],
   background: rgba(15, 23, 42, 0.65);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-left: 3px solid #38bdf8;
-  border-radius: 8px;
-  padding: 0.85rem 1rem;
+  border-radius: var(--radius-md, 10px);
+  padding: 1rem 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.75rem;
   transition: border-color 0.2s, transform 0.2s;
 }
 
@@ -1091,45 +1108,47 @@ div[id$="-mount"],
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
 }
 
 .tp-formula-card-title-wrap {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .tp-formula-card-num {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: rgba(56, 189, 248, 0.15);
   color: #38bdf8;
-  font-size: 0.7rem;
+  font-size: 0.82rem;
   font-family: var(--font-mono);
   font-weight: 700;
+  flex-shrink: 0;
 }
 
 .tp-formula-card-title {
-  font-size: 0.825rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: #f8fafc;
+  line-height: 1.4;
 }
 
 .tp-formula-card-tags {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
 .tp-formula-tag {
-  font-size: 0.65rem;
-  padding: 2px 6px;
+  font-size: 0.78rem;
+  padding: 3px 8px;
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.06);
   color: var(--text-dim);
@@ -1140,47 +1159,54 @@ div[id$="-mount"],
   background: rgba(139, 92, 246, 0.15);
   color: #c084fc;
   border: 1px solid rgba(139, 92, 246, 0.3);
+  font-size: 0.85rem;
+  padding: 3px 9px;
+  font-weight: 500;
 }
 
 .btn-copy-formula {
-  font-size: 0.65rem !important;
-  padding: 2px 7px !important;
+  font-size: 0.75rem !important;
+  padding: 3px 9px !important;
   border-radius: 4px;
   cursor: pointer;
 }
 
 .tp-formula-card-math {
   background: #070b13;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 6px;
-  padding: 0.6rem 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 0.85rem 1.1rem;
   overflow-x: auto;
   scrollbar-width: thin;
 }
 
+.tp-formula-card-math .katex {
+  font-size: 1.18em;
+}
+
 .tp-formula-card-desc {
-  font-size: 0.78rem;
-  line-height: 1.5;
-  color: #cbd5e1;
+  font-size: 1.02rem;
+  line-height: 1.65;
+  color: #e2e8f0;
 }
 
 .tp-formula-card-takeaway {
   background: rgba(16, 185, 129, 0.08);
-  border-left: 2px solid var(--color-positive);
-  padding: 6px 9px;
-  border-radius: 4px;
+  border-left: 3px solid var(--color-positive);
+  padding: 8px 12px;
+  border-radius: 6px;
   display: flex;
   align-items: flex-start;
-  gap: 6px;
-  font-size: 0.74rem;
-  line-height: 1.45;
+  gap: 8px;
+  font-size: 0.98rem;
+  line-height: 1.6;
   color: #a7f3d0;
 }
 
 .tp-formula-takeaway-icon {
-  font-size: 0.85rem;
+  font-size: 1.1rem;
   flex-shrink: 0;
-  margin-top: 1px;
+  margin-top: 2px;
 }
 
 
@@ -1229,6 +1255,23 @@ div[id$="-mount"],
   .katex-display {
     font-size: 1.05em;
     padding: 0.25rem 0.15rem;
+  }
+
+  .tp-formula-card {
+    padding: 0.85rem 0.95rem;
+    gap: 0.65rem;
+  }
+
+  .tp-formula-card-title {
+    font-size: 0.95rem;
+  }
+
+  .tp-formula-card-desc {
+    font-size: 0.92rem;
+  }
+
+  .tp-formula-card-takeaway {
+    font-size: 0.88rem;
   }
 }
 

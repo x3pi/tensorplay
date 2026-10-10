@@ -154,7 +154,7 @@
 
     const STEPS = [
       {
-        step: 1, badge: 'Bước 1 / 5',
+        step: 1, badge: 'Bước 1 / 6',
         heading: 'Lan truyền ngược qua thời gian (BPTT)',
         problem: 'Để xử lý chuỗi văn bản hoặc video dài, mạng RNN tái sử dụng một trọng số $w$ duy nhất qua mọi bước thời gian $t = 1 \\dots T$. Làm sao tính đạo hàm từ hàm mất mát $L = h_T$ dội ngược về từ đầu tiên $x_1$?',
         mechanism: 'Theo quy tắc chuỗi, gradient phải đi qua toàn bộ chuỗi mắt xích liên tục:\n$$\\frac{\\partial L}{\\partial x_1} = \\frac{\\partial h_T}{\\partial h_{T-1}} \\cdot \\frac{\\partial h_{T-1}}{\\partial h_{T-2}} \\cdots \\frac{\\partial h_2}{\\partial h_1} \\cdot \\frac{\\partial h_1}{\\partial x_1}$$\nMỗi bước thời gian tương đương với việc nhân thêm một ma trận Jacobian.',
@@ -162,7 +162,7 @@
         takeaway: 'Mạng RNN thực chất là một mạng cực sâu được gấp nếp (unrolled) qua thời gian.'
       },
       {
-        step: 2, badge: 'Bước 2 / 5',
+        step: 2, badge: 'Bước 2 / 6',
         heading: 'Căn bệnh tiêu biến: Mất trí nhớ ngắn hạn',
         problem: 'Nếu $|w| < 1$ (ví dụ $w = 0.5$), thì sau 10 bước thời gian, gradient dội về còn lại bao nhiêu?',
         mechanism: 'Đạo hàm là $w^{T-1} = 0.5^9 \\approx 0.00195$. Tín hiệu bị suy hao hơn 500 lần! Khi $T = 50$, $0.5^{49} \\approx 10^{-15}$, gradient hoàn toàn biến mất. RNN không thể học được phụ thuộc xa (long-range dependencies).',
@@ -170,7 +170,7 @@
         takeaway: 'Vanishing gradient khiến RNN nguyên bản chỉ nhớ được khoảng 5 đến 10 từ gần nhất.'
       },
       {
-        step: 3, badge: 'Bước 3 / 5',
+        step: 3, badge: 'Bước 3 / 6',
         heading: 'Căn bệnh bùng nổ & Chiếc kéo Gradient Clipping',
         problem: 'Nếu $|w| > 1$ (ví dụ $w = 1.5$), gradient sẽ phóng đại ra sao?',
         mechanism: '$1.5^9 \\approx 38.44$. Nếu $T = 20$, $1.5^{19} \\approx 2216$! Gradient cực lớn khiến trọng số nhảy vọt qua rìa vực thẳm và làm mô hình tràn số NaN. Để ngăn chặn, Mikolov đề xuất Gradient Clipping: nếu $\\lVert g \\rVert > \\tau$, ta cắt ngắn vector $g \\leftarrow g \\cdot \\frac{\\tau}{\\lVert g \\rVert}$.',
@@ -178,7 +178,7 @@
         takeaway: 'Gradient clipping chỉ giải quyết được bùng nổ, không thể cứu được tiêu biến.'
       },
       {
-        step: 4, badge: 'Bước 4 / 5',
+        step: 4, badge: 'Bước 4 / 6',
         heading: 'LSTM Highway: Cổng quên mở lối cao tốc',
         problem: 'Làm thế nào để gradient có thể đi ngược hàng trăm bước mà không bị suy hao?',
         mechanism: 'Kiến trúc LSTM (Hochreiter & Schmidhuber, 1997) thiết kế một kênh nhớ thẳng (cell state $c_t$). Đạo hàm $\\frac{\\partial c_t}{\\partial c_{t-1}} = f_t$ (cổng quên). Nếu cổng quên mở $f_t \\approx 0.95$, gradient được bảo toàn $0.95^9 \\approx 0.63$ thay vì suy sụp về 0!',
@@ -186,12 +186,18 @@
         takeaway: 'Đường dẫn cộng tính (Additive residual/highway) là chìa khóa vàng cho mọi kiến trúc mạng sâu (từ LSTM đến ResNet).'
       },
       {
-        step: 5, badge: 'Bước 5 / 5',
+        step: 5, badge: 'Bước 5 / 6',
         heading: 'Cổ chai tuần tự và Sự ra đời của Transformer',
         problem: 'Dù LSTM giải quyết được tiêu biến, tại sao thế giới AI vẫn chuyển dịch hoàn toàn sang Transformer?',
         mechanism: 'Vì RNN mang tính tuần tự cố hữu: $h_t$ bắt buộc phải đợi $h_{t-1}$ tính xong mới được chạy. Mạng không thể tận dụng hàng nghìn nhân CUDA song song của GPU ([[lesson:cuda_threads]]). Transformer loại bỏ hoàn toàn đệ quy thời gian, dùng [[lesson:self_attention]] để kết nối mọi cặp từ với độ dài đường dẫn $O(1)$ và tính toán song song 100%!',
         action: '👉 Thao tác (Cột 1): Bấm chuyển sang bài tiếp theo trên thanh điều hướng sau khi hoàn thành.\n👁️ Quan sát (Cột 3): Kết luận xác nhận đã mở khóa cánh cổng bước vào kỷ nguyên Transformer.',
         takeaway: 'Tạm biệt $O(T)$ tuần tự của RNN — Chào đón $O(1)$ song song hóa của Transformer!'
+      },
+      {
+        step: 6,
+        badge: 'Bước 6 / 6',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

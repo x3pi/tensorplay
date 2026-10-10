@@ -119,7 +119,7 @@
 
     const STEPS = [
       {
-        step: 1, badge: 'Bước 1 / 4',
+        step: 1, badge: 'Bước 1 / 5',
         heading: 'Nhân bản là lãng phí',
         problem: 'Data parallel ([[lesson:data_parallel_allreduce]]) đặt một bản mô hình ĐẦY ĐỦ lên mỗi GPU. Mô hình 7B với Adam mixed precision cần 16 byte mỗi tham số ([[lesson:mixed_precision]]): $7 \\times 10^9 \\times 16 = 112$ GB. GPU chỉ có 80 GB. Thêm GPU có giúp được không?',
         mechanism: 'Không: mỗi GPU vẫn phải chứa đủ 112 GB vì ai cũng giữ bản sao của trọng số, gradient và trạng thái optimizer giống hệt nhau. Thêm GPU chỉ tăng thông lượng, không giảm bộ nhớ mỗi GPU.',
@@ -127,7 +127,7 @@
         takeaway: 'Nhân bản trạng thái là chi phí bộ nhớ không đổi theo số GPU.'
       },
       {
-        step: 2, badge: 'Bước 2 / 4',
+        step: 2, badge: 'Bước 2 / 5',
         heading: 'ZeRO-1: chia optimizer',
         problem: 'Trong 16 byte, phần nào nặng nhất và chỉ cần ở bước cập nhật?',
         mechanism: 'Bản master FP32, $m$ và $v$ của Adam chiếm $12$ byte, chỉ dùng khi cập nhật trọng số. ZeRO-1 chia 12 byte này cho $N$ GPU: mỗi GPU chỉ giữ và cập nhật $1/N$ tham số. Với $N = 8$: $2 + 2 + 12/8 = 5.5$ byte, tức $38.5$ GB cho 7B: vừa GPU 80 GB. Truyền thông không tăng.',
@@ -135,7 +135,7 @@
         takeaway: 'Chia trạng thái optimizer cho 4× bộ nhớ ở mức miễn phí về truyền thông.'
       },
       {
-        step: 3, badge: 'Bước 3 / 4',
+        step: 3, badge: 'Bước 3 / 5',
         heading: 'ZeRO-2 và ZeRO-3 (FSDP): chia luôn gradient và trọng số',
         problem: 'Còn 2 + 2 byte nữa. Chia tiếp được không và cái giá là gì?',
         mechanism: 'ZeRO-2 chia thêm gradient: $2 + 14/8 = 3.75$ byte ($26.25$ GB). ZeRO-3 chia luôn trọng số: $16/8 = 2$ byte ($14$ GB) nhưng trọng số không còn nằm đủ trên mỗi GPU, phải all-gather ngay trước khi dùng mỗi tầng, ở cả lượt thuận lẫn lượt ngược. Truyền thông tăng từ $2\\,\\Psi$ lên $3\\,\\Psi$, gấp $1.5$ lần.',
@@ -143,12 +143,18 @@
         takeaway: 'Mỗi tầng chia thêm đổi một ít truyền thông lấy nhiều bộ nhớ hơn.'
       },
       {
-        step: 4, badge: 'Bước 4 / 4',
+        step: 4, badge: 'Bước 4 / 5',
         heading: 'Mô hình 70B: khi chỉ ZeRO-3 còn đường sống',
         problem: 'Mô hình 70B trên 64 GPU 80 GB. Cách nào nạp được?',
         mechanism: 'Nhân bản cần $1120$ GB mỗi GPU, ZeRO-1 cần $293$ GB, ZeRO-2 cần $155$ GB: đều vượt 80 GB. Chỉ ZeRO-3 đạt $16/64 = 0.25$ byte, tức $17.5$ GB mỗi GPU, còn chỗ cho activation ([[lesson:activation_checkpointing]]). Vì mỗi GPU chỉ giữ $1/N$ mô hình, thêm GPU giờ thật sự giảm bộ nhớ mỗi GPU.',
         action: '👉 Thao tác (Cột 2): Bấm preset "70B, 64 GPU: chỉ ZeRO-3 vừa ✅".\n👁️ Quan sát (Cột 3): Bảng so sánh: ba dòng đầu đỏ, dòng ZeRO-3 xanh.',
         takeaway: 'ZeRO-3/FSDP biến bộ nhớ nhiều GPU thành một vùng nhớ chung, đổi lại băng thông giữa các GPU.'
+      },
+      {
+        step: 5,
+        badge: 'Bước 5 / 5',
+        heading: '📐 Sổ Tay Công Thức Cốt Lõi',
+        isFormulaSlide: true
       }
     ];
 

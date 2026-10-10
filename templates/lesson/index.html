@@ -42,6 +42,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -85,6 +86,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS } from './logic.js';
@@ -117,10 +119,26 @@
       }]
     };
 
+    const FORMULAS = [
+      {
+        id: 'tpl-f1',
+        title: 'TODO: Công thức toán cốt lõi 1',
+        formula: 'y = f(x)',
+        description: 'TODO: Ý nghĩa toán học và vai trò trong hệ thống.',
+        takeaway: 'TODO: Điểm then chốt cần ghi nhớ.',
+        tags: ['Toán Học']
+      }
+    ];
+
     const logic = new LessonLogic();
 
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
+    });
+
+    createFormulaSummary(document.getElementById('mount-formula-summary'), {
+      title: 'Tổng Hợp Công Thức Cần Nhớ',
+      formulas: FORMULAS
     });
 
     createStepWizard(document.getElementById('mount-step-wizard'), {

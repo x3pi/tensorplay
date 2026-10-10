@@ -42,6 +42,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -109,6 +110,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS } from './logic.js';
@@ -167,9 +169,49 @@
 
     const logic = new LessonLogic();
 
+    const FORMULAS = [
+      {
+        id: 'q8-symm',
+        title: '1. Lượng Tử Hóa Đối Xứng (Symmetric INT8)',
+        formula: 'q = \\operatorname{clamp}\\left(\\left\\lfloor \\frac{x}{S} \\right\\rceil, -127, 127\\right), \\qquad S = \\frac{\\max(|x|)}{127}',
+        shape: 'x \\in \\mathbb{R} \\to q \\in [-127, 127] \\cap \\mathbb{Z}',
+        description: 'Điểm 0 của số thực khớp chính xác với điểm 0 của số nguyên. Không cần lưu giá trị lệch (Zero-point $Z = 0$).',
+        takeaway: 'Tính toán ma trận INT8 cực nhanh trên nhân Tensor Core của GPU.',
+        tags: ['Symmetric', 'INT8']
+      },
+      {
+        id: 'q8-asymm',
+        title: '2. Lượng Tử Hóa Phi Đối Xứng (Asymmetric INT8)',
+        formula: 'q = \\operatorname{clamp}\\left(\\left\\lfloor \\frac{x}{S} \\right\\rceil + Z, -128, 127\\right), \\qquad S = \\frac{x_{\\max} - x_{\\min}}{255}, \\quad Z = \\left\\lfloor -\\frac{x_{\\min}}{S} \\right\\rceil',
+        shape: 'Z = \\text{điểm gốc không (Zero-point offset)}',
+        description: 'Tận dụng trọn vẹn 256 mức lượng tử hóa cho dữ liệu lệch một phía (ví dụ sau hàm kích hoạt ReLU).',
+        takeaway: 'Giảm dung lượng mô hình đi 2 lần so với FP16 (từ 2 bytes xuống 1 byte mỗi trọng số).',
+        tags: ['Asymmetric', 'Zero-Point']
+      },
+      {
+        id: 'q8-dequant',
+        title: '3. Giải Lượng Tử Hóa (Dequantization)',
+        formula: '\\hat{x} = S \\times (q - Z)',
+        shape: 'q \\in \\mathbb{Z} \\to \\hat{x} \\in \\mathbb{R} \\approx x',
+        description: 'Khôi phục lại giá trị số thực dấu phẩy động gần đúng từ giá trị nguyên 8-bit.',
+        takeaway: 'Cơ chế hoạt động nền tảng của các định dạng nén mô hình như GGUF, AWQ và GPTQ.',
+        tags: ['Dequant', 'Khôi Phục']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 3 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     createStepWizard(document.getElementById('mount-step-wizard'), {
       steps: STEPS,

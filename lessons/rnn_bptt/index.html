@@ -68,6 +68,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -144,6 +145,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS, CLIP_THRESHOLD } from './logic.js';
@@ -210,9 +212,40 @@
 
     const logic = new LessonLogic();
 
+    const FORMULAS = [
+      {
+        id: 'rnn-forward',
+        title: '1. Lan Truyền Tiến Tế Bào RNN (Forward Cell)',
+        formula: 'h_t = \\tanh(W_{hh} h_{t-1} + W_{xh} x_t + b)',
+        shape: 'h_t \\in \\mathbb{R}^d = \\text{trạng thái ẩn tại bước thời gian } t',
+        description: 'Cập nhật bộ nhớ nội bộ dựa trên thông tin vừa nhận $x_t$ và ký ức từ bước trước $h_{t-1}$.',
+        takeaway: 'Mạng hồi quy dùng chung một bộ trọng số $W_{hh}, W_{xh}$ xuyên suốt toàn bộ chiều dài thời gian.',
+        tags: ['RNN', 'Forward']
+      },
+      {
+        id: 'rnn-bptt',
+        title: '2. Chuỗi Tích Đạo Hàm Dội Ngược Xuyên Thời Gian (BPTT)',
+        formula: '\\frac{\\partial L}{\\partial h_1} = \\frac{\\partial L}{\\partial h_T} \\prod_{t=2}^T \\frac{\\partial h_t}{\\partial h_{t-1}} = \\frac{\\partial L}{\\partial h_T} \\prod_{t=2}^T \\operatorname{diag}(1 - h_t^2) W_{hh}^T',
+        shape: '\\text{Chuỗi tích } T-1 \\text{ ma trận trọng số } W_{hh}^T',
+        description: 'Khi dội ngược qua $T$ bước, gradient bị nhân liên tiếp $T$ lần với ma trận $W_{hh}$.',
+        takeaway: 'Nếu trị riêng của $W_{hh} > 1 \\implies$ bùng nổ gradient; nếu $< 1 \\implies$ biến mất gradient (lý do LSTM và Transformer ra đời).',
+        tags: ['BPTT', 'Gradient']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 2 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     createStepWizard(document.getElementById('mount-step-wizard'), {
       steps: STEPS,

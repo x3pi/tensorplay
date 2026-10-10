@@ -42,6 +42,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -109,6 +110,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS, trainingBytesPerParam } from './logic.js';
@@ -175,9 +177,49 @@
 
     const logic = new LessonLogic();
 
+    const FORMULAS = [
+      {
+        id: 'mp-loss-scale',
+        title: '1. Kỹ Thuật Co Giãn Hàm Mất Mát Động (Dynamic Loss Scaling)',
+        formula: '\\mathcal{L}_{\\text{scaled}} = \\mathcal{L} \\times S \\implies g_{\\text{scaled}} = g \\times S, \\qquad g_{\\text{unscaled}} = \\frac{g_{\\text{scaled}}}{S}',
+        shape: 'S = \\text{hệ số scale (ví dụ } 2^{15} = 32768\\text{)}',
+        description: 'Trong FP16, các gradient nhỏ ($< 6 \\times 10^{-8}$) bị hụt về 0 (underflow). Nhân $S$ giúp đẩy gradient vào vùng an toàn.',
+        takeaway: 'Trước khi cập nhật trọng số, chia ngược lại cho $S$ để bảo toàn độ lớn chính xác.',
+        tags: ['Loss Scale', 'FP16']
+      },
+      {
+        id: 'mp-skip',
+        title: '2. Tự Động Bỏ Qua Bước Lỗi (Skip Step On Inf/NaN)',
+        formula: '\\text{if } \\operatorname{any\\_is\\_inf\\_or\\_nan}(g_{\\text{scaled}}) \\implies S \\leftarrow S / 2, \\quad \\text{Skip Step!}',
+        shape: '\\text{Nếu 2000 bước liên tiếp an toàn } \\implies S \\leftarrow S \\times 2',
+        description: 'Bộ điều khiển tự động hạ $S$ nếu xuất hiện số vô cực (tràn số) và tăng $S$ nếu mọi thứ êm đềm.',
+        takeaway: 'Cơ chế tự bảo vệ giúp quá trình huấn luyện mixed precision tự động vận hành trơn tru hàng tuần.',
+        tags: ['Động', 'An Toàn']
+      },
+      {
+        id: 'mp-mem',
+        title: '3. Phân Bổ Bộ Nhớ 16 Bytes / Tham Số Trong FP16 Adam',
+        formula: '\\text{Memory / Param} = 2_{\\text{FP16 W}} + 2_{\\text{FP16 G}} + 4_{\\text{Master W}} + 4_{\\text{Momentum}} + 4_{\\text{Variance}} = 16 \\text{ Bytes}',
+        shape: '\\text{Huấn luyện Mixed Precision KHÔNG làm giảm bộ nhớ trạng thái mô hình so với FP32!}',
+        description: 'Trọng số gốc FP32 và 2 trạng thái Adam bắt buộc phải lưu ở FP32 để chống tích lũy sai số.',
+        takeaway: 'Mixed precision chỉ giúp giảm bộ nhớ Activation và tăng tốc độ tính toán phần cứng Tensor Core.',
+        tags: ['Systems', '16 Bytes']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 3 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     createStepWizard(document.getElementById('mount-step-wizard'), {
       steps: STEPS,

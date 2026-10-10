@@ -40,6 +40,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -182,6 +183,7 @@
     import { createScoreBar } from '../../shared/components/ScoreBar.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS } from './logic.js';
@@ -305,11 +307,60 @@
 
     // 2. Mount CommentSection
     const commentMount = document.getElementById('mount-comment-section');
+    const FORMULAS = [
+      {
+        id: 'sr-forward',
+        title: '1. Lan Truyền Tiến: Logits & Softmax',
+        formula: 'Z = X \\cdot W, \\qquad P_{b, i} = \\frac{e^{Z_{b, i}}}{\\sum_{j=1}^K e^{Z_{b, j}}}',
+        shape: 'X \\in \\mathbb{R}^{B \\times n}, \\; W \\in \\mathbb{R}^{n \\times K} \\implies Z \\in \\mathbb{R}^{B \\times K}',
+        description: 'Nhân ma trận tính điểm $Z$, sau đó chuẩn hóa từng hàng bằng hàm Softmax để thu được ma trận xác suất $P$.',
+        takeaway: 'Toàn bộ mini-batch $B$ mẫu được xử lý song song bằng một phép nhân ma trận.',
+        tags: ['Forward', 'Ma Trận']
+      },
+      {
+        id: 'sr-loss',
+        title: '2. Hàm Mất Mát Cross-Entropy Loss',
+        formula: '\\text{Loss} = -\\frac{1}{B} \\sum_{b=1}^B \\ln\\left(P_{b, y_b}\\right)',
+        shape: 'P \\in \\mathbb{R}^{B \\times K}, \\; y \\in \\{0, \\dots, K-1\\}^B \\implies \\text{Loss} \\in \\mathbb{R}^+',
+        description: 'Đo độ sai lệch: nếu dự đoán tự tin vào nhãn đúng ($P_{y} \\to 1 \\implies \\text{Loss} \\to 0$); nếu đoán sai ($P_y \\to 0 \\implies \\text{Loss} \\to +\\infty$).',
+        takeaway: 'Cực tiểu hóa Cross-Entropy tương đương với cực đại hóa xác suất hợp lý (Maximum Likelihood Estimation).',
+        tags: ['Loss', 'Xác Suất']
+      },
+      {
+        id: 'sr-backward',
+        title: '3. Đạo Hàm Ma Trận Dội Ngược (Backward Pass)',
+        formula: 'G = P - I_y, \\qquad \\nabla_W = \\frac{1}{B} X^T \\cdot G',
+        shape: 'G \\in \\mathbb{R}^{B \\times K}, \\; X^T \\in \\mathbb{R}^{n \\times B} \\implies \\nabla_W \\in \\mathbb{R}^{n \\times K}',
+        description: '$G$ là vector sai số: phần tử nhãn đúng mang dấu âm (đòi tăng điểm), nhãn sai mang dấu dương (đòi giảm điểm). $\\nabla_W$ là tích giữa đầu vào và sai số.',
+        takeaway: 'Gradient của mạng nơ-ron được tính bằng tích ma trận chuyển vị $X^T G$, không cần bất kỳ vòng lặp thủ công nào.',
+        tags: ['Backward', 'Gradient']
+      },
+      {
+        id: 'sr-sgd',
+        title: '4. Cập Nhật Trọng Số Stochastic Gradient Descent (SGD)',
+        formula: 'W \\leftarrow W - \\alpha \\cdot \\nabla_W',
+        shape: '\\alpha = \\text{learning rate (tốc độ học)}',
+        description: 'Dấu trừ giúp ta đi ngược hướng dốc để giảm Loss. Trọng số lớp đúng tự động được tăng, lớp sai tự động bị phạt giảm.',
+        takeaway: 'Gradient descent tự động thưởng điểm cho nơ-ron đoán đúng và trừ điểm nơ-ron đoán sai mà không cần câu lệnh rẽ nhánh if/else.',
+        tags: ['Tối Ưu', 'SGD']
+      }
+    ];
+
     const commentSection = createCommentSection(commentMount, {
       lessonId: 'softmax_regression',
       initialStep: 1,
       curatedComments: COMMENTS[1]
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 4 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     // 3. Mount PresetPicker
     const presetMount = document.getElementById('mount-preset-picker');

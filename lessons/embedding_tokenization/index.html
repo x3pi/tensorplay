@@ -42,6 +42,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -107,6 +108,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS } from './logic.js';
@@ -165,9 +167,40 @@
 
     const logic = new LessonLogic();
 
+    const FORMULAS = [
+      {
+        id: 'et-onehot',
+        title: '1. Bản Chất Đại Số Của Embedding Lookup',
+        formula: 'E(t) = \\text{OneHot}(t) \\cdot W_E = W_E[t, :]',
+        shape: '\\text{OneHot} \\in \\{0, 1\\}^V, \\; W_E \\in \\mathbb{R}^{V \\times d} \\implies E(t) \\in \\mathbb{R}^d',
+        description: 'Thao tác tra cứu từ điển `W_E[t]` thực chất là phép nhân ma trận với vector One-hot, chọn ra hàng thứ $t$.',
+        takeaway: 'Bản chất toán học vẫn là một tầng tuyến tính (Linear Layer) nhưng được tối ưu thành phép tra cứu chỉ mục trong code.',
+        tags: ['Embedding', 'One-Hot']
+      },
+      {
+        id: 'et-bpe',
+        title: '2. Thuật Toán Ghép Cặp Byte (Byte-Pair Encoding - BPE)',
+        formula: '\\text{Iterate: } \\operatorname{arg\\,max}_{(c_1, c_2)} \\operatorname{Freq}(c_1, c_2) \\to \\text{Gộp thành token mới } c_{\\text{new}}',
+        shape: '\\text{Kích thước từ vựng } V \\text{ (thường từ 32,000 đến 128,000 tokens)}',
+        description: 'Bắt đầu từ các ký tự đơn lẻ hoặc bytes, liên tục gộp cặp ký tự xuất hiện nhiều nhất để tạo thành các subwords.',
+        takeaway: 'Cân bằng hoàn hảo giữa độ dài ngữ cảnh và kích thước từ vựng, giải quyết triệt để vấn đề từ mới (Out-Of-Vocabulary).',
+        tags: ['Tokenization', 'BPE']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 2 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     createStepWizard(document.getElementById('mount-step-wizard'), {
       steps: STEPS,

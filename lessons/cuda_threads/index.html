@@ -105,6 +105,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -192,6 +193,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath } from '../../shared/katex-render.js';
     import { LessonLogic, PRESETS } from './logic.js';
 
@@ -241,12 +243,52 @@
       onStepChange: (idx) => comments.setStep(idx)
     });
 
+    const FORMULAS = [
+      {
+        id: 'ct-idx1d',
+        title: '1. Chỉ Số Luồng Toàn Cục 1D (Global Thread ID)',
+        formula: '\\text{gid} = \\text{blockIdx.x} \\times \\text{blockDim.x} + \\text{threadIdx.x}',
+        shape: '\\text{blockIdx: chỉ số block}, \\; \\text{blockDim: số luồng/block}, \\; \\text{threadIdx: luồng nội bộ}',
+        description: 'Mỗi GPU thread tính toán chỉ số độc nhất của mình để biết cần xử lý phần tử nào trong mảng lớn.',
+        takeaway: 'Công thức vỡ lòng của mọi lập trình viên khi viết CUDA kernel đầu tiên.',
+        tags: ['CUDA', 'Indexing']
+      },
+      {
+        id: 'ct-idx2d',
+        title: '2. Tọa Độ Ma Trận 2D Trên Lưới Luồng',
+        formula: '\\text{col} = \\text{blockIdx.x} \\times \\text{blockDim.x} + \\text{threadIdx.x}, \\quad \\text{row} = \\text{blockIdx.y} \\times \\text{blockDim.y} + \\text{threadIdx.y}',
+        shape: '\\text{offset} = \\text{row} \\times \\text{Width} + \\text{col}',
+        description: 'Ánh xạ lưới khối 2D trực tiếp vào tọa độ hàng và cột của ma trận ảnh hoặc tensor.',
+        takeaway: 'Luôn kiểm tra biên: `if (row < H && col < W)` để tránh lỗi đọc tràn bộ nhớ GPU.',
+        tags: ['CUDA', '2D Grid']
+      },
+      {
+        id: 'ct-warp',
+        title: '3. Đơn Vị Thực Thi Warp & SIMT',
+        formula: '1 \\text{ Warp} = 32 \\text{ Threads}',
+        shape: '\\text{Thực thi đồng bộ cùng 1 lệnh máy (Lockstep)}',
+        description: 'GPU không điều phối từng thread riêng rẽ mà gom 32 threads thành 1 warp cùng thực thi chung một câu lệnh.',
+        takeaway: 'Rẽ nhánh `if/else` khác nhau giữa các thread trong cùng warp sẽ gây hiện tượng Warp Divergence (giảm tốc độ).',
+        tags: ['Hardware', 'Warp']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: 'cuda_threads',
       initialStep: 0,
       curatedComments: CURATED_COMMENTS,
       allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 3 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     const sliderN = createLiveSlider(document.getElementById('mount-slider-n'), {
       min: 4,

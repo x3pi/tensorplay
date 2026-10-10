@@ -81,6 +81,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -186,6 +187,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath } from '../../shared/katex-render.js';
     import { LessonLogic, PRESETS } from './logic.js';
 
@@ -235,12 +237,43 @@
       onStepChange: (idx) => comments.setStep(idx)
     });
 
+    const FORMULAS = [
+      {
+        id: 'rvf-cost',
+        title: '1. So Sánh Chi Phí Tính Toán Ma Trận Jacobian',
+        formula: '\\text{Forward-Mode: } O(n_{\\text{in}}) \\text{ lượt} \\quad \\text{vs} \\quad \\text{Reverse-Mode: } O(n_{\\text{out}}) \\text{ lượt}',
+        shape: 'J \\in \\mathbb{R}^{m \\times n} \\text{ với } n = n_{\\text{in}} \\text{ đầu vào, } m = n_{\\text{out}} \\text{ đầu ra}',
+        description: 'Forward-mode tính đạo hàm theo từng biến đầu vào. Reverse-mode tính đạo hàm theo từng biến đầu ra.',
+        takeaway: 'Mạng Deep Learning có hàng tỷ tham số ($n = 10^9$) nhưng chỉ có 1 giá trị Loss vô hướng ($m = 1$) $\\implies$ Reverse-Mode nhanh gấp hàng tỷ lần!',
+        tags: ['Độ Phức Tạp', 'Autodiff']
+      },
+      {
+        id: 'rvf-dual',
+        title: '2. Số Phức Kép (Dual Numbers) Trong Forward AD',
+        formula: 'x = a + b\\epsilon, \\quad \\text{với } \\epsilon^2 = 0 \\implies f(a + b\\epsilon) = f(a) + b f\'(a)\\epsilon',
+        shape: '\\epsilon = \\text{đơn vị vi phân vô cùng bé}',
+        description: 'Forward-mode lan truyền đồng thời giá trị thực và đạo hàm trong cùng một lượt tính xuôi.',
+        takeaway: 'Tuyệt vời cho các bài toán đồ họa và robot học ít tham số nhưng nhiều đầu ra.',
+        tags: ['Toán Học', 'Số Kép']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: 'reverse_vs_forward_ad',
       initialStep: 0,
       curatedComments: CURATED_COMMENTS,
       allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 2 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     const sliderInputs = createLiveSlider(document.getElementById('mount-slider-inputs'), {
       min: 2,

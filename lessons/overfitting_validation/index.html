@@ -42,6 +42,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -98,6 +99,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS } from './logic.js';
@@ -157,9 +159,40 @@
 
     const logic = new LessonLogic();
 
+    const FORMULAS = [
+      {
+        id: 'ov-gap',
+        title: '1. Khoảng Cách Tổng Quát Hóa (Generalization Gap)',
+        formula: '\\Delta = \\mathcal{L}_{\\text{val}} - \\mathcal{L}_{\\text{train}}',
+        shape: '\\text{Khi } \\mathcal{L}_{\\text{train}} \\downarrow \\text{ nhưng } \\mathcal{L}_{\\text{val}} \\uparrow \\implies \\text{Quá Khớp (Overfitting)}',
+        description: 'Đo lường mức độ học vẹt của mô hình: mô hình ghi nhớ dữ liệu huấn luyện nhưng mất khả năng dự đoán trên dữ liệu mới.',
+        takeaway: 'Chỉ số quan trọng nhất trên dashboard huấn luyện để theo dõi sức khỏe mô hình.',
+        tags: ['Validation', 'Gap']
+      },
+      {
+        id: 'ov-stop',
+        title: '2. Cơ Chế Dừng Sớm (Early Stopping)',
+        formula: '\\text{Stop when } \\mathcal{L}_{\\text{val}}^{(t)} > \\min_{i < t} \\mathcal{L}_{\\text{val}}^{(i)} \\quad \\text{sau } P \\text{ epochs (Patience)}',
+        shape: 'P = \\text{độ kiên nhẫn (patience steps)}',
+        description: 'Lưu lại checkpoint có Loss validation thấp nhất và dừng huấn luyện khi mô hình bắt đầu có dấu hiệu học vẹt.',
+        takeaway: 'Kỹ thuật miễn phí và hiệu quả nhất để thu được mô hình có khả năng tổng quát hóa cao nhất.',
+        tags: ['Early Stopping', 'Thực Tiễn']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 2 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     createStepWizard(document.getElementById('mount-step-wizard'), {
       steps: STEPS,

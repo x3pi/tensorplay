@@ -58,6 +58,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -135,6 +136,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS } from './logic.js';
@@ -201,9 +203,49 @@
 
     const logic = new LessonLogic();
 
+    const FORMULAS = [
+      {
+        id: 'opt-mom',
+        title: '1. SGD Kèm Quán Tính (Momentum)',
+        formula: 'v_t = \\beta v_{t-1} + g_t, \\qquad \\theta_t = \\theta_{t-1} - \\alpha v_t',
+        shape: '\\beta \\approx 0.9 \\implies \\text{tích lũy trung bình } \\frac{1}{1-\\beta} = 10 \\text{ bước trước}',
+        description: 'Tích lũy vận tốc như quả bóng lăn xuống dốc, giúp vượt qua các vùng lòng chảo phẳng và giảm dao động răng cưa.',
+        takeaway: 'Momentum giúp nén dao động ở chiều dốc đứng và tăng tốc ở chiều dốc thoai thoải.',
+        tags: ['Tối Ưu', 'Momentum']
+      },
+      {
+        id: 'opt-rmsprop',
+        title: '2. Thuật Toán RMSprop (Tốc Độ Học Thích Nghi)',
+        formula: 's_t = \\beta s_{t-1} + (1-\\beta) g_t^2, \\qquad \\theta_t = \\theta_{t-1} - \\frac{\\alpha}{\\sqrt{s_t} + \\epsilon} g_t',
+        shape: 's_t = \\text{ước lượng bình phương độ lớn gradient}',
+        description: 'Chia cho căn bậc 2 của bình phương gradient: tọa độ nào dốc mạnh sẽ bị hãm bước, tọa độ nào dốc thoai thoải sẽ được tăng bước.',
+        takeaway: 'Tạo ra bước đi thích nghi riêng biệt cho từng tham số trong mô hình.',
+        tags: ['RMSprop', 'Adaptive']
+      },
+      {
+        id: 'opt-adam',
+        title: '3. Thuật Toán Adam (Kết Hợp Momentum & RMSprop)',
+        formula: '\\theta_t = \\theta_{t-1} - \\frac{\\alpha}{\\sqrt{\\hat{v}_t} + \\epsilon} \\hat{m}_t',
+        shape: '\\hat{m}_t = \\text{hướng đi (Momentum)}, \\; \\hat{v}_t = \\text{độ lớn bước đi (RMSprop)}',
+        description: 'Kết hợp cả 2 ưu điểm tốt nhất: đi đúng hướng nhờ momentum và điều chỉnh bước học tự động cho từng tham số.',
+        takeaway: 'Bộ tối ưu mặc định phổ biến nhất trong toàn bộ giới trí tuệ nhân tạo hiện đại.',
+        tags: ['Adam', 'Chuẩn Mực']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 3 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     createStepWizard(document.getElementById('mount-step-wizard'), {
       steps: STEPS,

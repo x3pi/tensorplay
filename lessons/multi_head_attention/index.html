@@ -42,6 +42,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -116,6 +117,7 @@
     import { createStepWizard } from '../../shared/components/StepWizard.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS, TOKENS, X } from './logic.js';
@@ -174,9 +176,40 @@
 
     const logic = new LessonLogic();
 
+    const FORMULAS = [
+      {
+        id: 'mha-sub',
+        title: '1. Chiếu Vào Các Không Gian Con (Subspace Projections)',
+        formula: 'Q_i = X W_i^Q, \\quad K_i = X W_i^K, \\quad V_i = X W_i^V \\qquad (i = 1 \\dots h)',
+        shape: 'W_i^Q, W_i^K \\in \\mathbb{R}^{d_{\\text{model}} \\times d_k}, \\quad d_k = \\frac{d_{\\text{model}}}{h}',
+        description: 'Thay vì dùng 1 đầu lớn, chia nhỏ thành $h$ đầu độc lập. Mỗi đầu tập trung học một khía cạnh ngữ pháp, ngữ nghĩa khác nhau.',
+        takeaway: 'Giống như có nhiều chuyên gia cùng đọc văn bản dưới các góc nhìn đa dạng.',
+        tags: ['MHA', 'Subspaces']
+      },
+      {
+        id: 'mha-concat',
+        title: '2. Ghép Nối & Chiếu Đầu Ra (Concat & Output Projection)',
+        formula: '\\operatorname{MHA}(Q, K, V) = \\operatorname{Concat}(\\text{head}_1, \\dots, \\text{head}_h) W^O',
+        shape: 'W^O \\in \\mathbb{R}^{(h \\cdot d_v) \\times d_{\\text{model}}} \\equiv \\mathbb{R}^{d_{\\text{model}} \\times d_{\\text{model}}}',
+        description: 'Gộp thông tin từ $h$ đầu chú ý lại và chiếu qua ma trận $W^O$ để đưa về kích thước không gian ẩn chuẩn.',
+        takeaway: 'Tổng chi phí tính toán của $h$ đầu nhỏ tương đương đúng 1 đầu duy nhất kích thước đầy đủ.',
+        tags: ['MHA', 'Projection']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 2 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     createStepWizard(document.getElementById('mount-step-wizard'), {
       steps: STEPS,

@@ -42,6 +42,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -106,6 +107,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS } from './logic.js';
@@ -164,9 +166,49 @@
 
     const logic = new LessonLogic();
 
+    const FORMULAS = [
+      {
+        id: 'mgpt-embed',
+        title: '1. Giai Đoạn Nhúng Đầu Vào (Input Embeddings)',
+        formula: 'h_0 = W_e[x] + W_p[pos]',
+        shape: 'W_e \\in \\mathbb{R}^{V \\times d}, \\; W_p \\in \\mathbb{R}^{T_{\\max} \\times d} \\implies h_0 \\in \\mathbb{R}^{B \\times T \\times d}',
+        description: 'Biến đổi chuỗi token ID rời rạc thành các vector đặc trưng liên tục kết hợp cùng thông tin vị trí.',
+        takeaway: 'Khởi đầu của luồng dư Residual Stream chạy xuyên suốt mô hình.',
+        tags: ['Embedding', 'Forward']
+      },
+      {
+        id: 'mgpt-block',
+        title: '2. Vòng Lặp Qua N Khối Transformer Blocks',
+        formula: 'h_l\' = h_{l-1} + \\operatorname{Attn}(\\operatorname{LN}(h_{l-1})), \\qquad h_l = h_l\' + \\operatorname{MLP}(\\operatorname{LN}(h_l\'))',
+        shape: 'l = 1 \\dots L \\text{ (số tầng Transformer)}',
+        description: 'Hai chặng xử lý Pre-LN trên mỗi tầng: chặng 1 trao đổi thông tin giữa các từ (Attention), chặng 2 xử lý nội suy từng từ (MLP).',
+        takeaway: 'Cấu trúc lặp đồng nhất tạo nên sức mạnh mở rộng (Scalability) của mô hình Transformer.',
+        tags: ['Transformer', 'Block']
+      },
+      {
+        id: 'mgpt-head',
+        title: '3. Chiếu Logits Từ Vựng & Phân Phối Kế Tiếp',
+        formula: 'Z = \\operatorname{LN}(h_L) \\cdot W_e^T, \\qquad P = \\operatorname{softmax}(Z)',
+        shape: 'Z \\in \\mathbb{R}^{B \\times T \\times V} \\implies \\text{Logits chấm điểm trên toàn bộ từ vựng } V',
+        description: 'Sử dụng lại chính ma trận nhúng từ (Weight Tying $W_e^T$) để tính điểm xác suất cho token tiếp theo.',
+        takeaway: 'Tiết kiệm hàng triệu tham số và giúp biểu diễn từ vựng ở đầu vào và đầu ra đồng nhất không gian.',
+        tags: ['LM Head', 'Logits']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 3 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     createStepWizard(document.getElementById('mount-step-wizard'), {
       steps: STEPS,

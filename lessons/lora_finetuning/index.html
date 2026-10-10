@@ -42,6 +42,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -105,6 +106,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS } from './logic.js';
@@ -163,9 +165,40 @@
 
     const logic = new LessonLogic();
 
+    const FORMULAS = [
+      {
+        id: 'lora-decomp',
+        title: '1. Phân Rã Ma Trận Hạng Thấp (Low-Rank Decomposition)',
+        formula: 'W = W_0 + \\Delta W = W_0 + \\frac{\\alpha}{r} B \\cdot A',
+        shape: 'W_0 \\in \\mathbb{R}^{d \\times k} \\text{ (đóng băng)}, \\quad B \\in \\mathbb{R}^{d \\times r}, \\; A \\in \\mathbb{R}^{r \\times k} \\quad (r \\ll \\min(d, k))',
+        description: 'Đóng băng toàn bộ trọng số gốc $W_0$. Huấn luyện thêm 2 ma trận kẹp nhỏ $A$ và $B$ với hạng $r$ cực nhỏ (ví dụ $r=8$ hoặc $16$).',
+        takeaway: 'Giảm 99% số lượng tham số cần huấn luyện, cho phép fine-tune mô hình 70B chỉ với 1 GPU cá nhân.',
+        tags: ['LoRA', 'Hạng Thấp']
+      },
+      {
+        id: 'lora-init',
+        title: '2. Khởi Tạo Trọng Số An Toàn & Scaling Factor',
+        formula: 'A \\sim \\mathcal{N}\\left(0, \\frac{1}{r}\\right), \\quad B = 0 \\implies \\Delta W = B \\cdot A = 0 \\text{ tại bước } 0',
+        shape: '\\frac{\\alpha}{r} = \\text{hệ số khuếch đại thích nghi}',
+        description: 'Khởi tạo $B=0$ đảm bảo mô hình giữ nguyên 100% tri thức gốc ở thời điểm bắt đầu huấn luyện.',
+        takeaway: 'Khi hoàn tất, có thể gộp thẳng $\\Delta W$ vào $W_0$, không làm tăng thêm dù chỉ 1ms độ trễ suy luận.',
+        tags: ['Khởi Tạo', 'Không Độ Trễ']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 2 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     createStepWizard(document.getElementById('mount-step-wizard'), {
       steps: STEPS,

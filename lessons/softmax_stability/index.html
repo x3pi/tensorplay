@@ -40,6 +40,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -129,6 +130,7 @@
     import { createScoreBar } from '../../shared/components/ScoreBar.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS } from './logic.js';
@@ -239,11 +241,51 @@
       }
     });
 
+    const FORMULAS = [
+      {
+        id: 'ss-naive',
+        title: '1. Công Thức Softmax Ngây Thơ (Naive Softmax)',
+        formula: 'P_i = \\frac{e^{z_i}}{\\sum_{j=1}^K e^{z_j}}',
+        shape: 'z \\in \\mathbb{R}^K \\implies P \\in [0, 1]^K, \\; \\sum_i P_i = 1.0',
+        description: 'Biến vector điểm thô $z$ thành phân phối xác suất. Gặp lỗi tràn số khi $z_i > 88.72$ trong chuẩn FP32.',
+        takeaway: 'Hàm mũ $e^z$ tăng cực nhanh, dễ vượt quá giới hạn biểu diễn của số thực dấu phẩy động.',
+        tags: ['Forward', 'Softmax']
+      },
+      {
+        id: 'ss-shift',
+        title: '2. Tính Chất Bất Biến Dịch Chuyển (Shift-Invariance)',
+        formula: '\\operatorname{softmax}(z)_i = \\frac{e^{z_i - c}}{\\sum_{j=1}^K e^{z_j - c}} \\quad \\forall c \\in \\mathbb{R}',
+        shape: 'c = \\text{scalar}',
+        description: 'Chứng minh: nhân cả tử và mẫu với $e^{-c}$ triệt tiêu nhau, không làm thay đổi phân phối xác suất đầu ra.',
+        takeaway: 'Ta có quyền trừ đi một số bất kỳ trên toàn bộ vector logits mà không làm sai lệch kết quả toán học.',
+        tags: ['Toán Học', 'Bất Biến']
+      },
+      {
+        id: 'ss-safe',
+        title: '3. Softmax An Toàn (Safe Softmax)',
+        formula: 'm = \\max_{j=1}^K z_j, \\qquad P_i = \\frac{e^{z_i - m}}{\\sum_{j=1}^K e^{z_j - m}}',
+        shape: 'z_i - m \\le 0 \\implies e^{z_i - m} \\in (0, 1]',
+        description: 'Trừ $m = \\max(z)$ đảm bảo số mũ lớn nhất là $e^0 = 1$. Mẫu số luôn $\\ge 1$, triệt tiêu 100% lỗi tràn số (overflow).',
+        takeaway: 'Mọi framework (PyTorch, Candle, TensorFlow) đều cài đặt Safe Softmax ở tầng nhân C++/CUDA.',
+        tags: ['Systems', 'Ổn Định Số Học']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: 'softmax_stability',
       initialStep: 1,
       curatedComments: COMMENTS[1] || []
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 3 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     const presetsBar = createPresetPicker(document.getElementById('mount-preset-picker'), {
       presets: PRESETS,

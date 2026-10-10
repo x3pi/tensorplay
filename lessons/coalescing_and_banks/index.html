@@ -89,6 +89,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -182,6 +183,7 @@
     import { createStepWizard } from '../../shared/components/StepWizard.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath } from '../../shared/katex-render.js';
     import { LessonLogic, PRESETS } from './logic.js';
 
@@ -231,12 +233,52 @@
       onStepChange: (idx) => comments.setStep(idx)
     });
 
+    const FORMULAS = [
+      {
+        id: 'cb-coalesce',
+        title: '1. Truy Cập Hợp Nhất Bộ Nhớ Toàn Cục (Coalesced Access)',
+        formula: '\\text{Warp Access: } \\text{Thread } k \\text{ đọc } \\text{Base} + k \\implies 1 \\text{ Transaction } 128 \\text{ Bytes}',
+        shape: '32 \\text{ luồng đọc 32 số floats liên tục = 1 giao dịch bộ nhớ}',
+        description: 'Khi các luồng trong warp đọc ô nhớ liền kề nhau, phần cứng gộp thành đúng 1 giao dịch nạp duy nhất.',
+        takeaway: 'Nếu đọc nhảy bước (stride > 1), GPU phải phát tới 32 giao dịch riêng lẻ, làm nghẽn băng thông.',
+        tags: ['GPU', 'Coalescing']
+      },
+      {
+        id: 'cb-bank',
+        title: '2. Địa Chỉ Shared Memory Bank',
+        formula: '\\text{Bank ID} = \\left(\\frac{\\text{Address (Bytes)}}{4}\\right) \\pmod{32}',
+        shape: '32 \\text{ Banks độc lập, mỗi bank rộng 4 bytes (1 float32)}',
+        description: 'Shared Memory trên chip được chia thành 32 dải ngân hàng nhớ độc lập hoạt động song song.',
+        takeaway: 'Nếu 32 luồng đọc 32 bank khác nhau: tốc độ đạt cực đại trong đúng 1 chu kỳ xung nhịp.',
+        tags: ['Shared Memory', 'Banks']
+      },
+      {
+        id: 'cb-conflict',
+        title: '3. Xung Đột Ngân Hàng Nhớ (Bank Conflict)',
+        formula: '\\text{Latency} = k \\times \\text{Cycle} \\quad \\text{khi có } k \\text{ luồng cùng tranh chấp 1 Bank ID}',
+        shape: '\\text{Bị tuần tự hóa (Serialized) } k \\text{ lần}',
+        description: 'Mẹo kinh điển: Thêm khoảng đệm padding (ví dụ mảng `float tile[32][33]`) để làm lệch chỉ số bank, triệt tiêu xung đột.',
+        takeaway: 'Kỹ thuật đệm padding 1 cột là bí quyết tối ưu kernel ma trận hiệu năng cao.',
+        tags: ['Tối Ưu', 'Bank Conflict']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: 'coalescing_and_banks',
       initialStep: 0,
       curatedComments: CURATED_COMMENTS,
       allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 3 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
       presets: PRESETS,

@@ -42,6 +42,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -115,6 +116,7 @@
     import { createStepWizard } from '../../shared/components/StepWizard.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS } from './logic.js';
@@ -173,9 +175,40 @@
 
     const logic = new LessonLogic();
 
+    const FORMULAS = [
+      {
+        id: 'pe-sin',
+        title: '1. Mã Hóa Vị Trí Sinusoidal (Chiều Chẵn & Chiều Lẻ)',
+        formula: 'PE_{(pos, 2i)} = \\sin\\left(\\frac{pos}{10000^{2i/d}}\\right), \\qquad PE_{(pos, 2i+1)} = \\cos\\left(\\frac{pos}{10000^{2i/d}}\\right)',
+        shape: 'pos = \\text{vị trí token}, \\; i = \\text{chỉ số chiều không gian } [0, d/2-1]',
+        description: 'Tạo ra một bước sóng hình sin/cosin độc nhất cho từng vị trí, từ tần số siêu cao ở chiều đầu tới siêu thấp ở chiều cuối.',
+        takeaway: 'Giúp kiến trúc Transformer (vốn không có khái niệm thứ tự) nhận biết được khoảng cách giữa các từ.',
+        tags: ['Positional', 'Sinusoidal']
+      },
+      {
+        id: 'pe-linear',
+        title: '2. Tính Chất Tịnh Tiến Tuyến Tính (Linear Shift)',
+        formula: 'PE_{pos + k} = T_k \\cdot PE_{pos}',
+        shape: 'T_k = \\text{ma trận xoay tuyến tính chỉ phụ thuộc vào độ lệch } k',
+        description: 'Mô hình có thể dễ dàng học cách chú ý tới các vị trí tương đối vì $PE_{pos+k}$ là một hàm tuyến tính của $PE_{pos}$.',
+        takeaway: 'Khả năng tổng quát hóa ra những chuỗi văn bản dài hơn độ dài từng thấy trong lúc huấn luyện.',
+        tags: ['Toán Học', 'Tịnh Tiến']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 2 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     createStepWizard(document.getElementById('mount-step-wizard'), {
       steps: STEPS,

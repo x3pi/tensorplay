@@ -42,6 +42,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -109,6 +110,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS } from './logic.js';
@@ -167,9 +169,40 @@
 
     const logic = new LessonLogic();
 
+    const FORMULAS = [
+      {
+        id: 'rf-intensity',
+        title: '1. Cường Độ Tính Toán (Operational / Arithmetic Intensity)',
+        formula: 'I = \\frac{\\text{FLOPs}}{\\text{Bytes nạp / ghi từ DRAM}}',
+        shape: 'I = \\text{số phép tính số học thực hiện được trên mỗi byte dữ liệu di chuyển}',
+        description: 'Đo lường mức độ tận dụng dữ liệu: một con số được nạp vào thì ta dùng nó để tính toán bao nhiêu lần.',
+        takeaway: 'Phép nhân ma trận GEMM có $I$ rất cao; phép cộng vector, chuẩn hóa LayerNorm có $I$ rất thấp.',
+        tags: ['Roofline', 'Cường Độ']
+      },
+      {
+        id: 'rf-peak',
+        title: '2. Mô Hình Giới Hạn Hiệu Năng Roofline',
+        formula: 'P_{\\text{attainable}} = \\min\\left(P_{\\text{peak}}, \\; I \\times \\text{Bandwidth}_{\\text{memory}}\\right)',
+        shape: 'P_{\\text{peak}} = \\text{TFLOPS tối đa phần cứng}, \\; \\text{Bandwidth} = \\text{băng thông GB/s}',
+        description: 'Nếu $I < I^* = \\frac{P_{\\text{peak}}}{\\text{Bandwidth}}$: bài toán bị **nghẽn bộ nhớ (Memory-bound)**. Nếu $I > I^*$: bài toán bị **nghẽn tính toán (Compute-bound)**.',
+        takeaway: 'Kim chỉ nam tối thượng để xác định phương hướng tối ưu hóa kernel C++/CUDA.',
+        tags: ['Hiệu Năng', 'Roofline']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 2 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     createStepWizard(document.getElementById('mount-step-wizard'), {
       steps: STEPS,

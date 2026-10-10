@@ -58,6 +58,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -133,6 +134,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS, MEMORY } from './logic.js';
@@ -207,9 +209,49 @@
 
     const logic = new LessonLogic();
 
+    const FORMULAS = [
+      {
+        id: 'sv-offset',
+        title: '1. Ánh Xạ Chỉ Số Đa Chiều Sang Địa Chỉ 1D (Strides)',
+        formula: '\\text{offset}(i_0, i_1, \\dots, i_{D-1}) = \\sum_{k=0}^{D-1} i_k \\times \\text{stride}_k',
+        shape: '\\text{stride}_k = \\text{số phần tử cần nhảy trong mảng 1D khi chỉ số } i_k \\text{ tăng 1}',
+        description: 'Cách mà mọi thư viện Tensor (PyTorch, NumPy, Candle) biểu diễn các chiều không gian trừu tượng trên mảng 1D.',
+        takeaway: 'Nắm vững strides giúp bạn hiểu cơ chế hoạt động ngầm của mọi thao tác tensor.',
+        tags: ['Tensor', 'Strides']
+      },
+      {
+        id: 'sv-contig',
+        title: '2. Điều Kiện Bộ Nhớ Liên Tục (Contiguous Condition)',
+        formula: '\\text{stride}_k = \\text{stride}_{k+1} \\times \\text{shape}_{k+1}, \\qquad \\text{với } \\text{stride}_{D-1} = 1',
+        shape: '\\text{Dữ liệu xếp liền sát nhau trong RAM}',
+        description: 'Khi tensor bị cắt lát (slice) hoặc chuyển vị (transpose), strides bị thay đổi và tensor trở thành non-contiguous.',
+        takeaway: 'Hàm `.contiguous()` sẽ sao chép và sắp xếp lại dữ liệu về mảng tuần tự liên tục.',
+        tags: ['Systems', 'Contiguous']
+      },
+      {
+        id: 'sv-view',
+        title: '3. Phép Biến Đổi View Không Tốn Chi Phí (Zero-Copy View)',
+        formula: '\\text{Transpose: } \\operatorname{stride}_{\\text{new}} = \\operatorname{permute}(\\operatorname{stride}_{\\text{old}}), \\quad \\text{Time: } O(1), \\; \\text{RAM: } 0 \\text{ byte}',
+        shape: '\\text{Chỉ thay đổi metadata, không di chuyển dữ liệu}',
+        description: 'Chuyển vị một tensor bản chất chỉ là hoán đổi 2 số trong tuple strides, không cần chạy vòng lặp sao chép mảng.',
+        takeaway: 'Sức mạnh cốt lõi của Tensor Views: tái định hình tức thì mà không tiêu tốn thêm một byte RAM nào.',
+        tags: ['Zero-Copy', 'View']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 3 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     createStepWizard(document.getElementById('mount-step-wizard'), {
       steps: STEPS,

@@ -84,6 +84,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -214,6 +215,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath } from '../../shared/katex-render.js';
     import { LessonLogic, PRESETS } from './logic.js';
 
@@ -263,12 +265,52 @@
       onStepChange: (idx) => comments.setStep(idx)
     });
 
+    const FORMULAS = [
+      {
+        id: 'bn-stats',
+        title: '1. Chuẩn Hóa Theo Chiều Batch (Training Mode)',
+        formula: '\\mu_B = \\frac{1}{B} \\sum_{i=1}^B x_i, \\quad \\sigma_B^2 = \\frac{1}{B} \\sum_{i=1}^B (x_i - \\mu_B)^2, \\quad \\hat{x}_i = \\frac{x_i - \\mu_B}{\\sqrt{\\sigma_B^2 + \\epsilon}}',
+        shape: '\\text{Tính trung bình và phương sai trên trục } B \\text{ (Batch)}',
+        description: 'Ép phân phối đầu ra của mỗi nơ-ron về dạng chuẩn tắc $\\mathcal{N}(0, 1)$ trong từng mẻ huấn luyện.',
+        takeaway: 'Giảm hiện tượng biến đổi hiệp biến nội bộ (Internal Covariate Shift), cho phép dùng learning rate lớn hơn.',
+        tags: ['BatchNorm', 'Forward']
+      },
+      {
+        id: 'bn-affine',
+        title: '2. Biến Đổi Affine Có Khả Năng Học (Learnable Parameters)',
+        formula: 'y_i = \\gamma \\hat{x}_i + \\beta',
+        shape: '\\gamma = \\text{scale (độ co dãn)}, \\; \\beta = \\text{shift (độ dịch chuyển)}',
+        description: 'Cho phép mạng khôi phục lại phân phối gốc nếu việc chuẩn hóa thuần túy làm mất đi tính biểu diễn của dữ liệu.',
+        takeaway: 'Hai tham số $\\gamma, \\beta$ được cập nhật bằng Gradient Descent cùng với trọng số mô hình.',
+        tags: ['Tham Số', 'Affine']
+      },
+      {
+        id: 'bn-infer',
+        title: '3. Chế Độ Suy Luận & Thống Kê Tích Lũy (Running Stats)',
+        formula: '\\mu_{\\text{run}} = (1 - m) \\mu_{\\text{run}} + m \\mu_B, \\qquad \\sigma_{\\text{run}}^2 = (1 - m) \\sigma_{\\text{run}}^2 + m \\sigma_B^2',
+        shape: 'm = \\text{momentum} \\approx 0.1 \\implies \\text{Dùng cố định lúc } \\texttt{model.eval()}',
+        description: 'Khi chạy thực tế chỉ có 1 ảnh ($B=1$), BatchNorm không thể tính phương sai batch mà dùng thống kê tích lũy trong quá trình train.',
+        takeaway: 'Quên chuyển `model.eval()` khi inference sẽ khiến kết quả dự đoán bị sai lệch hoàn toàn.',
+        tags: ['Inference', 'Running Stats']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: 'batch_norm_dynamics',
       initialStep: 0,
       curatedComments: CURATED_COMMENTS,
       allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 3 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     const sliderGamma = createLiveSlider(document.getElementById('mount-slider-gamma'), {
       min: 0.1,

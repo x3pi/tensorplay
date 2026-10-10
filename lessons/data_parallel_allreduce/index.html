@@ -42,6 +42,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -112,6 +113,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS } from './logic.js';
@@ -170,9 +172,40 @@
 
     const logic = new LessonLogic();
 
+    const FORMULAS = [
+      {
+        id: 'dpar-ring',
+        title: '1. Khối Lượng Truyền Thông Vòng Ring All-Reduce',
+        formula: 'V_{\\text{comm}} = 2 \\times \\frac{N-1}{N} \\times S \\approx 2 S \\quad (\\text{khi } N \\text{ lớn})',
+        shape: 'N = \\text{số lượng GPU}, \\; S = \\text{kích thước gradients của mô hình (Bytes)}',
+        description: 'Chia gradients thành $N$ phần và truyền vòng tròn qua 2 giai đoạn: Scatter-Reduce và All-Gather.',
+        takeaway: 'Khối lượng truyền thông trên mỗi GPU không đổi dù tăng số lượng GPU lên hàng trăm card đồ họa.',
+        tags: ['All-Reduce', 'Song Song']
+      },
+      {
+        id: 'dpar-sync',
+        title: '2. Đồng Bộ Hóa Gradients Toàn Cục',
+        formula: 'g_{\\text{global}} = \\frac{1}{N} \\sum_{i=1}^N g_i',
+        shape: '\\text{Mỗi GPU huấn luyện trên 1 phần dữ liệu riêng biệt (Data Parallel)}',
+        description: 'Sau khi tính xong backward cục bộ, các GPU đồng bộ và lấy trung bình gradient trước khi cập nhật trọng số.',
+        takeaway: 'Đảm bảo trọng số trên toàn bộ cụm GPU luôn đồng nhất 100% sau mỗi bước tối ưu.',
+        tags: ['Đồng Bộ', 'Gradients']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 2 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     createStepWizard(document.getElementById('mount-step-wizard'), {
       steps: STEPS,

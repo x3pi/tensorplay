@@ -42,6 +42,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -124,6 +125,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS } from './logic.js';
@@ -190,9 +192,40 @@
 
     const logic = new LessonLogic();
 
+    const FORMULAS = [
+      {
+        id: 'do-inverted',
+        title: '1. Kỹ Thuật Inverted Dropout (Huấn Luyện)',
+        formula: 'm_i \\sim \\operatorname{Bernoulli}(1 - p), \\qquad y_i = \\frac{x_i \\cdot m_i}{1 - p}',
+        shape: 'p = \\text{xác suất rơi rụng (dropout rate)}, \\quad m_i \\in \\{0, 1\\}',
+        description: 'Ngẫu nhiên tắt các nơ-ron với xác suất $p$. Việc chia cho $(1-p)$ ngay lúc train đảm bảo kỳ vọng toán học $\\mathbb{E}[y] = x$.',
+        takeaway: 'Nhờ chia $(1-p)$ lúc train, lúc inference ta không cần phải làm gì cả ($y = x$), tiết kiệm chi phí runtime.',
+        tags: ['Dropout', 'Regularization']
+      },
+      {
+        id: 'do-ensemble',
+        title: '2. Trực Giác Học Tập: Tổ Hợp Mô Hình Ẩn (Ensemble)',
+        formula: '\\text{Mỗi bước lặp huấn luyện } 1 \\text{ mô hình mạng con trong tổng số } 2^N \\text{ cấu trúc khả dĩ}',
+        shape: 'N = \\text{số lượng nơ-ron}',
+        description: 'Ngăn chặn các nơ-ron phụ thuộc lẫn nhau (co-adaptation), ép mỗi nơ-ron phải học những đặc trưng độc lập hữu ích.',
+        takeaway: 'Kỹ thuật chống quá khớp (Overfitting) mạnh mẽ và trực quan bậc nhất trong học sâu.',
+        tags: ['Trực Giác', 'Ensemble']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 2 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     createStepWizard(document.getElementById('mount-step-wizard'), {
       steps: STEPS,

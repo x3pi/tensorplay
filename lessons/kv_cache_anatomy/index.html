@@ -107,6 +107,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -214,6 +215,7 @@
     import { createStepWizard } from '../../shared/components/StepWizard.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath } from '../../shared/katex-render.js';
     import { LessonLogic, PRESETS } from './logic.js';
 
@@ -263,12 +265,43 @@
       onStepChange: (idx) => comments.setStep(idx)
     });
 
+    const FORMULAS = [
+      {
+        id: 'kvc-size',
+        title: '1. Dung Lượng Bộ Nhớ KV Cache Cần Cấp Phát',
+        formula: '\\text{VRAM}_{\\text{KV}} = 2 \\times B \\times L \\times n_{\\text{layers}} \\times n_{\\text{kv\\_heads}} \\times d_{\\text{head}} \\times \\text{sizeof(dtype)}',
+        shape: '\\text{Số 2 đại diện cho 2 ma trận: Key và Value}',
+        description: 'Lưu trữ lại các vector Key và Value của các từ đã sinh trong quá khứ để không phải tính lại từ đầu.',
+        takeaway: 'Nguyên nhân chính gây tràn bộ nhớ GPU khi mô hình chạy phục vụ nhiều người dùng hoặc chuỗi quá dài.',
+        tags: ['KV Cache', 'VRAM']
+      },
+      {
+        id: 'kvc-phases',
+        title: '2. Hai Pha Xử Lý: Prefill vs Decode',
+        formula: '\\text{Prefill: } O(T^2) \\text{ Compute-bound (Song song)} \\quad \\text{vs} \\quad \\text{Decode: } O(1) \\text{ Memory-bound (Tuần tự)}',
+        shape: '\\text{Decode bị thắt cổ chai bởi băng thông đọc VRAM (Memory Bandwidth)}',
+        description: 'Pha Prefill đọc prompt cực nhanh nhờ tính song song. Pha Decode sinh từng token một, mỗi bước phải nạp toàn bộ KV Cache cũ.',
+        takeaway: 'Lý do vì sao tốc độ sinh token của LLM phụ thuộc vào băng thông bộ nhớ của card đồ họa.',
+        tags: ['Hệ Thống', 'Prefill Decode']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: 'kv_cache_anatomy',
       initialStep: 0,
       curatedComments: CURATED_COMMENTS,
       allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 2 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
       presets: PRESETS,

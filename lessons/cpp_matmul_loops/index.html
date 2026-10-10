@@ -53,6 +53,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -192,6 +193,7 @@
     import { LessonLogic, PRESETS } from './logic.js';
     import { createStepWizard } from '../../shared/components/StepWizard.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { renderMath } from '../../shared/katex-render.js';
@@ -253,7 +255,47 @@
 
     // Khởi tạo Socratic & Comments
     createStepWizard(document.getElementById('mount-step-wizard'), { steps: STEPS });
+    const FORMULAS = [
+      {
+        id: 'cml-gemm',
+        title: '1. Phép Nhân Ma Trận Cốt Lõi (GEMM)',
+        formula: 'C_{i, j} = \\sum_{k=0}^{K-1} A_{i, k} B_{k, j}',
+        shape: 'A \\in \\mathbb{R}^{M \\times K}, \\; B \\in \\mathbb{R}^{K \\times N} \\implies C \\in \\mathbb{R}^{M \\times N}',
+        description: 'Mỗi phần tử $C_{i, j}$ là tích vô hướng giữa hàng $i$ của $A$ và cột $j$ của $B$.',
+        takeaway: 'Chiếm hơn 90% thời gian tính toán của toàn bộ quá trình huấn luyện và suy luận mạng nơ-ron.',
+        tags: ['GEMM', 'Toán Học']
+      },
+      {
+        id: 'cml-flops',
+        title: '2. Khối Lượng Tính Toán FLOPs',
+        formula: '\\text{FLOPs} = 2 M N K',
+        shape: 'M N K \\text{ phép nhân} + M N K \\text{ phép cộng}',
+        description: 'Mỗi bước tích vô hướng đòi hỏi 1 phép nhân và 1 phép cộng dồn (Fused Multiply-Add).',
+        takeaway: 'Cơ sở để đo đạc thông lượng phần cứng (TFLOPS) của vi xử lý CPU và GPU.',
+        tags: ['FLOPs', 'Hiệu Năng']
+      },
+      {
+        id: 'cml-loops',
+        title: '3. Thứ Tự Vòng Lặp Tối Ưu Bộ Nhớ Đệm (Cache-Friendly)',
+        formula: '\\text{Tệ: } (i, j, k) \\implies \\text{Nhảy cột } B_{k, j} \\quad \\text{vs} \\quad \\text{Tốt: } (i, k, j) \\implies \\text{Duyệt liên tục } B_{k, j}, C_{i, j}',
+        shape: '\\text{Stride-1 sequential access in inner loop}',
+        description: 'Hoán đổi vòng $j$ vào trong cùng biến phép tính thành cộng vector liên tục, giảm thiểu cache misses tới 10 lần.',
+        takeaway: 'Thứ tự vòng lặp C++ quyết định tốc độ nhanh gấp 5 - 20 lần dù cùng đúng số phép tính FLOPs.',
+        tags: ['Systems', 'Cache Locality']
+      }
+    ];
+
     createCommentSection(document.getElementById('mount-comment-section'), { comments: COMMENTS });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 3 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     // Presets
     createPresetPicker(document.getElementById('mount-preset-picker'), {

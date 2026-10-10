@@ -40,6 +40,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -107,6 +108,7 @@
     import { createScoreBar } from '../../shared/components/ScoreBar.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS } from './logic.js';
@@ -190,11 +192,42 @@
       }
     });
 
+    const FORMULAS = [
+      {
+        id: 'cl-line',
+        title: '1. Dòng Cache (Cache Line) & Tỉ Lệ Nạp',
+        formula: '\\text{Cache Line} = 64 \\text{ Bytes} \\equiv 16 \\text{ số float32}',
+        shape: '1 \\text{ lần đọc nhớ từ RAM mang về 16 floats cạnh nhau}',
+        description: 'Phần cứng không nạp 1 số đơn lẻ mà luôn nạp nguyên 1 khối 64 bytes vào L1/L2 Cache.',
+        takeaway: 'Nếu đọc số thứ 0 rồi đọc tiếp số 1..15, ta hưởng lợi 15 lần Cache Hit miễn phí.',
+        tags: ['Hardware', 'CPU Cache']
+      },
+      {
+        id: 'cl-miss',
+        title: '2. So Sánh Tỉ Lệ Cache Miss: Hàng vs Cột',
+        formula: '\\text{Row-major (Hàng): } \\text{Miss Rate} \\approx \\frac{1}{16} = 6.25\\%, \\qquad \\text{Col-major (Cột): } \\text{Miss Rate} \\approx 100\\%',
+        shape: '\\text{Khi kích thước ma trận } N > \\text{L1 Cache}',
+        description: 'Duyệt dọc theo cột khiến mỗi lần đọc đều nhảy xa một bước $N \\times 4$ bytes, vứt bỏ toàn bộ phần còn lại của cache line.',
+        takeaway: 'Duyệt theo hàng nhanh hơn duyệt theo cột tới hàng chục lần vì tận dụng trọn vẹn Spatial Locality.',
+        tags: ['Tối Ưu', 'Locality']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: 'cache_locality',
       initialStep: 1,
       curatedComments: COMMENTS[1] || []
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 2 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     const gridEl = document.getElementById('matrix-grid-4x4');
     for (let i = 0; i < 16; i++) {

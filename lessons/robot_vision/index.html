@@ -56,6 +56,7 @@
 
           <!-- Reusable Comment & Knowledge Section Mount Point -->
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -157,6 +158,7 @@
     import { createScoreBar } from '../../shared/components/ScoreBar.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS } from './logic.js';
@@ -346,12 +348,61 @@
     });
 
     // 4.2 Reusable CommentSection
+    const FORMULAS = [
+      {
+        id: 'rv-dot',
+        title: '1. Điểm Số Nhận Diện Qua Tích Vô Hướng (Dot Product)',
+        formula: 'Z = X \\cdot W = \\sum_{i=0}^3 x_i w_i',
+        shape: 'X \\in \\{0, 1\\}^4, \\; W \\in \\mathbb{R}^4 \\implies Z \\in \\mathbb{R}',
+        description: 'Ảnh $2 \\times 2$ được duỗi phẳng thành vector 4 phần tử. Mỗi pixel nhân với một trọng số để chấm điểm biển báo.',
+        takeaway: 'Phép nhân ma trận hay tích vô hướng chính là cỗ máy chấm điểm độ tương đồng thị giác.',
+        tags: ['Forward', 'Đại Số Tuyến Tính']
+      },
+      {
+        id: 'rv-boundary',
+        title: '2. Ranh Giới Quyết Định Nhị Phân (Decision Boundary)',
+        formula: '\\hat{y} = \\mathbb{1}[Z \\ge 0] \\implies \\begin{cases} 1 & \\text{nếu } Z \\ge 0 \\text{ (Đi Thẳng)} \\\\ 0 & \\text{nếu } Z < 0 \\text{ (Dừng Lại)} \\end{cases}',
+        shape: 'Z \\in \\mathbb{R} \\implies \\hat{y} \\in \\{0, 1\\}',
+        description: 'Dấu của $Z$ quyết định hành vi robot. Siêu phẳng $X \\cdot W = 0$ chia không gian 4 chiều thành 2 nửa quyết định.',
+        takeaway: 'Nơ-ron nhị phân hoạt động như một công tắc ngưỡng dựa trên dấu của điểm số.',
+        tags: ['Phân Loại', 'Ngưỡng']
+      },
+      {
+        id: 'rv-weights',
+        title: '3. Cơ Chế Thưởng / Phạt Của Trọng Số Âm & Dương',
+        formula: 'w_i > 0 \\implies \\text{Detector (Khuyến khích)}, \\quad w_i < 0 \\implies \\text{Inhibitor (Bác bỏ)}',
+        shape: 'W \\in \\mathbb{R}^4',
+        description: 'Trọng số dương cộng điểm khi pixel sáng. Trọng số âm trừ điểm để chặn lỗi (ví dụ đèn pha chiếu làm sáng cả 4 pixel).',
+        takeaway: 'Trọng số âm là bằng chứng bác bỏ, giúp mô hình phân biệt mẫu thay vì chỉ đếm số lượng pixel sáng.',
+        tags: ['Trực Giác', 'Trọng Số']
+      },
+      {
+        id: 'rv-layout',
+        title: '4. Ánh Xạ Bộ Nhớ 1D Row-Major Order',
+        formula: '\\text{index} = r \\times C + c',
+        shape: 'r \\in [0, R-1], \\; c \\in [0, C-1] \\implies \\text{index} \\in [0, RC-1]',
+        description: 'Trong RAM máy tính, ma trận 2D được trải phẳng liên tục theo từng hàng. Với ảnh $2 \\times 2$: $(r=1, c=1) \\to \\text{index} = 3$.',
+        takeaway: 'Mọi tensor đa chiều trong bộ nhớ vật lý đều là dải ô nhớ tuyến tính 1D.',
+        tags: ['Systems', 'Bộ Nhớ RAM']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: 'robot_vision',
       initialStep: initialStep,
       curatedComments: STEP_COMMENTS[initialStep] || [],
       allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 4 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     // 4.3 PresetPicker
     const presetsBar = createPresetPicker(document.getElementById('mount-preset-picker'), {

@@ -43,6 +43,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -140,6 +141,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS } from './logic.js';
@@ -262,11 +264,42 @@
 
     // 2. Mount CommentSection
     const commentMount = document.getElementById('mount-comment-section');
+    const FORMULAS = [
+      {
+        id: 'ac-trade',
+        title: '1. Đánh Đổi Tính Toán Để Tiết Kiệm Bộ Nhớ VRAM',
+        formula: '\\text{Standard: } M_{\\text{act}} = O(N) \\implies \\text{Checkpointing: } M_{\\text{act}} = O(\\sqrt{N})',
+        shape: 'N = \\text{số lượng tầng của mô hình}',
+        description: 'Chỉ lưu kích hoạt tại $\\sqrt{N}$ chốt kiểm soát. Ở lượt chạy ngược, tính toán lại (recompute) các tầng ở giữa.',
+        takeaway: 'Tiết kiệm 80% VRAM activations với cái giá chỉ tăng thêm khoảng 33% số phép tính FLOPs.',
+        tags: ['VRAM', 'Checkpointing']
+      },
+      {
+        id: 'ac-opt',
+        title: '2. Chiến Lược Đặt Chốt Tối Ưu Nhất',
+        formula: '\\text{Optimal Segment Length} = k^* = \\sqrt{\\frac{2 \\times \\text{MemoryPerLayer}}{\\text{ComputeTime}}} \\approx \\sqrt{N}',
+        shape: '\\text{Chia mô hình thành các đoạn khối đều nhau}',
+        description: 'Chia đều các chốt kiểm soát giúp cực tiểu hóa diện tích đồ thị bộ nhớ đỉnh (Peak Memory).',
+        takeaway: 'Công nghệ bắt buộc giúp mở rộng batch size hoặc huấn luyện ngữ cảnh siêu dài.',
+        tags: ['Tối Ưu', 'Bộ Nhớ Đỉnh']
+      }
+    ];
+
     const commentSection = createCommentSection(commentMount, {
       lessonId: LESSON_ID,
       initialStep: 1,
       curatedComments: STEP_COMMENTS[1]
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 2 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     // 3. Mount PresetPicker
     const presetMount = document.getElementById('mount-preset-picker');

@@ -96,6 +96,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -212,6 +213,7 @@
     import { createStepWizard } from '../../shared/components/StepWizard.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath } from '../../shared/katex-render.js';
     import { LessonLogic, PRESETS } from './logic.js';
 
@@ -261,12 +263,43 @@
       onStepChange: (idx) => comments.setStep(idx)
     });
 
+    const FORMULAS = [
+      {
+        id: 'c2d-dims',
+        title: '1. Kích Thước Bản Đồ Đặc Trưng Đầu Ra (Output Shape)',
+        formula: 'H_{\\text{out}} = \\left\\lfloor \\frac{H + 2P - K_h}{S} \\right\\rfloor + 1, \\qquad W_{\\text{out}} = \\left\\lfloor \\frac{W + 2P - K_w}{S} \\right\\rfloor + 1',
+        shape: 'P = \\text{padding}, \\; S = \\text{stride}, \\; K = \\text{kích thước kernel}',
+        description: 'Công thức cơ bản xác định độ phân giải không gian của ảnh sau khi trượt bộ lọc tích chập qua.',
+        takeaway: 'Cần tính toán chuẩn xác để đảm bảo các phép cộng kết nối tắt (Residual) khớp kích thước không gian.',
+        tags: ['Conv2D', 'Kích Thước']
+      },
+      {
+        id: 'c2d-im2col',
+        title: '2. Phép Biến Đổi im2col Thành Nhân Ma Trận (GEMM)',
+        formula: 'Y = W_{\\text{flat}} \\cdot X_{\\text{col}}',
+        shape: 'W_{\\text{flat}} \\in \\mathbb{R}^{C_{\\text{out}} \\times (C_{\\text{in}} K_h K_w)}, \\quad X_{\\text{col}} \\in \\mathbb{R}^{(C_{\\text{in}} K_h K_w) \\times (H_{\\text{out}} W_{\\text{out}})}',
+        description: 'Trải các vùng cửa sổ trượt thành các cột dữ liệu. Biến toàn bộ phép trượt tích chập phức tạp thành 1 phép nhân ma trận GEMM tối ưu.',
+        takeaway: 'Bí quyết giúp các thư viện cuDNN và OpenBLAS chạy mạng CNN với tốc độ khủng khiếp.',
+        tags: ['im2col', 'GEMM']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: 'conv2d_im2col',
       initialStep: 0,
       curatedComments: CURATED_COMMENTS,
       allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 2 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
       presets: PRESETS,

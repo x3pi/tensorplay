@@ -43,6 +43,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -126,6 +127,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS } from './logic.js';
@@ -248,11 +250,42 @@
 
     // 2. Mount CommentSection
     const commentMount = document.getElementById('mount-comment-section');
+    const FORMULAS = [
+      {
+        id: 'aw-l2',
+        title: '1. Lỗi Của L2 Regularization Trong Adam Gốc',
+        formula: 'g_t^{\\text{L2}} = g_t + \\lambda \\theta_{t-1} \\implies \\Delta \\theta \\propto \\frac{g_t + \\lambda \\theta_{t-1}}{\\sqrt{v_t} + \\epsilon}',
+        shape: '\\text{Tham số có gradient lớn bị phạt ít, gradient nhỏ bị phạt nhiều}',
+        description: 'Trong Adam nguyên bản, L2 regularization bị trộn lẫn vào $v_t$ khiến các trọng số không được suy hao đồng đều.',
+        takeaway: 'Lý do khiến Adam từng bị chê là kém tổng quát hóa hơn SGD trên tập ImageNet.',
+        tags: ['Bẫy Kỹ Thuật', 'L2 Loss']
+      },
+      {
+        id: 'aw-decoupled',
+        title: '2. Cơ Chế Phân Tách Trọng Số Trong AdamW (Decoupled)',
+        formula: '\\theta_t = \\theta_{t-1} - \\eta \\frac{\\hat{m}_t}{\\sqrt{\\hat{v}_t} + \\epsilon} - \\eta \\lambda \\theta_{t-1}',
+        shape: '\\lambda = \\text{hệ số suy hao (Weight Decay)}, \\; \\eta = \\text{tốc độ học}',
+        description: 'Trừ trực tiếp lượng $\\eta \\lambda \\theta_{t-1}$ vào trọng số độc lập hoàn toàn với việc chia ma trận phương sai $\\sqrt{\\hat{v}_t}$.',
+        takeaway: 'Sửa lỗi triệt để cho Adam, trở thành chuẩn mực bắt buộc cho việc huấn luyện mọi mô hình Transformer & LLM.',
+        tags: ['AdamW', 'Chuẩn Mực']
+      }
+    ];
+
     const commentSection = createCommentSection(commentMount, {
       lessonId: LESSON_ID,
       initialStep: 1,
       curatedComments: STEP_COMMENTS[1]
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 2 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     // 3. Mount PresetPicker
     const presetMount = document.getElementById('mount-preset-picker');

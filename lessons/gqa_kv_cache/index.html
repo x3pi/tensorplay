@@ -42,6 +42,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -106,6 +107,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS } from './logic.js';
@@ -164,9 +166,40 @@
 
     const logic = new LessonLogic();
 
+    const FORMULAS = [
+      {
+        id: 'gqa-ratio',
+        title: '1. Tỉ Lệ Chia Sẻ Nhóm (Grouped Query Ratio)',
+        formula: 'G = \\frac{h_Q}{h_{KV}} \\qquad (\\text{MHA: } G=1, \\quad \\text{GQA: } 1 < G < h_Q, \\quad \\text{MQA: } h_{KV}=1)',
+        shape: 'h_Q = \\text{số đầu Query}, \\; h_{KV} = \\text{số đầu Key/Value}',
+        description: 'Cho nhiều đầu Query cùng dùng chung một đầu Key và Value. LLaMA 3 8B dùng $h_Q = 32, h_{KV} = 8 \\implies G = 4$.',
+        takeaway: 'Tiết kiệm 4 lần dung lượng KV Cache nhưng vẫn giữ nguyên 100% chất lượng suy luận so với MHA.',
+        tags: ['GQA', 'Cấu Trúc']
+      },
+      {
+        id: 'gqa-mem',
+        title: '2. Tiết Kiệm Băng Thông Khi Sinh Token',
+        formula: '\\text{VRAM KV (GQA)} = \\frac{1}{G} \\times \\text{VRAM KV (MHA)}',
+        shape: '\\text{Giảm lượng nạp HBM từ } h_Q \\text{ xuống } h_{KV} \\text{ mỗi token}',
+        description: 'Giảm lượng dữ liệu cần nạp từ VRAM vào chip GPU trong mỗi bước sinh từ, giúp tăng tốc độ generate tokens lên đáng kể.',
+        takeaway: 'Cải tiến kiến trúc quan trọng nhất trong thế hệ LLM hiện đại giúp tăng thông lượng phục vụ.',
+        tags: ['Tối Ưu', 'Băng Thông']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 2 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     createStepWizard(document.getElementById('mount-step-wizard'), {
       steps: STEPS,

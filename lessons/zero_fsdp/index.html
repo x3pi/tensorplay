@@ -42,6 +42,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -109,6 +110,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS } from './logic.js';
@@ -167,9 +169,40 @@
 
     const logic = new LessonLogic();
 
+    const FORMULAS = [
+      {
+        id: 'z-stages',
+        title: '1. Ba Cấp Độ Phân Mảnh Trạng Thái Bộ Nhớ (ZeRO Stages)',
+        formula: '\\text{ZeRO-1: Chia nhỏ Optimizer } (4\\times) \\quad \\to \\quad \\text{ZeRO-2: Chia thêm Gradients } (8\\times) \\quad \\to \\quad \\text{ZeRO-3 / FSDP: Chia toàn bộ Weights } (16\\times)',
+        shape: '\\text{Bộ nhớ mỗi GPU} = \\frac{2\\Phi_{\\text{weights}} + 2\\Phi_{\\text{grads}} + 12\\Phi_{\\text{optim}}}{N_d}',
+        description: 'Loại bỏ hoàn toàn việc nhân bản dữ liệu thừa thãi giữa các card đồ họa trong cụm phân tán.',
+        takeaway: 'Công nghệ then chốt của DeepSpeed và PyTorch FSDP giúp huấn luyện các siêu mô hình hàng trăm tỷ tham số.',
+        tags: ['ZeRO', 'FSDP']
+      },
+      {
+        id: 'z-mem',
+        title: '2. Công Thức Dung Lượng Bộ Nhớ Mỗi GPU Khi Áp Dụng FSDP',
+        formula: '\\text{VRAM}_{\\text{GPU}} = \\frac{16 \\Phi}{N_d} + \\text{Activations} + \\text{Buffers}',
+        shape: '\\Phi = \\text{tổng số tham số mô hình}, \\; N_d = \\text{số lượng GPU tham gia song song}',
+        description: 'Kích thước mô hình tối đa có thể huấn luyện tăng tỉ lệ thuận tuyến tính theo số lượng GPU.',
+        takeaway: '16 card GPU có thể chứa mô hình lớn gấp 16 lần so với chạy Data Parallel thông thường.',
+        tags: ['VRAM', 'Scaling']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 2 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     createStepWizard(document.getElementById('mount-step-wizard'), {
       steps: STEPS,

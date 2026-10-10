@@ -42,6 +42,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -120,6 +121,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath, renderAllInlineMath, renderInlineMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS, INIT_SCHEMES } from './logic.js';
@@ -186,9 +188,49 @@
 
     const logic = new LessonLogic();
 
+    const FORMULAS = [
+      {
+        id: 'ki-var',
+        title: '1. Nguyên Lý Bảo Toàn Phương Sai Tín Hiệu',
+        formula: '\\operatorname{Var}(y) = \\text{fan\\_in} \\times \\operatorname{Var}(w) \\times \\operatorname{Var}(x) \\overset{!}{=} \\operatorname{Var}(x)',
+        shape: 'y = W x \\implies \\text{Mục tiêu: phương sai không đổi qua hàng trăm tầng mạng}',
+        description: 'Nếu $\\operatorname{Var}(w)$ quá lớn, tín hiệu bùng nổ cấp số nhân. Nếu quá nhỏ, tín hiệu tắt lịm về 0 sau vài tầng.',
+        takeaway: 'Bí quyết giúp huấn luyện thành công các mạng nơ-ron sâu hàng trăm tầng mà không bị tiêu tán tín hiệu.',
+        tags: ['Khởi Tạo', 'Phương Sai']
+      },
+      {
+        id: 'ki-kaiming',
+        title: '2. Khởi Tạo Kaiming (He) Cho Mạng Dùng ReLU',
+        formula: 'W \\sim \\mathcal{N}\\left(0, \\sigma^2\\right), \\quad \\sigma = \\sqrt{\\frac{2}{\\text{fan\\_in}}}',
+        shape: '\\text{Số 2 bù đắp chính xác 50% nơ-ron bị van ReLU chặn âm}',
+        description: 'Vì ReLU triệt tiêu một nửa phương sai của dữ liệu, Kaiming nhân đôi phương sai khởi tạo của trọng số để bù lại.',
+        takeaway: 'Bước đột phá lịch sử giúp Kaiming He huấn luyện thành công mạng ResNet đoạt giải ImageNet.',
+        tags: ['Kaiming He', 'ReLU']
+      },
+      {
+        id: 'ki-xavier',
+        title: '3. Khởi Tạo Xavier (Glorot) Cho Tanh / Tuyến Tính',
+        formula: '\\sigma = \\sqrt{\\frac{2}{\\text{fan\\_in} + \\text{fan\\_out}}}',
+        shape: '\\text{Cân bằng phương sai ở cả chiều Forward lẫn Backward}',
+        description: 'Phù hợp cho các hàm kích hoạt đối xứng quanh 0 như Tanh, Sigmoid hoặc các tầng chiếu tuyến tính.',
+        takeaway: 'Khởi tạo mặc định của các tầng chiếu trong mô hình Transformer.',
+        tags: ['Xavier', 'Glorot']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 3 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     createStepWizard(document.getElementById('mount-step-wizard'), {
       steps: STEPS,

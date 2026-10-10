@@ -100,6 +100,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -197,6 +198,7 @@
     import { createScoreBar } from '../../shared/components/ScoreBar.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath } from '../../shared/katex-render.js';
     import { LessonLogic, PRESETS } from './logic.js';
 
@@ -246,12 +248,52 @@
       onStepChange: (idx) => comments.setStep(idx)
     });
 
+    const FORMULAS = [
+      {
+        id: 'sa-formula',
+        title: '1. Chú Ý Tích Vô Hướng Tỉ Lệ (Scaled Dot-Product Attention)',
+        formula: '\\operatorname{Attention}(Q, K, V) = \\operatorname{softmax}\\left(\\frac{Q K^T}{\\sqrt{d_k}} + M\\right) V',
+        shape: 'Q, K \\in \\mathbb{R}^{L \\times d_k}, \\; V \\in \\mathbb{R}^{L \\times d_v} \\implies \\text{Output} \\in \\mathbb{R}^{L \\times d_v}',
+        description: 'Tính điểm tương đồng giữa Query và Key, chuẩn hóa thành trọng số chú ý qua Softmax và tính trung bình có trọng số trên Value.',
+        takeaway: 'Công thức làm thay đổi toàn bộ thế giới AI (bài báo \'Attention Is All You Need\', 2017).',
+        tags: ['Self-Attention', 'Cốt Lõi']
+      },
+      {
+        id: 'sa-scale',
+        title: '2. Vì Sao Cần Chia Cho Căn Bậc Hai (\\sqrt{d_k})?',
+        formula: '\\operatorname{Var}(q \\cdot k) = \\sum_{i=1}^{d_k} \\operatorname{Var}(q_i k_i) = d_k \\implies \\operatorname{Var}\\left(\\frac{q \\cdot k}{\\sqrt{d_k}}\\right) = 1.0',
+        shape: '\\text{Giả sử } q_i, k_i \\sim \\mathcal{N}(0, 1) \\text{ độc lập}',
+        description: 'Khi số chiều $d_k$ lớn, tích vô hướng $Q K^T$ sẽ có giá trị cực lớn, đẩy Softmax vào vùng bão hòa có đạo hàm gần bằng 0.',
+        takeaway: 'Chia $\\sqrt{d_k}$ giữ phương sai ổn định bằng 1, giúp gradient lưu thông mạnh mẽ.',
+        tags: ['Toán Học', 'Scaling']
+      },
+      {
+        id: 'sa-mask',
+        title: '3. Mặt Nạ Nhân Quả (Causal Mask M)',
+        formula: 'M_{i, j} = \\begin{cases} 0 & \\text{nếu } j \\le i \\text{ (quá khứ \\& hiện tại)} \\\\ -\\infty & \\text{nếu } j > i \\text{ (tương lai)} \\end{cases}',
+        shape: 'e^{-\\infty} = 0 \\implies \\text{Trọng số chú ý tương lai triệt tiêu hoàn toàn}',
+        description: 'Đảm bảo khi dự đoán từ tiếp theo, mô hình ngôn ngữ tự hồi quy (Autoregressive) không nhìn trộm tương lai.',
+        takeaway: 'Bắt buộc cho mọi mô hình sinh văn bản Decoder-only (GPT, LLaMA, Claude).',
+        tags: ['Causal Mask', 'Decoder']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: 'self_attention',
       initialStep: 0,
       curatedComments: CURATED_COMMENTS,
       allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 3 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
       presets: PRESETS,

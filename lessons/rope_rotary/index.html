@@ -42,6 +42,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -112,6 +113,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS } from './logic.js';
@@ -170,9 +172,40 @@
 
     const logic = new LessonLogic();
 
+    const FORMULAS = [
+      {
+        id: 'rope-rot',
+        title: '1. Phép Xoay Tọa Độ 2D Trong Không Gian Phức',
+        formula: '\\begin{pmatrix} q_{2i}\' \\\\ q_{2i+1}\' \\end{pmatrix} = \\begin{pmatrix} \\cos(m\\theta_i) & -\\sin(m\\theta_i) \\\\ \\sin(m\\theta_i) & \\cos(m\\theta_i) \\end{pmatrix} \\begin{pmatrix} q_{2i} \\\\ q_{2i+1} \\end{pmatrix}, \\qquad \\theta_i = 10000^{-2i/d}',
+        shape: 'm = \\text{vị trí token}, \\; i = \\text{cặp chiều không gian thứ } i',
+        description: 'Chia vector Query và Key thành các cặp 2D, xoay mỗi cặp một góc tỉ lệ thuận với vị trí token $m$.',
+        takeaway: 'Tích hợp trực tiếp vị trí vào vector đặc trưng mà không cần cộng thêm vector vị trí tuyệt đối.',
+        tags: ['RoPE', 'Phép Xoay']
+      },
+      {
+        id: 'rope-rel',
+        title: '2. Tương Quan Vị Trí Tương Đối Hoàn Hảo (Relative Dot Product)',
+        formula: '\\langle R_m q, \\; R_n k \\rangle = q^T R_m^T R_n k = q^T R_{n-m} k',
+        shape: '\\text{Tích vô hướng chỉ phụ thuộc vào khoảng cách tương đối } (n - m)',
+        description: 'Nhờ tính chất trực giao của ma trận xoay, tích vô hướng giữa 2 token chỉ phụ thuộc vào khoảng cách cách nhau bao nhiêu từ.',
+        takeaway: 'Giải pháp mã hóa vị trí thống trị toàn bộ thế giới LLM mã nguồn mở hiện nay (LLaMA, Qwen, Mistral).',
+        tags: ['Toán Học', 'Relative Pos']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 2 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     createStepWizard(document.getElementById('mount-step-wizard'), {
       steps: STEPS,

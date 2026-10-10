@@ -53,6 +53,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -174,6 +175,7 @@
     import { LessonLogic, PRESETS } from './logic.js';
     import { createStepWizard } from '../../shared/components/StepWizard.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { renderMath } from '../../shared/katex-render.js';
@@ -235,7 +237,38 @@
 
     // Khởi tạo Socratic & Comments
     createStepWizard(document.getElementById('mount-step-wizard'), { steps: STEPS });
+    const FORMULAS = [
+      {
+        id: 'ml-accum',
+        title: '1. Tích Lũy Rò Rỉ Vùng Nhớ RAM Theo Epoch',
+        formula: '\\text{RAM}_{\\text{leaked}} = N_{\\text{steps}} \\times B \\times d \\times \\text{sizeof(float)}',
+        shape: 'N = \\text{số bước lặp}, \\; B = \\text{batch size}',
+        description: 'Quên giải phóng một con trỏ trung gian nhỏ trong vòng lặp huấn luyện sẽ tích lũy tuyến tính theo thời gian.',
+        takeaway: 'Rò rỉ 10MB mỗi batch sẽ làm sập máy chủ sau vài giờ chạy thực tế (OOM Crash).',
+        tags: ['Systems', 'RAM']
+      },
+      {
+        id: 'ml-raii',
+        title: '2. Nguyên Tắc Cân Bằng Cấp Phát & Thu Hồi (RAII)',
+        formula: '\\sum \\text{new}[] \\equiv \\sum \\text{delete}[]',
+        shape: '\\text{Constructor cấp phát } \\to \\text{Destructor thu hồi}',
+        description: 'Mỗi lời gọi cấp phát vùng nhớ động trên Heap (`malloc` hoặc `new[]`) bắt buộc phải có lệnh giải phóng tương ứng.',
+        takeaway: 'Trong C++ hiện đại, luôn ưu tiên sử dụng `std::vector` hoặc `std::unique_ptr` để tự động hóa giải phóng.',
+        tags: ['C++', 'RAII']
+      }
+    ];
+
     createCommentSection(document.getElementById('mount-comment-section'), { comments: COMMENTS });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 2 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     // Presets
     createPresetPicker(document.getElementById('mount-preset-picker'), {

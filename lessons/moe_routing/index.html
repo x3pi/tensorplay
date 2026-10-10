@@ -42,6 +42,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -111,6 +112,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS } from './logic.js';
@@ -169,9 +171,49 @@
 
     const logic = new LessonLogic();
 
+    const FORMULAS = [
+      {
+        id: 'moe-gate',
+        title: '1. Cơ Chế Định Tuyến Cổng (Top-K Gating)',
+        formula: 'H(x) = x \\cdot W_g, \\qquad G(x) = \\operatorname{softmax}(\\operatorname{TopK}(H(x), k))',
+        shape: 'W_g \\in \\mathbb{R}^{d \\times E}, \\; E = \\text{số lượng chuyên gia}, \\; k \\ll E \\text{ (ví dụ chọn 2 trong 8)}',
+        description: 'Một mạng nơ-ron cổng router chấm điểm xem token này phù hợp nhất với chuyên gia nào trong số $E$ chuyên gia.',
+        takeaway: 'Khai phá sức mạnh mô hình khổng lồ nhưng chi phí tính toán FLOPs mỗi token chỉ tương đương mô hình nhỏ.',
+        tags: ['MoE', 'Routing']
+      },
+      {
+        id: 'moe-blend',
+        title: '2. Tổng Hợp Đầu Ra Chuyên Gia',
+        formula: 'y = \\sum_{i \\in \\operatorname{TopK}} G(x)_i \\cdot \\text{Expert}_i(x)',
+        shape: 'G(x)_i = \\text{trọng số phần trăm đóng góp của chuyên gia } i',
+        description: 'Kết hợp đầu ra có trọng số từ $k$ chuyên gia được kích hoạt.',
+        takeaway: 'Kiến trúc nền tảng của Mixtral 8x7B, DeepSeek-V2/V3 và GPT-4.',
+        tags: ['MoE', 'Tổng Hợp']
+      },
+      {
+        id: 'moe-aux',
+        title: '3. Hàm Mất Mát Cân Bằng Tải (Load Balancing Loss)',
+        formula: '\\mathcal{L}_{\\text{aux}} = \\alpha \\cdot E \\sum_{i=1}^E f_i P_i',
+        shape: 'f_i = \\text{tỉ lệ token định tuyến vào } i, \\quad P_i = \\text{xác suất trung bình gán cho } i',
+        description: 'Phạt nặng nếu router dồn toàn bộ công việc cho 1-2 chuyên gia yêu thích, bỏ rơi các chuyên gia còn lại.',
+        takeaway: 'Bắt buộc phải có để toàn bộ các chuyên gia cùng phát triển đồng đều.',
+        tags: ['Auxiliary Loss', 'Cân Bằng']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 3 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     createStepWizard(document.getElementById('mount-step-wizard'), {
       steps: STEPS,

@@ -125,6 +125,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -268,6 +269,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath } from '../../shared/katex-render.js';
     import { LessonLogic, PRESETS } from './logic.js';
 
@@ -334,12 +336,43 @@
     });
 
     // 2. Mount CommentSection
+    const FORMULAS = [
+      {
+        id: 'ag-chain',
+        title: '1. Quy Tắc Dây Chuyền Đa Nhánh (Multivariate Chain Rule)',
+        formula: '\\frac{\\partial L}{\\partial x} = \\sum_{c \\in \\operatorname{Children}(x)} \\frac{\\partial L}{\\partial c} \\cdot \\frac{\\partial c}{\\partial x}',
+        shape: '\\text{Cộng dồn đạo hàm từ tất cả các nhánh con phân nhánh từ } x',
+        description: 'Khi một biến $x$ được sử dụng ở nhiều phép tính khác nhau, đạo hàm tổng thể dội về $x$ là tổng các nhánh đạo hàm con.',
+        takeaway: 'Lý do vì sao trong PyTorch ta thấy `grad` được cộng dồn (`+=`) và phải gọi `optimizer.zero_grad()` mỗi bước.',
+        tags: ['Autograd', 'Chain Rule']
+      },
+      {
+        id: 'ag-topo',
+        title: '2. Thứ Tự Tô-pô Đảo Ngược (Reverse Topological Sort)',
+        formula: '\\text{Loss} \\xrightarrow{\\text{duyệt ngược đồ thị}} \\text{Tầng ẩn} \\xrightarrow{} \\text{Trọng số (Leaf Nodes)}',
+        shape: '\\text{Đảm bảo nút con tính xong trước nút cha}',
+        description: 'Hệ thống sắp xếp đồ thị tính toán theo thứ tự phụ thuộc, dội ngược từ đầu ra về các nút lá tham số.',
+        takeaway: 'Nền tảng kiến trúc của autograd engine trong Torch, Candle và Jax.',
+        tags: ['Đồ Thị', 'Tô-pô']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: 'autograd_graph',
       initialStep: 0,
       curatedComments: CURATED_COMMENTS,
       allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 2 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     // 3. Mount PresetPicker
     const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {

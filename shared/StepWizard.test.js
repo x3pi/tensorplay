@@ -274,6 +274,80 @@ describe('shared/components/StepWizard.js - Socratic Taxonomy & Narrative Struct
       globalThis.window = origWindow;
     }
   });
+
+  it('tự động tích hợp bảng công thức vào slide cuối cùng và ẩn ở các slide trước', () => {
+    const createMockNode = (tag = 'div') => {
+      const children = [];
+      const listeners = {};
+      const node = {
+        tagName: tag.toUpperCase(),
+        innerHTML: '',
+        textContent: '',
+        value: '1',
+        disabled: false,
+        style: { display: '' },
+        parentElement: null,
+        children,
+        appendChild: (child) => {
+          children.push(child);
+          child.parentElement = node;
+          return child;
+        },
+        addEventListener: (e, fn) => { listeners[e] = fn; },
+        dispatchEvent: (e) => { if (listeners[e]) listeners[e](); },
+        closest: () => null,
+        querySelectorAll: () => []
+      };
+      return node;
+    };
+
+    const container = createMockNode('div');
+    const slotMock = createMockNode('div');
+    const formulaMountMock = createMockNode('div');
+
+    container.querySelector = (sel) => {
+      if (sel === '.wizard-slot-last-step') return slotMock;
+      return createMockNode();
+    };
+
+    const origDoc = globalThis.document;
+    globalThis.document = {
+      getElementById: (id) => (id === 'mount-formula-summary' ? formulaMountMock : null)
+    };
+
+    try {
+      const wizard = createStepWizard(container, {
+        steps: [
+          { heading: 'Bước 1', problem: 'P1' },
+          { heading: 'Bước 2', problem: 'P2' },
+          { heading: 'Bước 3', problem: 'P3' }
+        ],
+        initialStep: 1
+      });
+
+      // Ở bước 1 (slide đầu): mount-formula-summary phải bị ẩn
+      expect(slotMock.style.display).toBe('none');
+      expect(formulaMountMock.style.display).toBe('none');
+      expect(formulaMountMock.parentElement).toBe(slotMock);
+
+      // Chuyển sang bước 2: vẫn bị ẩn
+      wizard.setStep(2);
+      expect(slotMock.style.display).toBe('none');
+      expect(formulaMountMock.style.display).toBe('none');
+
+      // Chuyển sang bước 3 (slide cuối): hiển thị bảng công thức
+      wizard.setStep(3);
+      expect(slotMock.style.display).toBe('block');
+      expect(formulaMountMock.style.display).toBe('block');
+
+      // Quay lại bước 2: lại bị ẩn đi
+      wizard.prev();
+      expect(slotMock.style.display).toBe('none');
+      expect(formulaMountMock.style.display).toBe('none');
+    } finally {
+      globalThis.document = origDoc;
+    }
+  });
 });
 
 

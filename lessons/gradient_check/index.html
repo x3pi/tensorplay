@@ -42,6 +42,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -128,6 +129,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS, REL_ERR_THRESHOLD } from './logic.js';
@@ -194,9 +196,40 @@
 
     const logic = new LessonLogic();
 
+    const FORMULAS = [
+      {
+        id: 'gc-central',
+        title: '1. Sai Phân Trung Tâm 2 Phía (Central Difference)',
+        formula: 'g_{\\text{num}} = \\frac{f(\\theta + \\epsilon) - f(\\theta - \\epsilon)}{2\\epsilon} + O(\\epsilon^2)',
+        shape: '\\epsilon \\approx 10^{-5} \\text{ (vừa đủ nhỏ để tránh sai số làm tròn)}',
+        description: 'Sai phân trung tâm có độ chính xác bậc 2 $O(\\epsilon^2)$, chính xác hơn rất nhiều so with sai phân một phía $O(\\epsilon)$.',
+        takeaway: 'Phương pháp vạn năng để kiểm chứng đạo hàm giải tích viết tay trước khi đưa vào sản xuất.',
+        tags: ['GradCheck', 'Sai Phân']
+      },
+      {
+        id: 'gc-relerr',
+        title: '2. Sai Số Tương Đối (Relative Error)',
+        formula: '\\text{RelErr} = \\frac{\\|g_{\\text{ana}} - g_{\\text{num}}\\|_2}{\\max(\\|g_{\\text{ana}}\\|_2 + \\|g_{\\text{num}}\\|_2, 10^{-8})}',
+        shape: '\\text{Đạt chuẩn: } \\text{RelErr} < 10^{-5} \\quad (\\text{Nghi ngờ lỗi nếu } > 10^{-4})',
+        description: 'So sánh khoảng cách giữa đạo hàm giải tích và đạo hàm số học chuẩn hóa theo độ lớn của gradient.',
+        takeaway: 'Không bao giờ dùng sai số tuyệt đối $|a - b|$ vì khi gradient quá lớn hoặc quá nhỏ sẽ dẫn tới đánh giá sai lệch.',
+        tags: ['Kiểm Thử', 'Sai Số']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 2 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     createStepWizard(document.getElementById('mount-step-wizard'), {
       steps: STEPS,

@@ -979,6 +979,212 @@ div[id$="-mount"],
 }
 
 /* ==========================================================================
+   Formula Summary & Core Math Cheatsheet (.tp-formula-summary)
+   ========================================================================== */
+.wizard-slot-last-step {
+  margin-top: 1.25rem;
+  animation: tp-fade-slide-up 0.25s ease-out;
+}
+
+@keyframes tp-fade-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tp-formula-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.tp-formula-summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.15s ease;
+}
+
+.tp-formula-summary-header:hover {
+  background: rgba(56, 189, 248, 0.06);
+  border-color: rgba(56, 189, 248, 0.25);
+}
+
+.tp-formula-summary-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tp-formula-summary-icon {
+  font-size: 1.05rem;
+}
+
+.tp-formula-summary-count {
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  padding: 1px 7px;
+  border-radius: var(--radius-full);
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.tp-formula-summary-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tp-formula-summary-toggle {
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  transition: transform 0.2s ease;
+}
+
+.tp-formula-summary-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.tp-formula-card {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 3px solid #38bdf8;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.tp-formula-card:hover {
+  border-color: rgba(56, 189, 248, 0.35);
+  border-left-color: #38bdf8;
+}
+
+.tp-formula-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tp-formula-card-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tp-formula-card-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+.tp-formula-card-title {
+  font-size: 0.825rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.tp-formula-card-tags {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.tp-formula-tag {
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+}
+
+.tp-formula-tag.shape {
+  background: rgba(139, 92, 246, 0.15);
+  color: #c084fc;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.btn-copy-formula {
+  font-size: 0.65rem !important;
+  padding: 2px 7px !important;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.tp-formula-card-math {
+  background: #070b13;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 0.6rem 0.8rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.tp-formula-card-desc {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: #cbd5e1;
+}
+
+.tp-formula-card-takeaway {
+  background: rgba(16, 185, 129, 0.08);
+  border-left: 2px solid var(--color-positive);
+  padding: 6px 9px;
+  border-radius: 4px;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 0.74rem;
+  line-height: 1.45;
+  color: #a7f3d0;
+}
+
+.tp-formula-takeaway-icon {
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+
+/* ==========================================================================
    Mobile Component Optimizations (< 640px)
    ========================================================================== */
 @media (max-width: 640px) {

@@ -42,6 +42,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -107,6 +108,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS } from './logic.js';
@@ -165,9 +167,40 @@
 
     const logic = new LessonLogic();
 
+    const FORMULAS = [
+      {
+        id: 'lrw-warmup',
+        title: '1. Giai Đoạn Khởi Động Tuyến Tính (Linear Warmup)',
+        formula: '\\eta_t = \\eta_{\\max} \\times \\frac{t}{T_{\\text{warmup}}}, \\quad \\text{với } t \\le T_{\\text{warmup}}',
+        shape: 't = 1 \\dots T_{\\text{warmup}} \\text{ (thường chiếm 1% - 5% tổng số steps)}',
+        description: 'Tăng tốc độ học từ 0 lên cực đại trong những bước đầu, giúp các bộ đệm thống kê Adam ($m_t, v_t$) ổn định trước.',
+        takeaway: 'Không dùng warmup sẽ khiến mô hình nhận những bước nhảy bạo lực ngay từ đầu, dễ kẹt ở nghiệm xấu.',
+        tags: ['Warmup', 'Lịch Trình']
+      },
+      {
+        id: 'lrw-cosine',
+        title: '2. Suy Giảm Cosine (Cosine Annealing Decay)',
+        formula: '\\eta_t = \\eta_{\\min} + \\frac{1}{2}(\\eta_{\\max} - \\eta_{\\min}) \\left(1 + \\cos\\left(\\pi \\frac{t - T_{\\text{warmup}}}{T_{\\text{total}} - T_{\\text{warmup}}}\\right)\\right)',
+        shape: '\\eta_t \\text{ giảm mượt mà về } \\eta_{\\min} \\approx 0.1 \\eta_{\\max} \\text{ (hoặc 0)}',
+        description: 'Đường cong cosine giảm nhẹ lúc đầu, giảm nhanh ở giữa và hạ cánh êm dịu ở cuối, giúp trọng số lắng đọng vào cực tiểu phẳng.',
+        takeaway: 'Lịch trình tốc độ học chuẩn mực cho mọi bài toán huấn luyện LLM quy mô lớn.',
+        tags: ['Cosine Decay', 'Tối Ưu']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 2 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     createStepWizard(document.getElementById('mount-step-wizard'), {
       steps: STEPS,

@@ -106,6 +106,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -223,6 +224,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath } from '../../shared/katex-render.js';
     import { LessonLogic, PRESETS } from './logic.js';
 
@@ -272,12 +274,43 @@
       onStepChange: (idx) => comments.setStep(idx)
     });
 
+    const FORMULAS = [
+      {
+        id: 'fa-online',
+        title: '1. Công Thức Online Softmax Cục Bộ',
+        formula: 'm_{\\text{new}} = \\max(m_{\\text{old}}, m_j), \\qquad l_{\\text{new}} = e^{m_{\\text{old}} - m_{\\text{new}}} l_{\\text{old}} + e^{m_j - m_{\\text{new}}}',
+        shape: 'm = \\text{giá trị max}, \\; l = \\text{tổng số mũ mẫu số (sum of exps)}',
+        description: 'Tính toán Softmax tuần tự theo từng khối gạch (Tile) mà không cần phải nạp toàn bộ hàng vào bộ nhớ cùng lúc.',
+        takeaway: 'Bí quyết đột phá loại bỏ hoàn toàn việc lưu ma trận chú ý $N \\times N$ khổng lồ.',
+        tags: ['FlashAttention', 'Online Softmax']
+      },
+      {
+        id: 'fa-io',
+        title: '2. Tối Ưu Hóa Băng Thông Bộ Nhớ IO (Memory Hierarchy)',
+        formula: '\\text{Standard Attention: } O(N^2) \\text{ HBM Access} \\quad \\implies \\quad \\text{FlashAttention: } O(N) \\text{ HBM Access}',
+        shape: '\\text{SRAM (nhanh 19 TB/s)} \\quad \\text{vs} \\quad \\text{HBM (chậm 1.5 - 3 TB/s)}',
+        description: 'Giữ dữ liệu trong bộ nhớ đệm SRAM cực nhanh trên chip GPU và tính toán trực tiếp, chỉ ghi kết quả cuối ra VRAM.',
+        takeaway: 'Tăng tốc độ Transformer từ 2 đến 4 lần và cho phép mở rộng ngữ cảnh lên hàng trăm nghìn tokens.',
+        tags: ['Hardware', 'IO Complexity']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: 'flash_attention',
       initialStep: 0,
       curatedComments: CURATED_COMMENTS,
       allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 2 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     const sliderSeq = createLiveSlider(document.getElementById('mount-slider-seq'), {
       min: 4,

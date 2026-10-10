@@ -42,6 +42,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -124,6 +125,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS } from './logic.js';
@@ -190,9 +192,40 @@
 
     const logic = new LessonLogic();
 
+    const FORMULAS = [
+      {
+        id: 'ln-formula',
+        title: '1. Chuẩn Hóa Theo Chiều Ẩn (Layer Normalization)',
+        formula: '\\mu = \\frac{1}{d} \\sum_{i=1}^d x_i, \\quad \\sigma^2 = \\frac{1}{d} \\sum_{i=1}^d (x_i - \\mu)^2, \\quad y = \\frac{x - \\mu}{\\sqrt{\\sigma^2 + \\epsilon}} \\odot \\gamma + \\beta',
+        shape: '\\text{Tính độc lập cho từng token trên chiều ẩn } d \\text{ (không phụ thuộc } B \\text{)}',
+        description: 'Khác với BatchNorm, LayerNorm tính trung bình và phương sai trên các đặc trưng của chính token đó, hoàn toàn độc lập giữa các mẫu.',
+        takeaway: 'Hoạt động hoàn hảo cho chuỗi có độ dài thay đổi (NLP) và không bị ảnh hưởng bởi kích thước batch.',
+        tags: ['LayerNorm', 'Chuẩn Hóa']
+      },
+      {
+        id: 'ln-residual',
+        title: '2. Cơ Chế Kết Nối Tắt Pre-LN (Residual Stream)',
+        formula: 'x_{l+1} = x_l + F(\\operatorname{LN}(x_l)) \\implies \\frac{\\partial x_{l+1}}{\\partial x_l} = I + \\frac{\\partial F}{\\partial x_l}',
+        shape: 'I = \\text{ma trận đơn vị (đường cao tốc truyền gradient)}',
+        description: 'Gradient dội ngược có thể chạy thẳng tuột qua ma trận đơn vị $I$ mà không bị suy hao qua các hàm phi tuyến.',
+        takeaway: 'Pre-LN giải quyết triệt để lỗi mất mát gradient, là kiến trúc nền tảng của mọi khối Transformer hiện đại.',
+        tags: ['Pre-LN', 'Residual']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 2 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     createStepWizard(document.getElementById('mount-step-wizard'), {
       steps: STEPS,

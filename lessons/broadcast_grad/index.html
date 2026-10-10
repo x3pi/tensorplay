@@ -42,6 +42,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -138,6 +139,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS, P } from './logic.js';
@@ -208,9 +210,40 @@
 
     const logic = new LessonLogic();
 
+    const FORMULAS = [
+      {
+        id: 'bg-sum',
+        title: '1. Đạo Hàm Của Phép Mở Rộng Kích Thước (Broadcast)',
+        formula: '\\text{Forward: } C = A_{(1 \\times D)} + B_{(B \\times D)} \\implies \\text{Backward: } \\nabla_A = \\sum_{b=1}^B \\nabla_{C_{b, :}}',
+        shape: '\\nabla_A \\in \\mathbb{R}^{1 \\times D} \\text{ (giữ nguyên kích thước ban đầu)}',
+        description: 'Phép toán nào được sao chép/mở rộng ở chiều xuôi thì ở chiều dội ngược bắt buộc phải **cộng dồn (reduce sum)** trên đúng chiều đó.',
+        takeaway: 'Nguyên lý bất biến: kích thước của tensor gradient luôn bằng đúng kích thước của tensor tham số gốc.',
+        tags: ['Backward', 'Broadcast']
+      },
+      {
+        id: 'bg-code',
+        title: '2. Cú Pháp Rút Gọn Trong NumPy / PyTorch',
+        formula: '\\texttt{grad\\_A = grad\\_C.sum(axis=0, keepdims=True)}',
+        shape: '\\text{keepdims=True giữ đúng số chiều } 2D',
+        description: 'Khi dội ngược qua phép cộng bias hoặc vector hàng, luôn cần cộng dồn trên trục batch với `keepdims=True`.',
+        takeaway: 'Quên thu gọn chiều broadcast là một trong những bug hình học (shape bug) kinh điển nhất.',
+        tags: ['Code', 'NumPy']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 2 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     createStepWizard(document.getElementById('mount-step-wizard'), {
       steps: STEPS,

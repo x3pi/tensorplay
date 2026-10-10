@@ -53,6 +53,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -182,6 +183,7 @@
     import { LessonLogic, PRESETS } from './logic.js';
     import { createStepWizard } from '../../shared/components/StepWizard.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { renderMath } from '../../shared/katex-render.js';
@@ -243,7 +245,47 @@
 
     // Khởi tạo Socratic & Comments
     createStepWizard(document.getElementById('mount-step-wizard'), { steps: STEPS });
+    const FORMULAS = [
+      {
+        id: 'msgd-loss',
+        title: '1. Hàm Mất Mát Trung Bình Mini-Batch',
+        formula: '\\mathcal{L}_{\\text{batch}} = \\frac{1}{B} \\sum_{i=1}^B \\mathcal{L}(x_i, y_i)',
+        shape: 'B = \\text{kích thước mini-batch}',
+        description: 'Loss của batch là trung bình cộng của từng mẫu. Giúp xấp xỉ gradient toàn thể (Full Batch) với chi phí thấp.',
+        takeaway: 'Mini-batch cân bằng giữa tốc độ tính toán của SGD đơn lẻ và độ ổn định của Full Batch Gradient Descent.',
+        tags: ['Hàm Mất Mát', 'Batch']
+      },
+      {
+        id: 'msgd-grad',
+        title: '2. Gradient Ma Trận Trung Bình',
+        formula: '\\nabla_W = \\frac{1}{B} X^T \\cdot G, \\qquad \\operatorname{Var}(\\nabla_W) \\approx \\frac{\\sigma^2}{B}',
+        shape: 'X \\in \\mathbb{R}^{B \\times n}, \\; G \\in \\mathbb{R}^{B \\times K} \\implies \\nabla_W \\in \\mathbb{R}^{n \\times K}',
+        description: 'Phương sai của gradient giảm tỉ lệ nghịch với $B$. Tăng kích thước batch giúp hướng gradient mượt và ít rung lắc hơn.',
+        takeaway: 'Quên chia cho $B$ ở bước tính gradient sẽ làm bước học lớn gấp $B$ lần, khiến mô hình phát nổ NaN.',
+        tags: ['Gradient', 'Phương Sai']
+      },
+      {
+        id: 'msgd-scale',
+        title: '3. Quy Tắc Tuyến Tính Tăng Tốc Độ Học (Linear Scaling Rule)',
+        formula: '\\alpha_{\\text{new}} = \\alpha_{\\text{base}} \\times \\frac{B_{\\text{new}}}{B_{\\text{base}}}',
+        shape: '\\alpha = \\text{learning rate}',
+        description: 'Khi tăng kích thước batch gấp $k$ lần, nên tăng tốc độ học gấp $k$ lần (kết hợp Warmup) để giữ cùng tốc độ tiến bộ.',
+        takeaway: 'Quy tắc kinh điển của Facebook AI Research khi huấn luyện ResNet trên cụm hàng nghìn GPU.',
+        tags: ['Tối Ưu', 'Scaling']
+      }
+    ];
+
     createCommentSection(document.getElementById('mount-comment-section'), { comments: COMMENTS });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 3 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     // Presets
     createPresetPicker(document.getElementById('mount-preset-picker'), {

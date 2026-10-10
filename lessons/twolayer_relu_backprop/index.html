@@ -40,6 +40,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -164,6 +165,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS } from './logic.js';
@@ -298,11 +300,51 @@
 
     // 2. CommentSection
     const commentMount = document.getElementById('mount-comment-section');
+    const FORMULAS = [
+      {
+        id: 'tl-forward',
+        title: '1. Lan Truyền Tiến Mạng 2 Tầng (Forward Pass)',
+        formula: 'Z_1 = X W_1, \\quad A_1 = \\operatorname{ReLU}(Z_1) = \\max(0, Z_1), \\quad Z_2 = A_1 W_2',
+        shape: 'X \\in \\mathbb{R}^{B \\times n}, \\; W_1 \\in \\mathbb{R}^{n \\times d}, \\; W_2 \\in \\mathbb{R}^{d \\times K}',
+        description: 'Tầng ẩn chiếu dữ liệu sang không gian $d$ chiều và phi tuyến hóa qua van ReLU. Tầng 2 tạo logits phân loại $K$ lớp.',
+        takeaway: 'Hàm kích hoạt phi tuyến là điều kiện bắt buộc để mạng biểu diễn được các hàm phức tạp (Universal Approximation).',
+        tags: ['Forward', 'Tầng Ẩn']
+      },
+      {
+        id: 'tl-grad2',
+        title: '2. Gradient Tầng Ra (Output Layer Gradient)',
+        formula: 'G_2 = \\frac{1}{B}(P - I_y), \\qquad \\nabla_{W_2} = A_1^T \\cdot G_2',
+        shape: 'A_1^T \\in \\mathbb{R}^{d \\times B}, \\; G_2 \\in \\mathbb{R}^{B \\times K} \\implies \\nabla_{W_2} \\in \\mathbb{R}^{d \\times K}',
+        description: 'Đạo hàm theo trọng số tầng 2 là tích giữa đầu vào tầng đó ($A_1$) và sai số đầu ra ($G_2$).',
+        takeaway: 'Công thức giống hệt Softmax Regression, chỉ khác đầu vào là kích hoạt tầng ẩn $A_1$ thay vì dữ liệu thô $X$.',
+        tags: ['Backward', 'Gradient']
+      },
+      {
+        id: 'tl-relu-valve',
+        title: '3. Dội Ngược Qua Van ReLU & Gradient Tầng 1',
+        formula: 'G_1 = (G_2 W_2^T) \\odot \\mathbb{1}[Z_1 > 0], \\qquad \\nabla_{W_1} = X^T \\cdot G_1',
+        shape: '\\mathbb{1}[Z_1 > 0] = \\text{ReLU mask} \\in \\{0, 1\\}^{B \\times d}',
+        description: 'Van ReLU hoạt động một chiều: cho gradient đi qua khi $Z_1 > 0$, chặn đứng hoàn toàn gradient ($= 0$) khi $Z_1 \\le 0$.',
+        takeaway: 'Khởi tạo trọng số toàn số 0 sẽ làm tê liệt mạng nơ-ron (lời nguyền đối xứng), nơ-ron không bao giờ học được.',
+        tags: ['Backward', 'ReLU Mask']
+      }
+    ];
+
     const commentSection = createCommentSection(commentMount, {
       lessonId: 'twolayer_relu_backprop',
       initialStep: 1,
       curatedComments: COMMENTS[1]
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 3 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     // 3. PresetPicker
     const presetMount = document.getElementById('mount-preset-picker');

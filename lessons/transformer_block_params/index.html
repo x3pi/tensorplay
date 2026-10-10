@@ -42,6 +42,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -107,6 +108,7 @@
     import { createLiveSlider } from '../../shared/components/LiveSlider.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath, renderAllInlineMath } from '../../shared/katex-render.js';
     import { markCompleted } from '../../shared/progress.js';
     import { LessonLogic, PRESETS } from './logic.js';
@@ -165,9 +167,49 @@
 
     const logic = new LessonLogic();
 
+    const FORMULAS = [
+      {
+        id: 'tbp-attn',
+        title: '1. Tham Số Khối Chú Ý (Self-Attention Layer)',
+        formula: '\\text{Params}_{\\text{attn}} = 4 d_{\\text{model}}^2 \\quad (W_Q, W_K, W_V, W_O)',
+        shape: '\\text{Mỗi ma trận có kích thước } d_{\\text{model}} \\times d_{\\text{model}}',
+        description: 'Gồm 3 ma trận chiếu đầu vào (Q, K, V) và 1 ma trận chiếu đầu ra (Output projection).',
+        takeaway: 'Chiếm khoảng 1/3 tổng số tham số của một khối Transformer tiêu chuẩn.',
+        tags: ['Attention', 'Đếm Tham Số']
+      },
+      {
+        id: 'tbp-mlp',
+        title: '2. Tham Số Khối Lan Truyền Tiến (MLP / FFN)',
+        formula: '\\text{Standard FFN: } 8 d_{\\text{model}}^2 \\qquad \\text{SwiGLU FFN: } 3 \\times d_{\\text{model}} \\times d_{\\text{ff}} \\approx 8.25 d_{\\text{model}}^2',
+        shape: 'd_{\\text{ff}} = 4 d_{\\text{model}} \\text{ (Standard)} \\quad \\text{hoặc } \\approx \\frac{8}{3} d_{\\text{model}} \\text{ (SwiGLU)}',
+        description: 'Standard MLP gồm 2 tầng ($d \\to 4d \\to d$). SwiGLU gồm 3 tầng (Gate, Up, Down) giúp mô hình thông minh hơn.',
+        takeaway: 'Khối MLP là nơi lưu trữ \'tri thức thực tế\' (factual knowledge) của mô hình ngôn ngữ.',
+        tags: ['MLP', 'SwiGLU']
+      },
+      {
+        id: 'tbp-total',
+        title: '3. Tổng Tham Số Mỗi Tầng & Dung Lượng VRAM',
+        formula: '\\text{Total / Layer} \\approx 12 d_{\\text{model}}^2, \\qquad \\text{VRAM Weights} = \\text{TotalParams} \\times \\text{sizeof(dtype)}',
+        shape: '\\text{Ví dụ LLaMA-7B: 32 layers, } d=4096 \\implies \\approx 7 \\times 10^9 \\text{ params}',
+        description: 'Công thức nhẩm nhanh dung lượng: Mô hình 7 tỷ tham số (7B) ở FP16 tốn $7 \\times 2 = 14$ GB VRAM chỉ để nạp trọng số.',
+        takeaway: 'Quy tắc nằm lòng của mọi kỹ sư AI khi tính toán tài nguyên triển khai phần cứng.',
+        tags: ['Hệ Thống', 'Dung Lượng']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: LESSON_ID, initialStep: 1, curatedComments: STEP_COMMENTS[1] || [], allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 3 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     createStepWizard(document.getElementById('mount-step-wizard'), {
       steps: STEPS,

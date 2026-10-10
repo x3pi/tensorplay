@@ -38,6 +38,8 @@ export function createStepWizard(container, options = {}) {
 
       <div class="wizard-cards socratic-cards-list"></div>
 
+      <div class="wizard-slot-last-step" style="display: none; margin-top: 1.25rem;"></div>
+
       <div class="wizard-nav" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem;">
         <button class="tp-btn tp-btn-secondary btn-wizard-prev" title="Phím tắt: ←">◀ Trước</button>
         <div class="wizard-nav-hint" style="font-size: 0.75rem; color: var(--text-dim); display: flex; align-items: center; gap: 4px;">
@@ -195,6 +197,22 @@ export function createStepWizard(container, options = {}) {
 
     prevBtn.disabled = currentStep <= 1;
     nextBtn.disabled = currentStep >= steps.length;
+
+    // Slot for formula summary & concluding synthesis on the final slide
+    const isLastStep = currentStep === steps.length;
+    const lastStepSlot = container.querySelector?.('.wizard-slot-last-step');
+    if (typeof document !== 'undefined' && typeof document.getElementById === 'function') {
+      const extFormulaMount = document.getElementById('mount-formula-summary');
+      if (extFormulaMount && lastStepSlot) {
+        if (typeof lastStepSlot.appendChild === 'function' && extFormulaMount.parentElement !== lastStepSlot) {
+          lastStepSlot.appendChild(extFormulaMount);
+        }
+        if (lastStepSlot.style) lastStepSlot.style.display = isLastStep ? 'block' : 'none';
+        if (extFormulaMount.style) extFormulaMount.style.display = isLastStep ? 'block' : 'none';
+      } else if (lastStepSlot && lastStepSlot.style) {
+        lastStepSlot.style.display = isLastStep ? 'block' : 'none';
+      }
+    }
 
     renderDots();
   }

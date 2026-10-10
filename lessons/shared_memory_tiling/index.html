@@ -82,6 +82,7 @@
         <div class="lab-col-body">
           <div id="mount-step-wizard"></div>
           <div id="mount-comment-section"></div>
+          <div id="mount-formula-summary" style="display: none;"></div>
         </div>
       </section>
 
@@ -189,6 +190,7 @@
     import { createStepWizard } from '../../shared/components/StepWizard.js';
     import { createPresetPicker } from '../../shared/components/PresetPicker.js';
     import { createCommentSection } from '../../shared/components/CommentSection.js';
+    import { createFormulaSummary } from '../../shared/components/FormulaSummary.js';
     import { renderMath } from '../../shared/katex-render.js';
     import { LessonLogic, PRESETS } from './logic.js';
 
@@ -238,12 +240,43 @@
       onStepChange: (idx) => comments.setStep(idx)
     });
 
+    const FORMULAS = [
+      {
+        id: 'smt-tile',
+        title: '1. Phân Khối Tile & Tái Sử Dụng Dữ Liệu',
+        formula: '\\text{Tile Size} = T \\times T \\implies \\text{Giảm số lần nạp từ VRAM (HBM) đi } T \\text{ lần}',
+        shape: 'T = 16 \\text{ hoặc } 32 \\text{ (vừa vặn dung lượng Shared Memory)}',
+        description: 'Mỗi khối nạp một mẩu ma trận vào SRAM cực nhanh trên chip, các luồng dùng chung nhau mẩu đó nhiều lần.',
+        takeaway: 'Biến bài toán bị nghẽn băng thông nhớ (Memory-bound) thành tận dụng tối đa năng lực tính toán (Compute-bound).',
+        tags: ['Tiling', 'SRAM']
+      },
+      {
+        id: 'smt-sync',
+        title: '2. Rào Chắn Đồng Bộ Hóa Luồng (__syncthreads)',
+        formula: '\\text{Load to SRAM} \\to \\text{\\_\\_syncthreads()} \\to \\text{Compute GEMM} \\to \\text{\\_\\_syncthreads()}',
+        shape: '\\text{Bắt buộc 2 rào cản đồng bộ trong mỗi vòng lặp}',
+        description: 'Rào 1 đảm bảo mọi luồng đã nạp xong tile vào SRAM mới bắt đầu tính. Rào 2 đảm bảo mọi luồng tính xong mới nạp tile kế tiếp.',
+        takeaway: 'Thiếu `__syncthreads()` sẽ gây lỗi Race Condition (đọc phải dữ liệu cũ hoặc dữ liệu rác).',
+        tags: ['CUDA', 'Đồng Bộ']
+      }
+    ];
+
     const comments = createCommentSection(document.getElementById('mount-comment-section'), {
       lessonId: 'shared_memory_tiling',
       initialStep: 0,
       curatedComments: CURATED_COMMENTS,
       allowUserNotes: true
     });
+
+    const formulaMount = document.getElementById('mount-formula-summary');
+    if (formulaMount) {
+      createFormulaSummary(formulaMount, {
+        title: 'Tổng Hợp Công Thức Cốt Lõi Cần Nhớ',
+        badge: 'Cheat Sheet • 2 Công Thức',
+        formulas: FORMULAS,
+        initiallyExpanded: true
+      });
+    }
 
     const presets = createPresetPicker(document.getElementById('mount-preset-picker'), {
       presets: PRESETS,
